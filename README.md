@@ -1,15 +1,5 @@
 
-# /*
-# * SPDX-License-Identifier: AGPL-3.0-or-later
-# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
-# */
-
 # Device Assessment and Vulnerability Exposure (DAVE)
-
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/your-org/dave)
-[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
-[![PHP](https://img.shields.io/badge/PHP-8.0+-green.svg)](https://php.net)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://postgresql.org)
 
 ## 🏥 Overview
 
@@ -250,7 +240,7 @@ See [Development Setup Guide](docs/DEVELOPMENT-SETUP.md) for detailed instructio
 
 ## License
 
-This software is proprietary and confidential. All rights reserved.
+This software is licensed under the [GNU Affero General Public License version 3 or later]
 
 **Copyright (c) 2026 Siemens Healthineers - All rights reserved**
 
