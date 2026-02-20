@@ -1,0 +1,819 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+@import url('brand-variables.css');
+@import url('brand-components.css');
+
+/* Dark Mode Base */
+body {
+    font-family: var(--font-family);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* Device Mapping Container */
+.device-mapping-container {
+    padding: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.mapping-header {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.mapping-header h1 {
+    font-size: var(--font-size-h1);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mapping-header h1 i {
+    margin-right: 15px;
+    color: var(--siemens-petrol);
+    font-size: 2.5rem;
+}
+
+.mapping-header p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Mapping Stats */
+.mapping-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--siemens-petrol);
+}
+
+.stat-card .icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.stat-card .icon.mapped {
+    background: var(--success-green);
+}
+
+.stat-card .icon.unmapped {
+    background: var(--warning-orange);
+}
+
+.stat-card .icon.pending {
+    background: var(--siemens-petrol);
+}
+
+.stat-card .icon.error {
+    background: var(--error-red);
+}
+
+.stat-card h3 {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.stat-card .label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Unmapped Assets Section */
+.unmapped-assets {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+}
+
+.unmapped-assets h3 {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.unmapped-assets h3 i {
+    margin-right: 10px;
+    color: var(--warning-orange);
+}
+
+.assets-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.asset-item {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.3s ease;
+}
+
+.asset-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.asset-item h4 {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.asset-item h4 i {
+    margin-right: 8px;
+    color: var(--siemens-petrol);
+}
+
+.asset-details {
+    margin-bottom: 15px;
+}
+
+.asset-detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.asset-detail .label {
+    color: var(--text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.asset-detail .value {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-regular);
+}
+
+.asset-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Search Box */
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+    min-width: 300px;
+}
+
+.search-box:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.2);
+    background: var(--bg-secondary);
+}
+
+.search-box input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    padding: 4px 8px;
+    outline: none;
+}
+
+.search-box input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-box i {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-left: 8px;
+}
+
+/* Section Actions */
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* FDA Search Section */
+.fda-search {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+}
+
+.fda-search h3 {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.fda-search h3 i {
+    margin-right: 10px;
+    color: var(--siemens-petrol);
+}
+
+.search-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.search-input {
+    padding: 12px 16px;
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.2);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-btn {
+    padding: 12px 24px;
+    background: var(--siemens-petrol);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-btn:hover {
+    background: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.search-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Search Results */
+.search-results {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border-primary);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.3s ease;
+}
+
+.search-result-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+}
+
+.search-result-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Additional Search Elements */
+.results-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.results-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.results-list::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.results-list::-webkit-scrollbar-thumb {
+    background: var(--border-secondary);
+    border-radius: 3px;
+}
+
+.results-list::-webkit-scrollbar-thumb:hover {
+    background: var(--siemens-petrol);
+}
+
+/* Device Result Items */
+.device-result {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.device-result:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.device-result.selected {
+    border-color: var(--siemens-orange);
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.3);
+}
+
+.device-result h5 {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.device-result .device-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.device-result .device-udi {
+    font-family: 'Courier New', monospace;
+    background: var(--bg-input);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    margin-top: 8px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.loading i {
+    margin-right: 8px;
+    color: var(--siemens-petrol);
+}
+
+/* Error State */
+.error {
+    text-align: center;
+    padding: 20px;
+    color: var(--error-red);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error-red);
+    border-radius: 8px;
+}
+
+.search-result-item h4 {
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.search-result-item .details {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.search-result-item .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Mapping Actions */
+.mapping-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.map-btn {
+    padding: 8px 16px;
+    background: var(--success-green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.map-btn:hover {
+    background: #0d8a4a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.view-btn {
+    padding: 8px 16px;
+    background: var(--siemens-petrol);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-btn:hover {
+    background: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Mapped Devices Section */
+.mapped-devices {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+}
+
+.mapped-devices h3 {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.mapped-devices h3 i {
+    margin-right: 10px;
+    color: var(--success-green);
+}
+
+.devices-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.devices-table th {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.devices-table td {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+}
+
+.devices-table tr:hover {
+    background: var(--bg-hover);
+}
+
+.devices-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.mapped {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-green);
+    border: 1px solid var(--success-green);
+}
+
+.status-badge.unmapped {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-orange);
+    border: 1px solid var(--warning-orange);
+}
+
+.status-badge.pending {
+    background: rgba(0, 153, 153, 0.1);
+    color: var(--siemens-petrol);
+    border: 1px solid var(--siemens-petrol);
+}
+
+.status-badge.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+    border: 1px solid var(--error-red);
+}
+
+/* Bulk Actions */
+.bulk-actions {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.bulk-actions .selection-info {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.bulk-actions .actions {
+    display: flex;
+    gap: 10px;
+}
+
+.bulk-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bulk-btn.primary {
+    background: var(--siemens-petrol);
+    color: white;
+}
+
+.bulk-btn.primary:hover {
+    background: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.bulk-btn.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-secondary);
+}
+
+.bulk-btn.secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+}
+
+/* Progress Indicators */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--siemens-petrol);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .device-mapping-container {
+        padding: 20px;
+    }
+    
+    .mapping-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .assets-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .search-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .bulk-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .bulk-actions .actions {
+        justify-content: center;
+    }
+    
+    .devices-table {
+        font-size: 0.9rem;
+    }
+    
+    .devices-table th,
+    .devices-table td {
+        padding: 10px;
+    }
+}
+
+/* Dark Mode Enhancements */
+.device-mapping-container * {
+    color: inherit;
+}
+
+.device-mapping-container a {
+    color: var(--siemens-petrol);
+    text-decoration: none;
+}
+
+.device-mapping-container a:hover {
+    color: var(--siemens-petrol-dark);
+    text-decoration: underline;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--siemens-petrol);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}

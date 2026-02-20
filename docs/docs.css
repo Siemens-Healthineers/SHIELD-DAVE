@@ -1,0 +1,422 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* Documentation Dark Mode Styles for  */
+/* Siemens Healthineers Brand Compliant - Dark Mode */
+
+@import url('/assets/css/brand-variables.css');
+@import url('/assets/css/brand-components.css');
+
+/* Base Documentation Styles */
+body {
+    font-family: var(--font-family);
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    margin: 0;
+    padding: 20px;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    border-bottom: 2px solid var(--siemens-petrol);
+    padding-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--siemens-petrol);
+    border-bottom: 1px solid var(--border-primary);
+    padding-bottom: 0.3rem;
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--siemens-petrol);
+}
+
+h4 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+h5, h6 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+/* Paragraphs */
+p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* Links */
+a {
+    color: var(--siemens-petrol);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--siemens-petrol-dark);
+    text-decoration: underline;
+}
+
+/* Lists */
+ul, ol {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+}
+
+/* Code Blocks */
+pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+code {
+    background: var(--bg-secondary);
+    color: var(--siemens-petrol);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+pre code {
+    background: transparent;
+    color: var(--text-primary);
+    padding: 0;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    background: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+th {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+td {
+    color: var(--text-secondary);
+}
+
+tr:hover {
+    background: var(--bg-hover);
+}
+
+/* Blockquotes */
+blockquote {
+    border-left: 4px solid var(--siemens-petrol);
+    background: var(--bg-secondary);
+    margin: 1rem 0;
+    padding: 1rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Horizontal Rules */
+hr {
+    border: none;
+    height: 1px;
+    background: var(--border-primary);
+    margin: 2rem 0;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Navigation */
+.nav {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav a {
+    color: var(--siemens-petrol);
+    text-decoration: none;
+    margin-right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.nav a:hover {
+    background: var(--bg-hover);
+    color: var(--siemens-petrol-dark);
+}
+
+/* Alerts and Notices */
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border: 1px solid;
+}
+
+.alert-info {
+    background: rgba(0, 153, 153, 0.1);
+    border-color: var(--siemens-petrol);
+    color: var(--siemens-petrol);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--warning-orange);
+    color: var(--warning-orange);
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--success-green);
+    color: var(--success-green);
+}
+
+.alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--error-red);
+    color: var(--error-red);
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: var(--font-weight-semibold);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--siemens-petrol);
+    color: white;
+    border-color: var(--siemens-petrol);
+}
+
+.btn-primary:hover {
+    background: var(--siemens-petrol-dark);
+    border-color: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-secondary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+    color: var(--siemens-petrol);
+}
+
+/* Cards */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--siemens-petrol);
+}
+
+.card-header {
+    border-bottom: 1px solid var(--border-primary);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin: 0;
+}
+
+.card-content {
+    color: var(--text-secondary);
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success {
+    background: var(--success-green);
+    color: white;
+}
+
+.badge-warning {
+    background: var(--warning-orange);
+    color: white;
+}
+
+.badge-error {
+    background: var(--error-red);
+    color: white;
+}
+
+.badge-info {
+    background: var(--siemens-petrol);
+    color: white;
+}
+
+/* Code Syntax Highlighting */
+.highlight {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.highlight pre {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 1rem;
+}
+
+/* TOC (Table of Contents) */
+.toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.toc h3 {
+    color: var(--text-primary);
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.toc ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.toc li {
+    margin-bottom: 0.5rem;
+}
+
+.toc a {
+    color: var(--siemens-petrol);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+.toc a:hover {
+    color: var(--siemens-petrol-dark);
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.25rem;
+    }
+    
+    table {
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 0.5rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    a {
+        color: #0066cc;
+    }
+    
+    .card {
+        border: 1px solid #ccc;
+        box-shadow: none;
+    }
+}

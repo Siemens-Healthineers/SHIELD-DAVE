@@ -1,0 +1,305 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    text-decoration: none;
+    min-width: 200px;
+}
+
+.profile-trigger:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+    transform: translateY(-1px);
+}
+
+.profile-avatar {
+    width: 36px;
+    height: 36px;
+    background: var(--siemens-petrol);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    font-size: var(--font-size-body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.profile-role {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.profile-arrow {
+    color: var(--text-secondary);
+    font-size: 12px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 320px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+.profile-dropdown-menu.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.profile-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.profile-avatar-large {
+    width: 48px;
+    height: 48px;
+    background: var(--siemens-petrol);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.profile-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-name-large {
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    font-size: var(--font-size-h4);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-email {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--siemens-petrol);
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-divider {
+    height: 1px;
+    background: var(--border-primary);
+    margin: 0;
+}
+
+.profile-actions,
+.profile-links,
+.profile-admin {
+    padding: 8px 0;
+}
+
+.profile-action,
+.profile-link,
+.profile-admin-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.profile-action:hover,
+.profile-link:hover,
+.profile-admin-link:hover {
+    background: var(--bg-hover);
+    color: var(--siemens-petrol);
+}
+
+.profile-action i,
+.profile-link i,
+.profile-admin-link i {
+    width: 16px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.profile-action span,
+.profile-link span,
+.profile-admin-link span {
+    flex: 1;
+    font-size: var(--font-size-body);
+}
+
+.notification-badge {
+    background: var(--siemens-orange);
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: var(--font-weight-bold);
+    min-width: 18px;
+    text-align: center;
+}
+
+.profile-admin {
+    background: transparent;
+}
+
+.profile-admin-link {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.profile-admin-link:hover {
+    background: var(--siemens-petrol);
+    color: white;
+}
+
+.profile-footer {
+    padding: 8px 0;
+}
+
+.profile-logout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #F44336;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: var(--font-weight-medium);
+}
+
+.profile-logout:hover {
+    background: rgba(244, 67, 54, 0.1);
+    color: #D32F2F;
+}
+
+.profile-logout i {
+    width: 16px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-trigger {
+        min-width: auto;
+        padding: 8px 12px;
+    }
+    
+    .profile-info {
+        display: none;
+    }
+    
+    .profile-menu {
+        width: 280px;
+        right: -10px;
+    }
+    
+    .profile-name,
+    .profile-role {
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-menu {
+        width: calc(100vw - 40px);
+        right: -20px;
+    }
+}
+
+/* Animation for smooth dropdown */
+@keyframes profileDropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes profileDropdownOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}

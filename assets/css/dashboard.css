@@ -1,0 +1,1873 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+@import url('brand-variables.css');
+@import url('brand-components.css');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.dashboard-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header - Dark Mode */
+.dashboard-header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 0.75rem 1.5rem;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-md);
+}
+
+.header-left .logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--siemens-petrol);
+}
+
+.header-left .logo i {
+    margin-right: 8px;
+    font-size: 1.25rem;
+}
+
+.header-left .logo .logo-image {
+    height: 50px;
+    width: auto;
+    margin-right: 16px;
+    object-fit: contain;
+    object-position: left center;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.15));
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+    max-width: 200px;
+}
+
+.header-left .logo .logo-image:hover {
+    opacity: 0.9;
+}
+
+/* Responsive logo sizing */
+@media (max-width: 768px) {
+    .dashboard-header {
+        height: 70px;
+        padding: 0.5rem 1rem;
+    }
+    
+    .header-left .logo .logo-image {
+        height: 45px;
+        margin-right: 12px;
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header {
+        height: 55px;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .header-left .logo .logo-image {
+        height: 40px;
+        margin-right: 8px;
+        max-width: 160px;
+    }
+}
+
+/* Ensure logo doesn't interfere with text on small screens */
+@media (max-width: 600px) {
+    .header-left .logo span {
+        font-size: 0.9rem;
+    }
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-role {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    border: 1px solid var(--border-secondary);
+}
+
+.logout-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.logout-btn i {
+    margin-right: 6px;
+}
+
+/* Profile Dropdown */
+.profile-dropdown {
+    position: relative;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.profile-trigger:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+}
+
+.profile-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--siemens-petrol);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.profile-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.profile-role {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-arrow {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.profile-trigger:hover .profile-arrow {
+    color: var(--siemens-petrol);
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.profile-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-header {
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.profile-avatar-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--siemens-petrol);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+}
+
+.profile-details {
+    flex: 1;
+}
+
+.profile-name-large {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.profile-email {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.profile-role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--siemens-petrol);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-divider {
+    height: 1px;
+    background: var(--border-primary);
+    margin: 0;
+}
+
+.profile-actions,
+.profile-links {
+    padding: 12px 0;
+}
+
+.profile-action,
+.profile-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.profile-action:hover,
+.profile-link:hover {
+    background: var(--bg-hover);
+    color: var(--siemens-petrol);
+}
+
+.profile-action i,
+.profile-link i {
+    width: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.profile-action:hover i,
+.profile-link:hover i {
+    color: var(--siemens-petrol);
+}
+
+.notification-badge {
+    position: absolute;
+    right: 20px;
+    background: var(--siemens-orange);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.profile-admin {
+    padding: 8px 0;
+}
+
+.profile-admin-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: transparent;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: var(--font-weight-medium);
+}
+
+.profile-admin-link:hover {
+    background: var(--siemens-petrol);
+    color: white;
+    border: 1px solid var(--siemens-petrol);
+}
+
+.profile-admin-link i:first-child {
+    margin-right: 8px;
+}
+
+.profile-footer {
+    padding: 12px;
+}
+
+.profile-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    border: 1px solid var(--border-primary);
+}
+
+.profile-logout:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+/* Navigation - Dark Mode */
+.dashboard-nav {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 0 30px;
+    display: flex;
+    gap: 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    color: var(--siemens-petrol);
+    background: var(--bg-hover);
+}
+
+.nav-item.active {
+    color: var(--siemens-petrol);
+    border-bottom-color: var(--siemens-petrol);
+    background: var(--bg-hover);
+}
+
+.nav-item i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+.nav-item.loading {
+    position: relative;
+    color: transparent;
+}
+
+.nav-item.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Main Content */
+.dashboard-main {
+    flex: 1;
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Metrics Section */
+.metrics-section {
+    margin-bottom: 2rem;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Chart Card Styling */
+.metric-card.chart-card {
+    grid-column: span 3; /* Make it span 3 columns */
+}
+
+.metric-card.chart-card .metric-content {
+    padding: 0;
+}
+
+.metric-card.chart-card .chart-container {
+    margin-top: 8px;
+}
+
+.metric-card.chart-card .chart-item {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 3px !important;
+    padding: 2px 0 !important;
+    gap: 3px !important;
+}
+
+.metric-card.chart-card .chart-label {
+    flex: 1 !important;
+    font-size: 0.875rem !important;
+    color: var(--text-secondary) !important;
+    margin-right: 3px !important;
+    min-width: auto !important;
+}
+
+.metric-card.chart-card .chart-bar {
+    flex: 2 !important;
+    height: 8px !important;
+    background: var(--bg-hover) !important;
+    border-radius: 4px !important;
+    margin-right: 3px !important;
+    overflow: hidden !important;
+}
+
+.metric-card.chart-card .chart-fill {
+    height: 100%;
+    background: var(--siemens-petrol);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.metric-card.chart-card .chart-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 30px;
+    text-align: right;
+}
+
+
+/* Asset Locations Section */
+.asset-locations-section {
+    margin-bottom: 40px;
+}
+
+.asset-locations-section .dashboard-widget {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.location-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 20px;
+    background: var(--bg-hover);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--siemens-petrol);
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Asset Information Section */
+.asset-info-section {
+    margin-bottom: 60px;
+}
+
+.asset-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.asset-info-grid .metric-card {
+    height: fit-content;
+}
+
+.asset-info-grid .dashboard-widget {
+    height: fit-content;
+}
+
+/* Mini Chart Styling for Metric Cards */
+.metric-chart {
+    margin-top: 15px;
+}
+
+.mini-chart {
+    height: 6px;
+}
+
+.mini-chart .chart-bar {
+    height: 100%;
+    background: var(--bg-hover);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+}
+
+.mini-chart .chart-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.mini-chart .chart-fill.mapped {
+    background: var(--siemens-petrol);
+}
+
+.mini-chart .chart-fill.unmapped {
+    background: var(--text-muted);
+}
+
+.mini-chart .chart-fill.critical {
+    background: var(--error-red);
+}
+
+.mini-chart .chart-fill.high {
+    background: var(--warning-orange);
+}
+
+.mini-chart .chart-fill.danger {
+    background: var(--error-red);
+}
+
+.mini-chart .chart-fill.active {
+    background: var(--siemens-petrol);
+}
+
+.mini-chart .chart-fill.assigned {
+    background: var(--siemens-orange);
+}
+
+.metric-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--siemens-petrol);
+}
+
+.metric-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 24px;
+    background: var(--siemens-petrol);
+    color: white;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.metric-icon.critical {
+    background: var(--error-red);
+}
+
+.metric-icon.warning {
+    background: var(--siemens-orange);
+}
+
+.metric-icon.danger {
+    background: var(--error-red);
+}
+
+.metric-icon.kev {
+    background: linear-gradient(135deg, var(--siemens-orange), var(--siemens-orange-light));
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    animation: kev-pulse 2s ease-in-out infinite;
+}
+
+@keyframes kev-pulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
+    }
+}
+
+.kev-card {
+    border-left: 4px solid var(--siemens-orange) !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.kev-card:hover {
+    border-color: var(--siemens-orange-dark) !important;
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+.kev-overdue {
+    color: var(--siemens-orange);
+    font-weight: 600;
+}
+
+.chart-fill.kev-overdue {
+    background: linear-gradient(90deg, var(--siemens-orange), var(--siemens-orange-light));
+}
+
+
+.metric-content h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.metric-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    gap: 15px;
+}
+
+.metric-detail .mapped {
+    color: var(--success-green);
+    font-weight: 600;
+}
+
+.metric-detail .unmapped {
+    color: var(--error-red);
+    font-weight: 600;
+}
+
+.metric-detail .critical {
+    color: var(--error-red);
+    font-weight: 600;
+}
+
+.metric-detail .high {
+    color: var(--warning-orange);
+    font-weight: 600;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 32px;
+    margin-bottom: 60px;
+}
+
+/* EPSS Chart - 2 columns wide */
+.dashboard-widget.epss-chart-wide {
+    grid-column: span 2;
+}
+
+.dashboard-widget {
+    background: var(--bg-card);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-card);
+    overflow: hidden;
+    color: var(--text-primary);
+}
+
+.widget-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+}
+
+.widget-header h3 {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.widget-header h3 i {
+    margin-right: 8px;
+    color: var(--siemens-petrol);
+}
+
+.widget-action {
+    color: var(--siemens-petrol);
+    text-decoration: none;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-duration) var(--transition-easing);
+}
+
+.widget-action:hover {
+    color: var(--siemens-petrol-dark);
+}
+
+.widget-content {
+    padding: 32px;
+}
+
+/* Asset List */
+.asset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.asset-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
+}
+
+.asset-item:hover {
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.asset-info {
+    flex: 1;
+}
+
+.asset-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.asset-details {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.asset-status {
+    margin-left: 15px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.mapped {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-green);
+    border: 1px solid var(--success-green);
+}
+
+.status-badge.unmapped {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+    border: 1px solid var(--error-red);
+}
+
+/* Vulnerability List */
+.vulnerability-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.vulnerability-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.vulnerability-list::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.vulnerability-list::-webkit-scrollbar-thumb {
+    background: var(--border-secondary);
+    border-radius: 3px;
+}
+
+.vulnerability-list::-webkit-scrollbar-thumb:hover {
+    background: var(--siemens-petrol);
+}
+
+.vulnerability-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+}
+
+.vulnerability-item:hover {
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.vuln-info {
+    flex: 1;
+}
+
+.vuln-cve {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.vuln-details {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.vuln-severity {
+    margin-left: 15px;
+    text-align: right;
+}
+
+.severity-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+}
+
+.severity-badge.critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error-red);
+    border-color: var(--error-red);
+}
+
+.severity-badge.high {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning-orange);
+    border-color: var(--warning-orange);
+}
+
+.severity-badge.medium {
+    background: rgba(0, 153, 153, 0.2);
+    color: var(--siemens-petrol);
+    border-color: var(--siemens-petrol);
+}
+
+.severity-badge.low {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success-green);
+    border-color: var(--success-green);
+}
+
+.cvss-score {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Recall List */
+.recall-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.recall-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
+}
+
+.recall-item:hover {
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.recall-info {
+    flex: 1;
+}
+
+.recall-number {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.recall-details {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.recall-reason {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.recall-impact {
+    margin-left: 15px;
+    text-align: right;
+}
+
+.impact-count {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+    border: 1px solid var(--error-red);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Chart */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chart-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.chart-label {
+    min-width: 120px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.chart-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.chart-fill {
+    height: 100%;
+    background: var(--siemens-petrol);
+    border-radius: 4px;
+    transition: width var(--transition-duration) var(--transition-easing);
+}
+
+.chart-value {
+    min-width: 30px;
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 0 20px;
+        flex-direction: column;
+        height: auto;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+    
+    .header-right {
+        margin-top: 10px;
+    }
+    
+    .dashboard-nav {
+        padding: 0 20px;
+        flex-wrap: wrap;
+    }
+    
+    .nav-item {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .dashboard-main {
+        padding: 1rem;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-card {
+        padding: 20px;
+    }
+    
+    .metric-card.chart-card {
+        grid-column: span 1; /* Reset to single column on mobile */
+    }
+    
+    /* EPSS Chart - Reset to single column on mobile */
+    .dashboard-widget.epss-chart-wide {
+        grid-column: span 1;
+    }
+    
+    .metric-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .metric-value {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-main {
+        padding: 0.75rem;
+    }
+    
+    .widget-content {
+        padding: 20px;
+    }
+    
+    .asset-item,
+    .vulnerability-item,
+    .recall-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .asset-status,
+    .vuln-severity,
+    .recall-impact {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+}
+
+/* Loading Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Focus styles for accessibility */
+.nav-item:focus,
+.logout-btn:focus,
+.widget-action:focus {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .metric-card {
+        border-color: #000;
+    }
+    
+    .status-badge,
+    .severity-badge {
+        border: 1px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .metric-card,
+    .nav-item,
+    .logout-btn {
+        transition: none;
+    }
+    
+    .chart-fill {
+        transition: none;
+    }
+}
+
+/* SBOM Evaluation Status Section */
+.evaluation-status-section {
+    margin-bottom: 40px;
+}
+
+.evaluation-status-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.evaluation-status-section .section-header h2 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.evaluation-status-section .section-header h2 i {
+    color: var(--siemens-petrol);
+}
+
+.evaluation-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.evaluation-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.evaluation-status-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.3s ease;
+}
+
+.evaluation-status-card:hover {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.1);
+}
+
+.evaluation-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.evaluation-status-header h3 {
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.evaluation-count {
+    background: var(--siemens-petrol);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: center;
+}
+
+.evaluation-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.evaluation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.evaluation-item:last-child {
+    border-bottom: none;
+}
+
+.evaluation-info {
+    flex: 1;
+}
+
+.evaluation-type {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.evaluation-time {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+}
+
+.evaluation-results {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.evaluation-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.evaluation-status.completed {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-green);
+}
+
+.evaluation-status.running {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-orange);
+}
+
+.evaluation-status.failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+}
+
+.evaluation-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-hover);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--siemens-petrol);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 32px;
+}
+
+.no-evaluations {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 24px;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design for Evaluation Status */
+@media (max-width: 768px) {
+    .evaluation-status-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .evaluation-status-section .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .evaluation-status-card {
+        padding: 16px;
+    }
+    
+    .evaluation-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .evaluation-status {
+        align-self: flex-end;
+    }
+}
+
+/* Enhanced Vulnerability Severity Metrics */
+.metrics-section .metric-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.metrics-section .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--siemens-petrol), var(--siemens-petrol-light));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.metrics-section .metric-card:hover::before {
+    opacity: 1;
+}
+
+/* Enhanced Metric Icons for Vulnerability Severity */
+.metrics-section .metric-icon {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.metrics-section .metric-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+.metrics-section .metric-card:hover .metric-icon::after {
+    width: 100%;
+    height: 100%;
+}
+
+/* Critical Severity Styling */
+.metrics-section .metric-icon.critical {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.metrics-section .metric-card:has(.metric-icon.critical) {
+    border-left: 4px solid #dc2626;
+}
+
+.metrics-section .metric-card:has(.metric-icon.critical):hover {
+    border-color: #dc2626;
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.15);
+}
+
+/* High Severity Styling */
+.metrics-section .metric-icon.warning {
+    background: linear-gradient(135deg, #ea580c, #f97316);
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+}
+
+.metrics-section .metric-card:has(.metric-icon.warning) {
+    border-left: 4px solid #ea580c;
+}
+
+.metrics-section .metric-card:has(.metric-icon.warning):hover {
+    border-color: #ea580c;
+    box-shadow: 0 8px 25px rgba(234, 88, 12, 0.15);
+}
+
+/* Info/Open Issues Styling */
+.metrics-section .metric-icon.info {
+    background: linear-gradient(135deg, var(--siemens-petrol), var(--siemens-petrol-light));
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+}
+
+.metrics-section .metric-card:has(.metric-icon.info) {
+    border-left: 4px solid var(--siemens-petrol);
+}
+
+.metrics-section .metric-card:has(.metric-icon.info):hover {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 8px 25px rgba(0, 153, 153, 0.15);
+}
+
+/* Total Vulnerabilities Styling */
+.metrics-section .metric-card:first-child .metric-icon {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.metrics-section .metric-card:first-child {
+    border-left: 4px solid #6b7280;
+}
+
+.metrics-section .metric-card:first-child:hover {
+    border-color: #6b7280;
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.15);
+}
+
+/* Enhanced Metric Values */
+.metrics-section .metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin: 8px 0;
+    background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Enhanced Metric Details */
+.metrics-section .metric-detail {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.metrics-section .metric-detail .affected {
+    color: var(--siemens-petrol);
+    font-weight: 600;
+}
+
+/* Severity Chart Enhancements */
+.severity-chart {
+    padding: 16px 0;
+}
+
+.severity-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 8px 0;
+}
+
+.severity-item:last-child {
+    margin-bottom: 0;
+}
+
+.severity-label {
+    min-width: 80px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.severity-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-hover);
+    border-radius: 4px;
+    margin: 0 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.severity-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    position: relative;
+}
+
+.severity-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.severity-fill.critical {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.severity-fill.high {
+    background: linear-gradient(90deg, #ea580c, #f97316);
+}
+
+.severity-fill.medium {
+    background: linear-gradient(90deg, var(--siemens-petrol), var(--siemens-petrol-light));
+}
+
+.severity-fill.low {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.severity-value {
+    min-width: 40px;
+    text-align: right;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Responsive Enhancements for Vulnerability Metrics */
+@media (max-width: 768px) {
+    .metrics-section .metric-value {
+        font-size: 2rem;
+    }
+    
+    .severity-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .severity-bar {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .severity-value {
+        align-self: flex-end;
+    }
+}
+
+/* Vulnerability Trends Chart Styling */
+.trends-widget {
+    grid-column: span 3;
+}
+
+.trends-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.trends-chart-section {
+    min-height: 250px;
+}
+
+.trends-summary-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.trends-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.trends-period-select {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.trends-period-select:hover {
+    border-color: var(--siemens-petrol);
+}
+
+.trends-period-select:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.1);
+}
+
+.trends-chart-container {
+    position: relative;
+    height: 250px;
+    margin: 8px 0;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border-primary);
+}
+
+.trends-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    border: 1px solid var(--border-primary);
+}
+
+.trends-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
+}
+
+.trends-summary-item:hover {
+    border-color: var(--siemens-petrol);
+    background: var(--bg-hover);
+}
+
+.trends-summary-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.trends-summary-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.trends-summary-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.trends-summary-change.positive {
+    color: var(--error-red);
+}
+
+.trends-summary-change.negative {
+    color: var(--success-green);
+}
+
+.trends-summary-change.neutral {
+    color: var(--text-secondary);
+}
+
+/* Chart Loading State */
+.trends-chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.trends-chart-loading i {
+    margin-right: 8px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Chart Error State */
+.trends-chart-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.trends-chart-error i {
+    font-size: 2rem;
+    color: var(--error-red);
+    margin-bottom: 8px;
+}
+
+.trends-chart-error p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design for Trends */
+@media (max-width: 1200px) {
+    .trends-widget {
+        grid-column: span 1;
+    }
+    
+    .trends-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .trends-summary {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .trends-summary-item {
+        flex: 1;
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .trends-chart-container {
+        height: 200px;
+        padding: 8px;
+    }
+    
+    .trends-summary {
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+    }
+    
+    .trends-summary-item {
+        padding: 6px 8px;
+    }
+    
+    .trends-summary-value {
+        font-size: 1rem;
+    }
+    
+    .trends-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+}

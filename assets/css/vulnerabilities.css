@@ -1,0 +1,1474 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* Page Container */
+.page-container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+}
+
+/* Page Header */
+.page-header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-title h1 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-semibold);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-title h1 i {
+    color: var(--siemens-petrol);
+}
+
+.page-title p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.page-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: var(--button-padding);
+    background: var(--siemens-petrol);
+    color: white;
+    border: 1px solid var(--siemens-petrol);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-easing);
+}
+
+.btn:hover {
+    background: var(--siemens-petrol-dark);
+    border-color: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+    color: var(--siemens-petrol);
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+}
+
+/* Metrics Section */
+.metrics-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.metrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--siemens-petrol);
+}
+
+.metrics-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.metrics-header h2 i {
+    color: var(--siemens-petrol);
+}
+
+.metrics-summary {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.summary-item strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--siemens-petrol);
+}
+
+.summary-item {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.metric-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--siemens-petrol);
+}
+
+.metric-card.critical::before {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.metric-card.high::before {
+    background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.metric-card.medium::before {
+    background: linear-gradient(90deg, #eab308, #ca8a04);
+}
+
+.metric-card.low::before {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.metric-card.resolved::before {
+    background: linear-gradient(90deg, var(--siemens-petrol), var(--siemens-petrol-dark));
+}
+
+.metric-card.total::before {
+    background: linear-gradient(90deg, #6366f1, #4f46e5);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--siemens-petrol);
+}
+
+.metric-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.metric-card.critical .metric-icon {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.metric-card.high .metric-icon {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.metric-card.medium .metric-icon {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+}
+
+.metric-card.low .metric-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.metric-card.resolved .metric-icon {
+    background: linear-gradient(135deg, var(--siemens-petrol), var(--siemens-petrol-dark));
+}
+
+.metric-card.total .metric-icon {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.metric-content {
+    flex: 1;
+}
+
+.metric-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.metric-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Filters Section */
+.filters-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Search Bar Container */
+.search-bar-container {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-primary);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    z-index: 1;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Filters Grid */
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.25rem;
+    padding: 1.5rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-group label i {
+    color: var(--siemens-petrol);
+    font-size: 0.9rem;
+}
+
+.filter-select {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.filter-controls select {
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    min-width: 120px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-controls select:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+/* DataTable Styles */
+.datatable-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.datatable-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.datatable-title h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.datatable-title h3 i {
+    color: var(--siemens-petrol);
+}
+
+.datatable-title p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.datatable-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.table-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.table-controls label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.page-size-select {
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.page-size-select:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.results-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.datatable-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.datatable-container .data-table th {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Column Widths */
+.datatable-container .data-table th:nth-child(1),
+.datatable-container .data-table td:nth-child(1) {
+    width: 12%; /* CVE ID */
+}
+
+.datatable-container .data-table th:nth-child(2),
+.datatable-container .data-table td:nth-child(2) {
+    width: 35%; /* Description */
+}
+
+.datatable-container .data-table th:nth-child(3),
+.datatable-container .data-table td:nth-child(3) {
+    width: 8%; /* Severity */
+}
+
+.datatable-container .data-table th:nth-child(4),
+.datatable-container .data-table td:nth-child(4) {
+    width: 10%; /* CVSS Score */
+}
+
+.datatable-container .data-table th:nth-child(5),
+.datatable-container .data-table td:nth-child(5) {
+    width: 10%; /* EPSS Score */
+}
+
+.datatable-container .data-table th:nth-child(6),
+.datatable-container .data-table td:nth-child(6) {
+    width: 10%; /* Affected Devices */
+}
+
+.datatable-container .data-table th:nth-child(7),
+.datatable-container .data-table td:nth-child(7) {
+    width: 8%; /* Published */
+}
+
+.datatable-container .data-table th:nth-child(8),
+.datatable-container .data-table td:nth-child(8) {
+    width: 7%; /* Actions */
+}
+
+.data-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.data-table th.sortable:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.data-table th.sortable i {
+    margin-left: 0.5rem;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.data-table th.sortable:hover i {
+    opacity: 1;
+    color: var(--siemens-petrol);
+}
+
+.data-table th.no-sort {
+    cursor: default;
+}
+
+.datatable-container .data-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Allow description column to wrap */
+.datatable-container .data-table td:nth-child(2) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+    line-height: 1.4;
+    max-height: 3.6em; /* Limit to 3 lines */
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.loading-cell, .empty-cell {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-content i {
+    font-size: 1.5rem;
+    color: var(--siemens-petrol);
+}
+
+.loading-content span {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.empty-cell i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.5;
+}
+
+.empty-cell p {
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+}
+
+.empty-cell small {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* CVE Link */
+.cve-link {
+    color: var(--siemens-petrol);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+}
+
+.cve-link:hover {
+    color: var(--siemens-petrol-dark);
+    text-decoration: underline;
+}
+
+/* Description Cell */
+.description-cell {
+    max-width: 300px;
+}
+
+.description-text {
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+/* Severity Badges */
+.severity-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.severity-badge.critical {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.severity-badge.high {
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.severity-badge.medium {
+    background: rgba(234, 179, 8, 0.1);
+    color: #eab308;
+    border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.severity-badge.low {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.severity-badge.unknown {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+/* CVSS Score */
+.cvss-score {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+}
+
+.cvss-score.critical {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.cvss-score.high {
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+}
+
+.cvss-score.medium {
+    background: rgba(234, 179, 8, 0.1);
+    color: #eab308;
+}
+
+.cvss-score.low {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+/* Device Count */
+.device-count {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.open-count {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--siemens-orange);
+    font-weight: 500;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.open {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-badge.resolved {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.status-badge.unknown {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+/* DataTable Footer */
+.datatable-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.table-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Pagination */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.page-btn {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+}
+
+.page-btn.active {
+    background: var(--siemens-petrol);
+    color: white;
+    border-color: var(--siemens-petrol);
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: var(--bg-card);
+    margin: 2% auto;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Vulnerability Details */
+.vulnerability-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.detail-section h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-bottom: 2px solid var(--siemens-petrol);
+    padding-bottom: 0.5rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-item p {
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+/* Impact Stats */
+.impact-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.impact-stat {
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* Affected Devices */
+.affected-devices {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.device-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.device-item:hover {
+    border-color: var(--siemens-petrol, #009999);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.15);
+    transform: translateY(-1px);
+}
+
+.device-item:last-child {
+    margin-bottom: 0;
+}
+
+.device-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.device-info strong {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.device-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary, #f8fafc);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.device-name i {
+    color: var(--siemens-petrol, #009999);
+    font-size: 0.875rem;
+}
+
+.device-details {
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* Device Vulnerability Counts */
+.device-vulns {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    min-width: 160px;
+    text-align: right;
+}
+
+.vuln-count {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.vuln-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary, #f8fafc);
+    line-height: 1;
+}
+
+.vuln-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.vuln-breakdown {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.severity-badge i {
+    font-size: 0.6875rem;
+}
+
+.severity-badge.critical {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.severity-badge.high {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.device-details span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+    padding: 0.125rem 0.375rem;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    border: 1px solid var(--border-primary);
+}
+
+.device-hostname {
+    color: var(--siemens-petrol) !important;
+}
+
+.device-fda-name {
+    color: var(--siemens-petrol) !important;
+    font-weight: 600;
+}
+
+.device-brand {
+    color: var(--siemens-orange) !important;
+    font-weight: 600;
+}
+
+.device-model {
+    color: var(--siemens-orange) !important;
+}
+
+.device-manufacturer {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+
+.device-tag {
+    color: var(--siemens-orange) !important;
+}
+
+.device-ip {
+    color: var(--text-secondary) !important;
+}
+
+.device-type {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+
+.component-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Affected Applications Section */
+.affected-applications {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.application-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.application-item:hover {
+    border-color: var(--siemens-petrol);
+    background: var(--bg-hover);
+}
+
+.application-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.application-info .component-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.application-info .component-version {
+    background: var(--siemens-petrol);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.application-info .component-vendor {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+
+.component-name {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.component-version {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+}
+
+.component-vendor {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.device-status {
+    flex-shrink: 0;
+}
+
+/* Notification System */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 300px;
+    max-width: 500px;
+    animation: slideIn 0.3s ease;
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green);
+}
+
+.notification-error {
+    border-left: 4px solid var(--error-red);
+}
+
+.notification-info {
+    border-left: 4px solid var(--siemens-petrol);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.notification-content i {
+    font-size: 1.25rem;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green);
+}
+
+.notification-error .notification-content i {
+    color: var(--error-red);
+}
+
+.notification-info .notification-content i {
+    color: var(--siemens-petrol);
+}
+
+.notification-content span {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .datatable-container .data-table th,
+    .datatable-container .data-table td {
+        padding: 10px 14px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .filters-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .device-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .device-vulns {
+        width: 100%;
+        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .vuln-count {
+        align-items: flex-start;
+    }
+    
+    .vuln-breakdown {
+        align-items: flex-start;
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    
+    .metrics-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .metrics-summary {
+        justify-content: space-around;
+        gap: 1rem;
+    }
+    
+    .datatable-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .datatable-actions {
+        justify-content: space-between;
+    }
+    
+    .search-bar-container {
+        flex-direction: column;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .datatable-wrapper {
+        font-size: 0.75rem;
+    }
+    
+    .datatable-container .data-table th,
+    .datatable-container .data-table td {
+        padding: 8px 12px;
+    }
+    
+    .datatable-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .impact-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .device-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .application-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .application-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-summary {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .impact-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .page-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+}

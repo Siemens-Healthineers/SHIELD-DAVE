@@ -1,0 +1,474 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+/* Modal Content */
+.recall-scheduling-modal {
+    background: var(--bg-card, #1a1a1a);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    border: 1px solid var(--border-primary, #333333);
+}
+
+/* Modal Header */
+.recall-scheduling-modal .modal-header {
+    background: linear-gradient(135deg, var(--siemens-petrol, #009999), var(--siemens-petrol-dark, #007777));
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary, #333333);
+}
+
+.recall-scheduling-modal .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.recall-scheduling-modal .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.recall-scheduling-modal .modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Body */
+.recall-scheduling-modal .modal-body {
+    padding: 2rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Section Headers */
+.recall-scheduling-modal h3 {
+    color: var(--text-primary, #f8fafc);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--siemens-petrol, #009999);
+}
+
+/* Recall Information Section */
+.recall-info-section {
+    margin-bottom: 2rem;
+}
+
+.recall-details {
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.recall-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.recall-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.recall-field strong {
+    color: var(--siemens-petrol, #009999);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recall-field span {
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 0.95rem;
+}
+
+/* Devices Selection Section */
+.devices-selection-section {
+    margin-bottom: 2rem;
+}
+
+.devices-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary, #1a1a1a);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary, #333333);
+}
+
+.select-all-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary, #f8fafc);
+}
+
+.selected-count {
+    color: var(--siemens-petrol, #009999);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.devices-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 8px;
+    background: var(--bg-secondary, #1a1a1a);
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-primary, #333333);
+    transition: background-color 0.2s ease;
+}
+
+.device-item:last-child {
+    border-bottom: none;
+}
+
+.device-item:hover {
+    background-color: var(--bg-hover, #333333);
+}
+
+.device-item.scheduled {
+    opacity: 0.6;
+    background-color: var(--bg-tertiary, #333333);
+}
+
+.device-checkbox {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+    cursor: pointer;
+}
+
+.device-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.device-name {
+    font-weight: 600;
+    color: var(--text-primary, #f8fafc);
+    font-size: 1rem;
+}
+
+.device-details {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+}
+
+.device-model,
+.device-location {
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.device-criticality {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.device-criticality.clinical-high {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+
+.device-criticality.business-medium {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.device-criticality.business-low {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+.scheduled-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--siemens-orange, #ff6b35);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Scheduling Section */
+.scheduling-section {
+    margin-bottom: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    color: var(--text-primary, #f8fafc);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid var(--border-secondary, #555555);
+    border-radius: 6px;
+    background: var(--bg-secondary, #1a1a1a);
+    color: var(--text-primary, #f8fafc);
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--siemens-petrol, #009999);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary, #f8fafc);
+}
+
+/* Modal Footer */
+.recall-scheduling-modal .modal-footer {
+    background: var(--bg-secondary, #1a1a1a);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    border-top: 1px solid var(--border-primary, #333333);
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: var(--siemens-petrol, #009999);
+    color: white;
+    border: 1px solid var(--siemens-petrol, #009999);
+}
+
+.btn-primary:hover {
+    background: var(--siemens-petrol-dark, #007777);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-secondary, #cbd5e1);
+    border: 1px solid var(--border-secondary, #555555);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover, #333333);
+    color: var(--text-primary, #f8fafc);
+}
+
+/* Checkbox Styles */
+input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-secondary, #555555);
+    border-radius: 4px;
+    background: var(--bg-secondary, #1a1a1a);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    background: var(--siemens-petrol, #009999);
+    border-color: var(--siemens-petrol, #009999);
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 10001;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.notification-info {
+    background: linear-gradient(135deg, var(--siemens-petrol, #009999), var(--siemens-petrol-dark, #007777));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .recall-scheduling-modal {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .recall-scheduling-modal .modal-header,
+    .recall-scheduling-modal .modal-body,
+    .recall-scheduling-modal .modal-footer {
+        padding: 1rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .recall-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .devices-controls {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .recall-scheduling-modal .modal-footer {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+
+
+

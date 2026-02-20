@@ -1,0 +1,51 @@
+# /*
+# * SPDX-License-Identifier: AGPL-3.0-or-later
+# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+# */
+#
+# Installation:
+#   sudo cp /var/www/html/services/dave-sbom-evaluation.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable dave-sbom-evaluation
+#   sudo systemctl start dave-sbom-evaluation
+#
+# Management:
+#   sudo systemctl status dave-sbom-evaluation
+#   sudo systemctl stop dave-sbom-evaluation
+#   sudo systemctl restart dave-sbom-evaluation
+#   sudo journalctl -u dave-sbom-evaluation -f
+
+[Unit]
+Description= SBOM Evaluation Service
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+
+# Python environment
+ExecStart=/usr/bin/python3 /var/www/html/services/sbom_evaluation_service.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=512M
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dave-sbom-evaluation
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,3220 @@
+# /*
+# * SPDX-License-Identifier: AGPL-3.0-or-later
+# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+# */
+
+openapi: 3.0.3
+info:
+  title: DAVE API
+  description: 'Comprehensive REST API for Device Assessment and Vulnerability Exposure (DAVE)
+
+
+    This API provides endpoints for managing assets, vulnerabilities, risks, software components, and patches
+
+    in a healthcare cybersecurity environment.
+
+
+    ## Authentication
+
+    All endpoints require authentication using:
+
+    - API Key authentication (via X-API-Key header)
+
+
+    ### Using X-API-Key Header
+
+    Include your API key in the `X-API-Key` header:
+
+    ```
+
+    X-API-Key: {{DAVE_API_KEY}}
+
+    ```
+
+
+    In Postman, you can use environment variables like `{{DAVE_API_KEY}}` which will be automatically replaced.
+
+
+    ## Rate Limiting
+
+    API calls are subject to rate limiting to ensure fair usage.
+
+
+    ## Error Handling
+
+    All errors follow a consistent format with a `success` boolean, `error` object containing `code` and `message`,
+
+    and a timestamp.
+
+    '
+  version: 1.3.0
+  contact:
+    name: Siemens Healthineers
+    email: support@example.com
+  license:
+    name: Proprietary
+    url: https://example.com/license
+servers:
+- url: http://{host}/api/v1
+  description: '🔧 Custom HTTP server - Enter your IP or hostname (e.g., 192.168.1.100)'
+  variables:
+    host:
+      default: localhost
+      description: 'Enter server IP address or hostname (e.g., 192.168.1.100, 10.0.0.5, myserver.local)'
+- url: http://{host}:{port}/api/v1
+  description: '🔧 Custom HTTP server with port'
+  variables:
+    host:
+      default: localhost
+      description: Server hostname or IP address
+    port:
+      default: '80'
+      description: Server port number
+      enum:
+        - '80'
+        - '8080'
+        - '8000'
+        - '3000'
+- url: https://{host}/api/v1
+  description: '🔒 Custom HTTPS server'
+  variables:
+    host:
+      default: api.dave.example.com
+      description: Server hostname (e.g., api.yourdomain.com, abc123.ngrok.io)
+- url: http://localhost/api/v1
+  description: 💻 Local development server (localhost)
+- url: https://api.dave.example.com/api/v1
+  description: 🌐 Production server (HTTPS)
+tags:
+- name: Assets
+  description: Asset management operations - manage medical devices and IT assets
+- name: Vulnerabilities
+  description: Vulnerability management operations - CVE tracking and remediation
+- name: Risks
+  description: Risk management operations - risk assessment and prioritization
+- name: Components
+  description: Software component management - SBOM and dependency tracking
+- name: Patches
+  description: Patch management operations - patch tracking and deployment
+security:
+- DAVE_API_KEY: []
+paths:
+  /assets:
+    get:
+      tags:
+      - Assets
+      summary: List all assets
+      description: 'Retrieve a paginated list of assets with optional filtering and search capabilities.
+
+        Supports filtering by department, asset type, status, and CVE associations.
+
+        '
+      operationId: listAssets
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: page
+        in: query
+        description: Page number for pagination (starts at 1)
+        required: false
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        description: Number of items per page (max 100)
+        required: false
+        schema:
+          type: integer
+          default: 25
+          minimum: 1
+          maximum: 100
+      - name: search
+        in: query
+        description: Search term to filter by hostname, IP address, or manufacturer
+        required: false
+        schema:
+          type: string
+      - name: department
+        in: query
+        description: Filter by department
+        required: false
+        schema:
+          type: string
+      - name: asset_type
+        in: query
+        description: Filter by asset type
+        required: false
+        schema:
+          type: string
+          enum:
+          - Medical Device
+          - Network Equipment
+          - Server
+          - Workstation
+          - IoT Device
+      - name: status
+        in: query
+        description: Filter by asset status
+        required: false
+        schema:
+          type: string
+          enum:
+          - Active
+          - Inactive
+          - Disposed
+      - name: cve_filter
+        in: query
+        description: Comma-separated list of CVE IDs to filter assets that have these vulnerabilities
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AssetSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-02-02T10:30:45+00:00'
+              examples:
+                success:
+                  summary: Successful asset list response
+                  value:
+                    success: true
+                    data:
+                    - asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      hostname: CT-SCANNER-01
+                      ip_address: 10.20.30.40
+                      asset_type: Medical Device
+                      manufacturer: Siemens Healthineers
+                      model: SOMATOM Drive
+                      serial_number: SN123456789
+                      department: Radiology
+                      location: Building A - Floor 2
+                      criticality: Clinical-High
+                      status: Active
+                      last_seen: '2026-02-02T09:15:30'
+                      created_at: '2025-08-21T08:00:00'
+                      updated_at: '2026-02-02T09:15:30'
+                      mapping_status: Mapped
+                      brand_name: SOMATOM
+                      device_name: SOMATOM Drive CT Scanner
+                      manufacturer_name: Siemens Healthineers
+                      metadata: '{"object_id": "OO-11111", "provider": "Acme Services"}'
+                    pagination:
+                      page: 1
+                      limit: 25
+                      total: 150
+                      pages: 6
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+      - Assets
+      summary: Create a new asset
+      description: Create a new asset record in the system
+      operationId: createAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetCreateRequest'
+            examples:
+              medicalDevice:
+                summary: Create medical device asset
+                value:
+                  hostname: MRI-SCANNER-05
+                  ip_address: 10.20.30.50
+                  mac_address: 00:1A:2B:3C:4D:5E
+                  asset_type: Medical Device
+                  manufacturer: GE Healthcare
+                  model: Signa Explorer 1.5T
+                  serial_number: GE987654321
+                  department: Radiology
+                  location: Building B - Floor 1
+                  criticality: Clinical-High
+                  firmware_version: v2.3.4
+                  metadata: '{"object_id": "OO-12345", "provider": "Acme Services"}'
+      responses:
+        '200':
+          description: Asset created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      asset_id:
+                        type: string
+                        format: uuid
+                      message:
+                        type: string
+                        example: Asset created successfully
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+  /assets/{asset_id}:
+    get:
+      tags:
+      - Assets
+      summary: Get asset details
+      description: Retrieve detailed information about a specific asset including FDA device data
+      operationId: getAsset
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: asset_id
+        in: path
+        required: true
+        description: Unique identifier of the asset
+        schema:
+          type: string
+          format: uuid
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AssetDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Detailed asset response
+                  value:
+                    success: true
+                    data:
+                      asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      hostname: CT-SCANNER-01
+                      ip_address: 10.20.30.40
+                      mac_address: 00:1A:2B:3C:4D:5E
+                      asset_type: Medical Device
+                      asset_subtype: Imaging System
+                      manufacturer: Siemens Healthineers
+                      model: SOMATOM Drive
+                      serial_number: SN123456789
+                      location: Building A - Floor 2
+                      firmware_version: v5.2.1
+                      cpu: Intel Xeon E5
+                      memory_ram: 32GB
+                      storage: 2TB SSD
+                      power_requirements: 220V, 50Hz
+                      primary_communication_protocol: TCP/IP, DICOM
+                      assigned_admin_user: admin@hospital.com
+                      business_unit: Diagnostic Imaging
+                      department: Radiology
+                      cost_center: CC-RAD-001
+                      warranty_expiration_date: '2027-12-31'
+                      scheduled_replacement_date: '2030-06-30'
+                      disposal_date: null
+                      disposal_method: null
+                      criticality: Clinical-High
+                      regulatory_classification: FDA Class II
+                      phi_status: Contains PHI
+                      data_encryption_transit: true
+                      data_encryption_rest: true
+                      authentication_method: LDAP
+                      patch_level_last_update: '2026-01-15'
+                      last_audit_date: '2025-12-20'
+                      source: network_scan
+                      status: Active
+                      first_seen: '2025-08-21T08:00:00'
+                      last_seen: '2026-02-02T09:15:30'
+                      created_at: '2025-08-21T08:00:00'
+                      updated_at: '2026-02-02T09:15:30'
+                      mapping_status: Mapped
+                      device_id: dev-12345
+                      device_identifier: DI-98765
+                      brand_name: SOMATOM
+                      model_number: DRIVE-001
+                      manufacturer_name: Siemens Healthineers
+                      device_description: Computed Tomography Scanner for diagnostic imaging
+                      gmdn_term: Computed tomography scanner
+                      is_implantable: false
+                      fda_class: Class II
+                      udi: 01234567890123456
+                      mapping_confidence: 95.5
+                      mapping_method: Automatic
+                      mapped_at: '2025-08-21T10:00:00'
+                      k_number: K123456
+                      decision_code: SEKN
+                      decision_date: '2020-05-15'
+                      decision_description: Substantially Equivalent
+                      clearance_type: 510(k)
+                      date_received: '2020-03-10'
+                      statement_or_summary: Summary
+                      applicant: Siemens Medical Solutions USA, Inc.
+                      contact: regulatory@siemens-healthineers.com
+                      address_1: 40 Liberty Boulevard
+                      address_2: null
+                      city: Malvern
+                      state: PA
+                      zip_code: '19355'
+                      postal_code: null
+                      country_code: US
+                      advisory_committee: RA
+                      advisory_committee_description: Radiology
+                      review_advisory_committee: RA
+                      expedited_review_flag: false
+                      third_party_flag: false
+                      device_class: '2'
+                      medical_specialty_description: Radiology
+                      registration_numbers: 1234567,2345678
+                      fei_numbers: '1000123456'
+                      device_name: SOMATOM Drive CT Scanner
+                      product_code: JAK
+                      regulation_number: '892.1750'
+                      metadata: '{"object_id": "OO-11111", "provider": "Acme Services"}'
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+      - Assets
+      summary: Update asset
+      description: Update an existing asset's information
+      operationId: updateAsset
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: asset_id
+        in: path
+        required: true
+        description: Unique identifier of the asset
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetUpdateRequest'
+            examples:
+              updateLocation:
+                summary: Update asset location and department
+                value:
+                  location: Building C - Floor 3
+                  department: Emergency Department
+                  criticality: Clinical-High
+                  metadata: '{"object_id": "OO-11111", "provider": "Acme Services"}'
+              updateFirmware:
+                summary: Update firmware version
+                value:
+                  firmware_version: v5.3.0
+                  patch_level_last_update: '2026-02-01'
+      responses:
+        '200':
+          description: Asset updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      asset_id:
+                        type: string
+                      message:
+                        type: string
+                        example: Asset updated successfully
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags:
+      - Assets
+      summary: Delete asset
+      description: Soft delete an asset by setting its status to 'Disposed'
+      operationId: deleteAsset
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: asset_id
+        in: path
+        required: true
+        description: Unique identifier of the asset
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Asset deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      asset_id:
+                        type: string
+                      message:
+                        type: string
+                        example: Asset deleted successfully
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'  
+  /vulnerabilities:
+    get:
+      tags:
+      - Vulnerabilities
+      summary: List all vulnerabilities
+      description: 'Retrieve a paginated list of vulnerabilities with comprehensive filtering options.
+
+        Supports filtering by severity, status, EPSS score, and asset association.
+
+        '
+      operationId: listVulnerabilities
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: page
+        in: query
+        description: Page number for pagination
+        required: false
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        description: Number of items per page (max 100)
+        required: false
+        schema:
+          type: integer
+          default: 25
+          minimum: 1
+          maximum: 100
+      - name: search
+        in: query
+        description: Search term to filter by CVE ID or description
+        required: false
+        schema:
+          type: string
+      - name: severity
+        in: query
+        description: Filter by severity level
+        required: false
+        schema:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+      - name: status
+        in: query
+        description: Filter by remediation status
+        required: false
+        schema:
+          type: string
+          enum:
+          - Open
+          - In Progress
+          - Resolved
+      - name: asset_id
+        in: query
+        description: Filter vulnerabilities affecting a specific asset
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: epss-gt
+        in: query
+        description: Filter vulnerabilities with EPSS score greater than or equal to this value
+        required: false
+        schema:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+      - name: epss-percentile-gt
+        in: query
+        description: Filter vulnerabilities with EPSS percentile greater than or equal to this value
+        required: false
+        schema:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+      - name: sort
+        in: query
+        description: Field to sort by
+        required: false
+        schema:
+          type: string
+          enum:
+          - severity
+          - cvss_score
+          - published_date
+          - epss
+          - epss_percentile
+          - affected_assets
+          default: severity
+      - name: sort_dir
+        in: query
+        description: Sort direction
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VulnerabilitySummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Successful vulnerability list response
+                  value:
+                    success: true
+                    data:
+                    - vulnerability_id: vuln-123456
+                      cve_id: CVE-2023-12345
+                      description: Buffer overflow in XYZ component allows remote code execution
+                      severity: Critical
+                      cvss_v4_score: null
+                      cvss_v4_vector: null
+                      cvss_v3_score: 9.8
+                      cvss_v3_vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+                      cvss_v2_score: null
+                      cvss_v2_vector: null
+                      cvss_score: 9.8
+                      kev: true
+                      published_date: '2023-06-15'
+                      last_modified: '2023-08-20'
+                      epss_score: 0.92456
+                      epss_percentile: 0.98765
+                      epss_date: '2023-08-21'
+                      epss_last_updated: '2023-08-21T00:00:00'
+                      affected_assets: 5
+                      open_count: 3
+                      in_progress_count: 2
+                      resolved_count: 0
+                    pagination:
+                      page: 1
+                      limit: 25
+                      total: 342
+                      pages: 14
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+      - Vulnerabilities
+      summary: Create a new vulnerability
+      description: Manually create a new vulnerability record
+      operationId: createVulnerability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VulnerabilityCreateRequest'
+            examples:
+              newCVE:
+                summary: Create new CVE vulnerability
+                value:
+                  asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  description: Privilege escalation vulnerability in authentication module
+                  severity: High
+                  cvss_v3_score: 8.4
+                  cvss_v3_vector: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:N
+                  published_date: '2026-02-01'
+      responses:
+        '200':
+          description: Vulnerability created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      vulnerability_id:
+                        type: string
+                      message:
+                        type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+  /vulnerabilities/{vulnerability_id}:
+    get:
+      tags:
+      - Vulnerabilities
+      summary: Get vulnerability details
+      description: Retrieve detailed information about a specific vulnerability including affected assets
+      operationId: getVulnerability
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: vulnerability_id
+        in: path
+        required: true
+        description: Unique identifier of the vulnerability
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/VulnerabilityDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Detailed vulnerability response
+                  value:
+                    success: true
+                    data:
+                      vulnerability_id: vuln-123456
+                      cve_id: CVE-2023-12345
+                      description: Buffer overflow in XYZ component allows remote code execution. An attacker can exploit
+                        this vulnerability to execute arbitrary code on the target system.
+                      severity: Critical
+                      cvss_v4_score: null
+                      cvss_v4_vector: null
+                      cvss_v3_score: 9.8
+                      cvss_v3_vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+                      cvss_v2_score: null
+                      cvss_v2_vector: null
+                      cvss_score: 9.8
+                      kev: true
+                      published_date: '2023-06-15'
+                      last_modified: '2023-08-20'
+                      epss_score: 0.92456
+                      epss_percentile: 0.98765
+                      epss_date: '2023-08-21'
+                      epss_last_updated: '2023-08-21T00:00:00'
+                      nvd_data:
+                        references:
+                        - url: https://nvd.nist.gov/vuln/detail/CVE-2023-12345
+                        - url: https://vendor.com/security/CVE-2023-12345
+                        cwe:
+                        - CWE-120
+                        - CWE-787
+                      affected_assets:
+                      - asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        hostname: CT-SCANNER-01
+                        ip_address: 10.20.30.40
+                        asset_type: Medical Device
+                        department: Radiology
+                        remediation_status: In Progress
+                        remediation_notes: Patch scheduled for next maintenance window
+                        discovered_at: '2023-07-01T10:00:00'
+                      - asset_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                        hostname: MRI-SCANNER-02
+                        ip_address: 10.20.30.41
+                        asset_type: Medical Device
+                        department: Radiology
+                        remediation_status: Open
+                        remediation_notes: null
+                        discovered_at: '2023-07-01T10:00:00'
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags:
+      - Vulnerabilities
+      summary: Update vulnerability
+      description: Update vulnerability information such as remediation status
+      operationId: updateVulnerability
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: vulnerability_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VulnerabilityUpdateRequest'
+            examples:
+              updateStatus:
+                summary: Update remediation status
+                value:
+                  severity: High
+                  description: Updated description with additional details
+      responses:
+        '200':
+          description: Vulnerability updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+      - Vulnerabilities
+      summary: Delete vulnerability
+      description: Remove a vulnerability record from the system
+      operationId: deleteVulnerability
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: vulnerability_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Vulnerability deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /risks:
+    get:
+      tags:
+      - Risks
+      summary: List all risks
+      description: 'Retrieve a paginated list of risk assessments with filtering by score level,
+
+        device class, status, and exploitation status.
+
+        '
+      operationId: listRisks
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: page
+        in: query
+        description: Page number for pagination
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        description: Number of items per page (max 100)
+        required: false
+        schema:
+          type: integer
+          default: 25
+          maximum: 100
+      - name: search
+        in: query
+        description: Search term for risk name, ID, or description
+        required: false
+        schema:
+          type: string
+      - name: asset_id
+        in: query
+        description: Filter risks for specific asset
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: site
+        in: query
+        description: Filter by site location
+        required: false
+        schema:
+          type: string
+      - name: risk_score_level
+        in: query
+        description: Filter by risk score level
+        required: false
+        schema:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+      - name: device_class
+        in: query
+        description: Filter by FDA device class
+        required: false
+        schema:
+          type: string
+          enum:
+          - Class I
+          - Class II
+          - Class III
+      - name: status
+        in: query
+        description: Filter by risk status
+        required: false
+        schema:
+          type: string
+      - name: exploited
+        in: query
+        description: Filter by exploitation status (true/false)
+        required: false
+        schema:
+          type: boolean
+      - name: sort
+        in: query
+        description: Field to sort by
+        required: false
+        schema:
+          type: string
+          enum:
+          - risk_score
+          - cvss
+          - epss
+          - created_at
+          - nhs_published_date
+          - name
+          default: risk_score
+      - name: sort_dir
+        in: query
+        description: Sort direction
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RiskSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Successful risk list response
+                  value:
+                    success: true
+                    data:
+                    - id: risk-98765
+                      asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      device_class: Class II
+                      type: vulnerability
+                      type_display_name: Vulnerability Risk
+                      display_name: Critical RCE Vulnerability
+                      risk_id: RISK-2026-001
+                      risk_type_display_name: Security Vulnerability
+                      risk_group: Remote Code Execution
+                      name: CVE-2023-12345 - Buffer Overflow
+                      risk_score: 9.2
+                      risk_score_level: Critical
+                      cvss: 9.8
+                      epss: 0.92
+                      availability_score: 9
+                      confidentiality_score: 10
+                      integrity_score: 9
+                      impact_confidentiality: High
+                      impact_patient_safety: Medium
+                      impact_service_disruption: High
+                      nhs_published_date: '2023-07-01'
+                      nhs_severity: Critical
+                      nhs_threat_id: NHS-THREAT-123
+                      description: Critical vulnerability allowing remote code execution
+                      status_display_name: Active
+                      category: Software Vulnerability
+                      has_malware: false
+                      tags_easy_to_weaponize: true
+                      tags_exploit_code_maturity: High
+                      tags_exploited_in_the_wild: true
+                      tags_lateral_movement: false
+                      tags_malware: []
+                      site: Main Hospital
+                      link:
+                      - url: https://nvd.nist.gov/vuln/detail/CVE-2023-12345
+                        type: NVD
+                      created_at: '2023-07-01T10:00:00'
+                      updated_at: '2023-08-15T14:30:00'
+                    pagination:
+                      page: 1
+                      limit: 25
+                      total: 89
+                      pages: 4
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+      - Risks
+      summary: Create a new risk
+      description: Create a new risk assessment record
+      operationId: createRisk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskCreateRequest'
+            examples:
+              newRisk:
+                summary: Create new risk assessment
+                value:
+                  asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  risk_id: RISK-2026-099
+                  name: Unauthorized Access Risk
+                  device_class: Class II
+                  type: access_control
+                  risk_score: 7.5
+                  risk_score_level: High
+                  cvss: 7.8
+                  description: Risk of unauthorized access due to weak authentication
+                  status_display_name: Active
+                  impact_patient_safety: Medium
+                  impact_service_disruption: Low
+                  impact_confidentiality: High
+      responses:
+        '200':
+          description: Risk created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
+          description: Risk with this ID already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+  /risks/{risk_id}:
+    get:
+      tags:
+      - Risks
+      summary: Get risk details
+      description: Retrieve detailed information about a specific risk
+      operationId: getRisk
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: risk_id
+        in: path
+        required: true
+        description: Unique identifier of the risk
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/RiskDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+      - Risks
+      summary: Update risk
+      description: Update an existing risk assessment
+      operationId: updateRisk
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: risk_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskUpdateRequest'
+            examples:
+              updateStatus:
+                summary: Update risk status and score
+                value:
+                  status_display_name: Mitigated
+                  risk_score: 3.5
+                  risk_score_level: Low
+                  description: Risk mitigated through patch deployment and configuration changes
+      responses:
+        '200':
+          description: Risk updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+      - Risks
+      summary: Delete risk
+      description: Remove a risk record from the system
+      operationId: deleteRisk
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: risk_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Risk deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /components:
+    get:
+      tags:
+      - Components
+      summary: List all software components
+      description: 'Retrieve a list of software components from SBOMs and independent component records.
+
+        Supports filtering by search term and SBOM association.
+
+        '
+      operationId: listComponents
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: limit
+        in: query
+        description: Number of items to return (max 1000)
+        required: false
+        schema:
+          type: integer
+          default: 100
+          maximum: 1000
+      - name: offset
+        in: query
+        description: Number of items to skip
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - name: search
+        in: query
+        description: Search term for component name, vendor, or version
+        required: false
+        schema:
+          type: string
+      - name: independent_only
+        in: query
+        description: Return only independent components (not part of any SBOM)
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComponentSummary'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+                      has_more:
+                        type: boolean
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Successful component list response
+                  value:
+                    success: true
+                    data:
+                    - component_id: comp-12345-abcde
+                      sbom_id: sbom-98765
+                      name: openssl
+                      version: 1.1.1k
+                      vendor: OpenSSL Project
+                      license: Apache-2.0
+                      purl: pkg:generic/openssl@1.1.1k
+                      cpe: cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*
+                      created_at: '2025-09-15T14:22:33'
+                      package_id: pkg-openssl-111k
+                      version_id: ver-111k
+                    - component_id: comp-23456-bcdef
+                      sbom_id: null
+                      name: log4j
+                      version: 2.17.1
+                      vendor: Apache Software Foundation
+                      license: Apache-2.0
+                      purl: pkg:maven/org.apache.logging.log4j/log4j-core@2.17.1
+                      cpe: cpe:2.3:a:apache:log4j:2.17.1:*:*:*:*:*:*:*
+                      created_at: '2025-10-01T09:15:20'
+                      package_id: pkg-log4j-2171
+                      version_id: ver-2171
+                    pagination:
+                      total: 1847
+                      limit: 100
+                      offset: 0
+                      has_more: true
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+      - Components
+      summary: Create a new software component
+      description: Create an independent software component record (not part of SBOM)
+      operationId: createComponent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComponentCreateRequest'
+            examples:
+              newComponent:
+                summary: Create new software component
+                value:
+                  name: nginx
+                  version: 1.21.6
+                  vendor: NGINX, Inc.
+                  license: BSD-2-Clause
+                  purl: pkg:generic/nginx@1.21.6
+                  cpe: cpe:2.3:a:nginx:nginx:1.21.6:*:*:*:*:*:*:*
+      responses:
+        '201':
+          description: Component created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ComponentDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+  /components/{component_id}:
+    get:
+      tags:
+      - Components
+      summary: Get component details
+      description: Retrieve detailed information about a specific software component
+      operationId: getComponent
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: component_id
+        in: path
+        required: true
+        description: Unique identifier of the component
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ComponentDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+      - Components
+      summary: Update software component
+      description: Update an existing software component's information
+      operationId: updateComponent
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: component_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComponentUpdateRequest'
+            examples:
+              updateVersion:
+                summary: Update component version
+                value:
+                  version: 1.22.0
+                  purl: pkg:generic/nginx@1.22.0
+                  cpe: cpe:2.3:a:nginx:nginx:1.22.0:*:*:*:*:*:*:*
+      responses:
+        '200':
+          description: Component updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ComponentDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+      - Components
+      summary: Delete software component
+      description: Remove a software component from the system (only if not linked to vulnerabilities)
+      operationId: deleteComponent
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: component_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Component deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Component is linked to vulnerabilities and cannot be deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: COMPONENT_IN_USE
+                      message:
+                        type: string
+                        example: 'Cannot delete component: it is linked to 5 vulnerability(ies)'
+  /patches:
+    get:
+      tags:
+      - Patches
+      summary: List all patches
+      description: 'Retrieve a list of patches with optional filtering by device type and active status.
+
+        Includes patch metadata, CVE associations, and application statistics.
+
+        '
+      operationId: listPatches
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: active_only
+        in: query
+        description: Return only active patches
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: device_type
+        in: query
+        description: Filter patches for specific device type
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatchSummary'
+              examples:
+                success:
+                  summary: Successful patch list response
+                  value:
+                    success: true
+                    data:
+                    - patch_id: patch-12345
+                      patch_name: Security Update KB5034441
+                      patch_type: Security Patch
+                      target_device_type: Medical Device
+                      target_package_id: pkg-windows-server
+                      target_version: '2019'
+                      cve_list:
+                      - CVE-2024-21351
+                      - CVE-2024-21412
+                      description: This security update addresses multiple critical vulnerabilities
+                      release_date: '2024-02-13'
+                      vendor: Microsoft
+                      kb_article: KB5034441
+                      download_url: https://catalog.update.microsoft.com/v7/site/Search.aspx?q=KB5034441
+                      install_instructions: '1. Download patch from URL
+
+                        2. Run installer with admin privileges
+
+                        3. Reboot system after installation'
+                      prerequisites: Windows Server 2019 with at least 1GB free disk space
+                      estimated_install_time: 15 minutes
+                      requires_reboot: true
+                      is_active: true
+                      created_at: '2024-02-13T10:00:00'
+                      updated_at: '2024-02-13T10:00:00'
+                      package_name: Windows Server
+                      package_vendor: Microsoft
+                      created_by_name: admin
+                      application_count: 45
+                      cve_count: 2
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+      - Patches
+      summary: Create a new patch
+      description: Create a new patch record in the system
+      operationId: createPatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchCreateRequest'
+            examples:
+              newPatch:
+                summary: Create new security patch
+                value:
+                  patch_name: Critical Firmware Update v3.2.1
+                  patch_type: Firmware
+                  target_device_type: CT Scanner
+                  target_version: 3.x
+                  cve_list:
+                  - CVE-2025-11111
+                  - CVE-2025-22222
+                  description: Critical firmware update addressing remote code execution vulnerabilities
+                  release_date: '2025-01-15'
+                  vendor: Siemens Healthineers
+                  kb_article: SH-FW-2025-001
+                  download_url: https://vendor.com/downloads/fw-3.2.1
+                  install_instructions: Contact field service engineer for installation
+                  prerequisites: Device must be running firmware 3.0 or higher
+                  estimated_install_time: 2 hours
+                  requires_reboot: true
+      responses:
+        '200':
+          description: Patch created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  patch_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+  /patches/{patch_id}:
+    get:
+      tags:
+      - Patches
+      summary: Get patch details
+      description: Retrieve detailed information about a specific patch
+      operationId: getPatch
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: patch_id
+        in: path
+        required: true
+        description: Unique identifier of the patch
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/PatchDetailed'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+      - Patches
+      summary: Update patch
+      description: Update patch information (Admin only)
+      operationId: updatePatch
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: patch_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchUpdateRequest'
+            examples:
+              updatePatch:
+                summary: Update patch details
+                value:
+                  description: Updated description with additional deployment notes
+                  install_instructions: Updated installation procedure
+                  is_active: true
+      responses:
+        '200':
+          description: Patch updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+      - Patches
+      summary: Delete (deactivate) patch
+      description: Deactivate a patch by setting is_active to false (Admin only)
+      operationId: deletePatch
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: patch_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Patch deactivated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '403':
+          description: Admin access required
+  /patches/{patch_id}/apply:
+    post:
+      tags:
+      - Patches
+      summary: Apply patch to assets
+      description: Apply a patch to one or more assets and track the application
+      operationId: applyPatch
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: patch_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - asset_ids
+              properties:
+                asset_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Array of asset IDs to apply the patch to
+                verification_status:
+                  type: string
+                  enum:
+                  - Pending
+                  - Verified
+                  - Failed
+                  default: Pending
+                verification_method:
+                  type: string
+                  enum:
+                  - Manual
+                  - SBOM Upload
+                  - Automatic
+                  - Version Check
+                  default: Manual
+                notes:
+                  type: string
+            examples:
+              applyToAssets:
+                summary: Apply patch to multiple assets
+                value:
+                  asset_ids:
+                  - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  - b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  verification_status: Pending
+                  verification_method: Automatic
+                  notes: Applied during scheduled maintenance window
+      responses:
+        '200':
+          description: Patch application initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  applications_created:
+                    type: integer
+                  vulnerabilities_closed:
+                    type: integer
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  /patches/{patch_id}/applications:
+    get:
+      tags:
+      - Patches
+      summary: Get patch application history
+      description: Retrieve history of patch applications for a specific patch
+      operationId: getPatchApplications
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: patch_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatchApplication'
+              examples:
+                success:
+                  summary: Patch application history
+                  value:
+                    success: true
+                    data:
+                    - application_id: app-98765
+                      patch_id: patch-12345
+                      asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      device_id: dev-11111
+                      applied_at: '2024-02-15T14:30:00'
+                      applied_by: user-123
+                      verification_status: Verified
+                      verification_method: Automatic
+                      verified_at: '2024-02-15T16:00:00'
+                      verified_by: user-456
+                      notes: Successfully applied and verified
+                      hostname: CT-SCANNER-01
+                      ip_address: 10.20.30.40
+                      device_name: SOMATOM Drive CT Scanner
+                      applied_by_name: john.doe
+                      verified_by_name: jane.smith
+components:
+  securitySchemes:
+    DAVE_API_KEY:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key for authentication via X-API-Key header
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 25
+        total:
+          type: integer
+          example: 150
+        pages:
+          type: integer
+          example: 6
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            message:
+              type: string
+        timestamp:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: ERROR_CODE
+            message:
+              type: string
+              example: Error message description
+        timestamp:
+          type: string
+          format: date-time
+    AssetSummary:
+      type: object
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        hostname:
+          type: string
+          example: CT-SCANNER-01
+        ip_address:
+          type: string
+          example: 10.20.30.40
+        asset_type:
+          type: string
+          example: Medical Device
+        manufacturer:
+          type: string
+          example: Siemens Healthineers
+        model:
+          type: string
+          example: SOMATOM Drive
+        serial_number:
+          type: string
+          example: SN123456789
+        department:
+          type: string
+          example: Radiology
+        location:
+          type: string
+          example: Building A - Floor 2
+        criticality:
+          type: string
+          enum:
+          - Clinical-High
+          - Business-Medium
+          - Non-Essential
+          example: Clinical-High
+        status:
+          type: string
+          enum:
+          - Active
+          - Inactive
+          - Disposed
+          example: Active
+        last_seen:
+          type: string
+          format: date-time
+          example: '2026-02-02T09:15:30'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        mapping_status:
+          type: string
+          enum:
+          - Mapped
+          - Unmapped
+        brand_name:
+          type: string
+          nullable: true
+        device_name:
+          type: string
+          nullable: true
+        manufacturer_name:
+          type: string
+          nullable: true
+    AssetDetailed:
+      allOf:
+      - $ref: '#/components/schemas/AssetSummary'
+      - type: object
+        properties:
+          mac_address:
+            type: string
+            example: 00:1A:2B:3C:4D:5E
+          asset_subtype:
+            type: string
+            example: Imaging System
+          firmware_version:
+            type: string
+            example: v5.2.1
+          cpu:
+            type: string
+            example: Intel Xeon E5
+          memory_ram:
+            type: string
+            example: 32GB
+          storage:
+            type: string
+            example: 2TB SSD
+          power_requirements:
+            type: string
+            example: 220V, 50Hz
+          primary_communication_protocol:
+            type: string
+            example: TCP/IP, DICOM
+          assigned_admin_user:
+            type: string
+            example: admin@hospital.com
+          business_unit:
+            type: string
+            example: Diagnostic Imaging
+          cost_center:
+            type: string
+            example: CC-RAD-001
+          warranty_expiration_date:
+            type: string
+            format: date
+            nullable: true
+          scheduled_replacement_date:
+            type: string
+            format: date
+            nullable: true
+          disposal_date:
+            type: string
+            format: date
+            nullable: true
+          disposal_method:
+            type: string
+            nullable: true
+          regulatory_classification:
+            type: string
+            example: FDA Class II
+          phi_status:
+            type: string
+            example: Contains PHI
+          data_encryption_transit:
+            type: boolean
+          data_encryption_rest:
+            type: boolean
+          authentication_method:
+            type: string
+            example: LDAP
+          patch_level_last_update:
+            type: string
+            format: date
+          last_audit_date:
+            type: string
+            format: date
+          source:
+            type: string
+            example: network_scan
+          first_seen:
+            type: string
+            format: date-time
+          device_id:
+            type: string
+            nullable: true
+          device_identifier:
+            type: string
+            nullable: true
+          model_number:
+            type: string
+            nullable: true
+          device_description:
+            type: string
+            nullable: true
+          gmdn_term:
+            type: string
+            nullable: true
+          is_implantable:
+            type: boolean
+            nullable: true
+          fda_class:
+            type: string
+            nullable: true
+          udi:
+            type: string
+            nullable: true
+          mapping_confidence:
+            type: number
+            format: float
+            nullable: true
+          mapping_method:
+            type: string
+            nullable: true
+          mapped_at:
+            type: string
+            format: date-time
+            nullable: true
+          k_number:
+            type: string
+            nullable: true
+          decision_code:
+            type: string
+            nullable: true
+          decision_date:
+            type: string
+            format: date
+            nullable: true
+          decision_description:
+            type: string
+            nullable: true
+          clearance_type:
+            type: string
+            nullable: true
+          date_received:
+            type: string
+            format: date
+            nullable: true
+          statement_or_summary:
+            type: string
+            nullable: true
+          applicant:
+            type: string
+            nullable: true
+          contact:
+            type: string
+            nullable: true
+          address_1:
+            type: string
+            nullable: true
+          address_2:
+            type: string
+            nullable: true
+          city:
+            type: string
+            nullable: true
+          state:
+            type: string
+            nullable: true
+          zip_code:
+            type: string
+            nullable: true
+          postal_code:
+            type: string
+            nullable: true
+          country_code:
+            type: string
+            nullable: true
+          advisory_committee:
+            type: string
+            nullable: true
+          advisory_committee_description:
+            type: string
+            nullable: true
+          review_advisory_committee:
+            type: string
+            nullable: true
+          expedited_review_flag:
+            type: boolean
+            nullable: true
+          third_party_flag:
+            type: boolean
+            nullable: true
+          device_class:
+            type: string
+            nullable: true
+          medical_specialty_description:
+            type: string
+            nullable: true
+          registration_numbers:
+            type: string
+            nullable: true
+          fei_numbers:
+            type: string
+            nullable: true
+          product_code:
+            type: string
+            nullable: true
+          regulation_number:
+            type: string
+            nullable: true
+          metadata:
+            type: string
+            maxLength: 512
+            nullable: true
+            description: Additional metadata information for the asset (max 512 characters)
+            example: '{"object_id": "OO-12345", "provider": "Acme Services"}'
+    AssetCreateRequest:
+      type: object
+      required:
+      - hostname
+      - ip_address
+      - asset_type
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+          description: Optional UUID, will be auto-generated if not provided
+        hostname:
+          type: string
+        ip_address:
+          type: string
+        mac_address:
+          type: string
+        asset_type:
+          type: string
+        manufacturer:
+          type: string
+        model:
+          type: string
+        serial_number:
+          type: string
+        department:
+          type: string
+        location:
+          type: string
+        criticality:
+          type: string
+          enum:
+          - Clinical-High
+          - Business-Medium
+          - Non-Essential
+          default: Business-Medium
+        status:
+          type: string
+          enum:
+          - Active
+          - Inactive
+          default: Active
+        firmware_version:
+          type: string
+        first_seen:
+          type: string
+          format: date-time
+        last_seen:
+          type: string
+          format: date-time
+        source:
+          type: string
+        metadata:
+          type: string
+          maxLength: 512
+          description: Additional metadata information for the asset (max 512 characters)
+          example: '{"object_id": "OO-12345", "provider": "Acme Services"}'
+    AssetUpdateRequest:
+      type: object
+      properties:
+        hostname:
+          type: string
+        ip_address:
+          type: string
+        mac_address:
+          type: string
+        asset_type:
+          type: string
+        asset_subtype:
+          type: string
+        manufacturer:
+          type: string
+        model:
+          type: string
+        serial_number:
+          type: string
+        location:
+          type: string
+        firmware_version:
+          type: string
+        cpu:
+          type: string
+        memory_ram:
+          type: string
+        storage:
+          type: string
+        power_requirements:
+          type: string
+        primary_communication_protocol:
+          type: string
+        assigned_admin_user:
+          type: string
+        business_unit:
+          type: string
+        department:
+          type: string
+        cost_center:
+          type: string
+        warranty_expiration_date:
+          type: string
+          format: date
+        scheduled_replacement_date:
+          type: string
+          format: date
+        disposal_date:
+          type: string
+          format: date
+        disposal_method:
+          type: string
+        criticality:
+          type: string
+          enum:
+          - Clinical-High
+          - Business-Medium
+          - Non-Essential
+        regulatory_classification:
+          type: string
+        phi_status:
+          type: string
+        data_encryption_transit:
+          type: boolean
+        data_encryption_rest:
+          type: boolean
+        authentication_method:
+          type: string
+        patch_level_last_update:
+          type: string
+          format: date
+        last_audit_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - Active
+          - Inactive
+          - Disposed
+        metadata:
+          type: string
+          maxLength: 512
+          description: Additional metadata information for the asset (max 512 characters)
+          example: '{"object_id": "OO-12345", "provider": "Acme Services"}'
+    VulnerabilitySummary:
+      type: object
+      properties:
+        vulnerability_id:
+          type: string
+          example: vuln-123456
+        cve_id:
+          type: string
+          example: CVE-2023-12345
+        description:
+          type: string
+          example: Buffer overflow in XYZ component
+        severity:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+          example: Critical
+        cvss_v4_score:
+          type: number
+          format: float
+          nullable: true
+        cvss_v4_vector:
+          type: string
+          nullable: true
+        cvss_v3_score:
+          type: number
+          format: float
+          example: 9.8
+        cvss_v3_vector:
+          type: string
+          example: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+        cvss_v2_score:
+          type: number
+          format: float
+          nullable: true
+        cvss_v2_vector:
+          type: string
+          nullable: true
+        cvss_score:
+          type: number
+          format: float
+          description: Highest available CVSS score (v4, v3, or v2)
+          example: 9.8
+        kev:
+          type: boolean
+          description: Known Exploited Vulnerability status
+          example: true
+        published_date:
+          type: string
+          format: date
+          example: '2023-06-15'
+        last_modified:
+          type: string
+          format: date
+          example: '2023-08-20'
+        epss_score:
+          type: number
+          format: float
+          description: Exploit Prediction Scoring System score
+          example: 0.92456
+        epss_percentile:
+          type: number
+          format: float
+          example: 0.98765
+        epss_date:
+          type: string
+          format: date
+        epss_last_updated:
+          type: string
+          format: date-time
+        affected_assets:
+          type: integer
+          description: Number of assets affected by this vulnerability
+          example: 5
+        open_count:
+          type: integer
+          example: 3
+        in_progress_count:
+          type: integer
+          example: 2
+        resolved_count:
+          type: integer
+          example: 0
+    VulnerabilityDetailed:
+      allOf:
+      - $ref: '#/components/schemas/VulnerabilitySummary'
+      - type: object
+        properties:
+          nvd_data:
+            type: object
+            description: Additional data from NVD
+            nullable: true
+          affected_assets:
+            type: array
+            items:
+              type: object
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                hostname:
+                  type: string
+                ip_address:
+                  type: string
+                asset_type:
+                  type: string
+                department:
+                  type: string
+                remediation_status:
+                  type: string
+                  enum:
+                  - Open
+                  - In Progress
+                  - Resolved
+                remediation_notes:
+                  type: string
+                  nullable: true
+                discovered_at:
+                  type: string
+                  format: date-time
+    VulnerabilityCreateRequest:
+      type: object
+      required:
+      - description
+      - severity
+      oneOf:
+      - required:
+        - asset_id
+      - required:
+        - device_id
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+          description: UUID of the asset (required if device_id is not provided)
+        device_id:
+          type: string
+          format: uuid
+          description: UUID of the device (required if asset_id is not provided)
+        cve_id:
+          type: string
+          description: CVE identifier (optional)
+        description:
+          type: string
+        severity:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+        cvss_v3_score:
+          type: number
+          format: float
+        cvss_v3_vector:
+          type: string
+        cvss_v2_score:
+          type: number
+          format: float
+        cvss_v2_vector:
+          type: string
+        published_date:
+          type: string
+          format: date
+    VulnerabilityUpdateRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        severity:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+        cvss_v3_score:
+          type: number
+          format: float
+        cvss_v3_vector:
+          type: string
+    RiskSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          example: risk-98765
+        external_id:
+          type: string
+          description: External system risk identifier (e.g., Cynerio risk ID)
+          example: 2b291b92a79beb29948672956150de6f
+        asset_id:
+          type: string
+          format: uuid
+        device_class:
+          type: string
+          example: Class II
+        type:
+          type: string
+          example: vulnerability
+        type_display_name:
+          type: string
+          example: Vulnerability Risk
+        display_name:
+          type: string
+          example: Critical RCE Vulnerability
+        risk_id:
+          type: string
+          example: RISK-2026-001
+        risk_type_display_name:
+          type: string
+          example: Security Vulnerability
+        risk_group:
+          type: string
+          example: Remote Code Execution
+        name:
+          type: string
+          example: CVE-2023-12345 - Buffer Overflow
+        risk_score:
+          type: number
+          format: float
+          example: 9.2
+        risk_score_level:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+          example: Critical
+        cvss:
+          type: number
+          format: float
+          example: 9.8
+        epss:
+          type: number
+          format: float
+          example: 0.92
+        availability_score:
+          type: integer
+          example: 9
+        confidentiality_score:
+          type: integer
+          example: 10
+        integrity_score:
+          type: integer
+          example: 9
+        impact_confidentiality:
+          type: string
+          example: High
+        impact_patient_safety:
+          type: string
+          example: Medium
+        impact_service_disruption:
+          type: string
+          example: High
+        nhs_published_date:
+          type: string
+          format: date
+        nhs_severity:
+          type: string
+        nhs_threat_id:
+          type: string
+        description:
+          type: string
+        status_display_name:
+          type: string
+          example: Active
+        category:
+          type: string
+          example: Software Vulnerability
+        has_malware:
+          type: boolean
+        tags_easy_to_weaponize:
+          type: boolean
+        tags_exploit_code_maturity:
+          type: string
+        tags_exploited_in_the_wild:
+          type: boolean
+        tags_lateral_movement:
+          type: boolean
+        tags_malware:
+          type: array
+          items:
+            type: string
+        site:
+          type: string
+          example: Main Hospital
+        link:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              type:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    RiskDetailed:
+      allOf:
+      - $ref: '#/components/schemas/RiskSummary'
+    RiskCreateRequest:
+      type: object
+      required:
+      - asset_id
+      - risk_id
+      - name
+      properties:
+        external_id:
+          type: string
+          description: External system risk identifier (e.g., Cynerio risk ID)
+        asset_id:
+          type: string
+          format: uuid
+        risk_id:
+          type: string
+        name:
+          type: string
+        device_class:
+          type: string
+        type:
+          type: string
+        risk_score:
+          type: number
+          format: float
+        risk_score_level:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+        cvss:
+          type: number
+          format: float
+        epss:
+          type: number
+          format: float
+        description:
+          type: string
+        status_display_name:
+          type: string
+        impact_patient_safety:
+          type: string
+        impact_service_disruption:
+          type: string
+        impact_confidentiality:
+          type: string
+        tags_exploited_in_the_wild:
+          type: boolean
+        site:
+          type: string
+    RiskUpdateRequest:
+      type: object
+      properties:
+        external_id:
+          type: string
+          description: External system risk identifier (e.g., Cynerio risk ID)
+        device_class:
+          type: string
+        type:
+          type: string
+        risk_score:
+          type: number
+          format: float
+        risk_score_level:
+          type: string
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+        cvss:
+          type: number
+          format: float
+        epss:
+          type: number
+          format: float
+        description:
+          type: string
+        status_display_name:
+          type: string
+        impact_confidentiality:
+          type: string
+        impact_patient_safety:
+          type: string
+        impact_service_disruption:
+          type: string
+        tags_easy_to_weaponize:
+          type: boolean
+        tags_exploited_in_the_wild:
+          type: boolean
+        has_malware:
+          type: boolean
+    ComponentSummary:
+      type: object
+      properties:
+        component_id:
+          type: string
+          example: comp-12345-abcde
+        sbom_id:
+          type: string
+          nullable: true
+          description: SBOM ID if component is part of an SBOM, null for independent components
+        name:
+          type: string
+          example: openssl
+        version:
+          type: string
+          example: 1.1.1k
+        vendor:
+          type: string
+          example: OpenSSL Project
+        license:
+          type: string
+          example: Apache-2.0
+        purl:
+          type: string
+          description: Package URL identifier
+          example: pkg:generic/openssl@1.1.1k
+        cpe:
+          type: string
+          description: Common Platform Enumeration identifier
+          example: cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*
+        created_at:
+          type: string
+          format: date-time
+        package_id:
+          type: string
+          nullable: true
+        version_id:
+          type: string
+          nullable: true
+    ComponentDetailed:
+      allOf:
+      - $ref: '#/components/schemas/ComponentSummary'
+    ComponentCreateRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          description: Component name
+        version:
+          type: string
+        vendor:
+          type: string
+        license:
+          type: string
+        purl:
+          type: string
+        cpe:
+          type: string
+    ComponentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        vendor:
+          type: string
+        license:
+          type: string
+        purl:
+          type: string
+        cpe:
+          type: string
+    PatchSummary:
+      type: object
+      properties:
+        patch_id:
+          type: string
+          example: patch-12345
+        patch_name:
+          type: string
+          example: Security Update KB5034441
+        patch_type:
+          type: string
+          enum:
+          - Software Update
+          - Firmware
+          - Configuration
+          - Security Patch
+          - Hotfix
+          example: Security Patch
+        target_device_type:
+          type: string
+          nullable: true
+        target_package_id:
+          type: string
+          nullable: true
+        target_version:
+          type: string
+          nullable: true
+        cve_list:
+          type: array
+          items:
+            type: string
+          example:
+          - CVE-2024-21351
+          - CVE-2024-21412
+        description:
+          type: string
+        release_date:
+          type: string
+          format: date
+        vendor:
+          type: string
+        kb_article:
+          type: string
+        download_url:
+          type: string
+        install_instructions:
+          type: string
+        prerequisites:
+          type: string
+        estimated_install_time:
+          type: string
+        requires_reboot:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        package_name:
+          type: string
+          nullable: true
+        package_vendor:
+          type: string
+          nullable: true
+        created_by_name:
+          type: string
+        application_count:
+          type: integer
+          description: Number of times this patch has been applied
+        cve_count:
+          type: integer
+          description: Number of CVEs addressed by this patch
+    PatchDetailed:
+      allOf:
+      - $ref: '#/components/schemas/PatchSummary'
+    PatchCreateRequest:
+      type: object
+      required:
+      - patch_name
+      properties:
+        patch_name:
+          type: string
+        patch_type:
+          type: string
+          enum:
+          - Software Update
+          - Firmware
+          - Configuration
+          - Security Patch
+          - Hotfix
+          default: Software Update
+        target_device_type:
+          type: string
+        target_package_id:
+          type: string
+        target_version:
+          type: string
+        cve_list:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        release_date:
+          type: string
+          format: date
+        vendor:
+          type: string
+        kb_article:
+          type: string
+        download_url:
+          type: string
+        install_instructions:
+          type: string
+        prerequisites:
+          type: string
+        estimated_install_time:
+          type: string
+        requires_reboot:
+          type: boolean
+          default: false
+    PatchUpdateRequest:
+      type: object
+      properties:
+        patch_name:
+          type: string
+        patch_type:
+          type: string
+          enum:
+          - Software Update
+          - Firmware
+          - Configuration
+          - Security Patch
+          - Hotfix
+        target_device_type:
+          type: string
+        target_package_id:
+          type: string
+        target_version:
+          type: string
+        cve_list:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        release_date:
+          type: string
+          format: date
+        vendor:
+          type: string
+        kb_article:
+          type: string
+        download_url:
+          type: string
+        install_instructions:
+          type: string
+        prerequisites:
+          type: string
+        estimated_install_time:
+          type: string
+        requires_reboot:
+          type: boolean
+        is_active:
+          type: boolean
+    PatchApplication:
+      type: object
+      properties:
+        application_id:
+          type: string
+        patch_id:
+          type: string
+        asset_id:
+          type: string
+          format: uuid
+        device_id:
+          type: string
+          nullable: true
+        applied_at:
+          type: string
+          format: date-time
+        applied_by:
+          type: string
+        verification_status:
+          type: string
+          enum:
+          - Pending
+          - Verified
+          - Failed
+        verification_method:
+          type: string
+          enum:
+          - Manual
+          - SBOM Upload
+          - Automatic
+          - Version Check
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        verified_by:
+          type: string
+          nullable: true
+        notes:
+          type: string
+        hostname:
+          type: string
+        ip_address:
+          type: string
+        device_name:
+          type: string
+          nullable: true
+        applied_by_name:
+          type: string
+        verified_by_name:
+          type: string
+          nullable: true
+  responses:
+    UnauthorizedError:
+      description: Authentication required or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+            timestamp: '2026-02-02T10:30:45+00:00'
+    BadRequestError:
+      description: Invalid request parameters or missing required fields
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: INVALID_JSON
+              message: Invalid JSON input
+            timestamp: '2026-02-02T10:30:45+00:00'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+            timestamp: '2026-02-02T10:30:45+00:00'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: INTERNAL_ERROR
+              message: Internal server error
+            timestamp: '2026-02-02T10:30:45+00:00'

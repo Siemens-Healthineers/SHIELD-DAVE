@@ -1,0 +1,1610 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* Security Settings Page Styles */
+
+/* Base Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Siemens Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.settings-container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Siemens Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.settings-header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-header .header-left {
+    display: flex;
+    align-items: center;
+}
+
+.settings-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.settings-header .logo i {
+    color: var(--siemens-petrol);
+    font-size: 1.5rem;
+}
+
+.settings-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.settings-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Page Header */
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    color: var(--text-primary);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.page-header h1 i {
+    color: var(--siemens-petrol);
+}
+
+.page-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .settings-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .settings-main {
+        padding: 1rem;
+    }
+    
+    .settings-content {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+.settings-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settings-card h2 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-card h2 i {
+    color: var(--siemens-petrol);
+}
+
+/* Security Dashboard */
+.security-dashboard {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+    border: 1px solid var(--siemens-petrol);
+}
+
+.security-overview {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Removed duplicate - using the one in SECURITY SCORE HELP MODAL section */
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--siemens-petrol) 0deg,
+        var(--siemens-petrol) 306deg, /* 85% of 360deg */
+        var(--border-primary) 306deg,
+        var(--border-primary) 360deg
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0, 153, 153, 0.2);
+    transition: all 0.3s ease;
+}
+
+.score-circle::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.score-circle span {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--siemens-petrol);
+    z-index: 2;
+    position: relative;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.score-circle small {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    z-index: 2;
+    position: relative;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.score-circle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(0, 153, 153, 0.3);
+}
+
+/* Score circle animations */
+@keyframes scorePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.score-circle.updating {
+    animation: scorePulse 0.6s ease-in-out;
+}
+
+/* Score color variations */
+.score-circle.score-excellent {
+    --score-color: var(--siemens-petrol);
+}
+
+.score-circle.score-good {
+    --score-color: var(--siemens-orange);
+}
+
+.score-circle.score-poor {
+    --score-color: #ef4444;
+}
+
+.score-circle span {
+    color: var(--score-color, var(--siemens-petrol));
+    transition: color 0.3s ease;
+}
+
+.security-status {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+}
+
+.status-item i {
+    font-size: 1rem;
+}
+
+.text-success {
+    color: #10b981;
+}
+
+.text-warning {
+    color: #f59e0b;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
+/* =============================================================================
+   MFA SECTION STYLING - SIEMENS HEALTHINEERS BRAND COMPLIANCE
+   ============================================================================= */
+
+.mfa-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mfa-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
+}
+
+.mfa-status:hover {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 2px 8px rgba(0, 153, 153, 0.1);
+}
+
+.mfa-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mfa-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.mfa-description {
+    color: var(--text-secondary);
+    margin: 0;
+    flex: 1;
+    line-height: 1.5;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-secondary);
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--siemens-petrol);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* MFA Setup Section */
+.mfa-setup {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mfa-setup h3 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mfa-setup h3::before {
+    content: "🔐";
+    font-size: 1.25rem;
+}
+
+.setup-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.step {
+    padding: 1.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-secondary);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.step:hover {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 2px 8px rgba(0, 153, 153, 0.1);
+}
+
+.step h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step h4::before {
+    content: "✓";
+    background: var(--siemens-petrol);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.step p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+/* QR Code Container - Dark Mode Styling */
+.qr-code-container {
+    text-align: center;
+    padding: 2rem;
+    background: var(--bg-primary);
+    border-radius: 0.75rem;
+    border: 2px solid var(--border-primary);
+    margin: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.qr-code-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+        rgba(0, 153, 153, 0.05) 0%, 
+        rgba(255, 107, 53, 0.05) 100%);
+    pointer-events: none;
+}
+
+.qr-code-container img {
+    max-width: 220px;
+    height: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.qr-code-container img:hover {
+    transform: scale(1.05);
+}
+
+.qr-code-container p {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+/* Verification Input Styling */
+.verification-input {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5rem 0;
+    max-width: 400px;
+}
+
+.verification-input input {
+    flex: 1;
+    padding: 1rem;
+    border: 2px solid var(--border-primary);
+    border-radius: 0.75rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    text-align: center;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.verification-input input:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.verification-input input::placeholder {
+    color: var(--text-muted);
+    letter-spacing: normal;
+}
+
+/* MFA Management */
+.mfa-manage {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mfa-manage h3 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mfa-manage h3::before {
+    content: "⚙️";
+    font-size: 1.25rem;
+}
+
+/* MFA Status Indicators */
+.mfa-status-enabled {
+    color: var(--siemens-petrol);
+    font-weight: 600;
+}
+
+.mfa-status-disabled {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* MFA Action Buttons */
+.mfa-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.mfa-actions .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.mfa-actions .btn-primary {
+    background: var(--siemens-petrol);
+    color: white;
+}
+
+.mfa-actions .btn-primary:hover {
+    background: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+}
+
+.mfa-actions .btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.mfa-actions .btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.mfa-actions .btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+}
+
+.mfa-actions .btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+}
+
+/* Backup Codes Styling */
+.backup-codes {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.backup-codes h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.backup-codes p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.backup-codes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.backup-code {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.backup-codes {
+    margin-top: 1rem;
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN - MFA SECTION
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .mfa-setup {
+        padding: 1.5rem;
+    }
+    
+    .mfa-setup h3 {
+        font-size: 1.25rem;
+    }
+    
+    .step {
+        padding: 1rem;
+    }
+    
+    .step h4 {
+        font-size: 1.1rem;
+    }
+    
+    .qr-code-container {
+        padding: 1.5rem;
+    }
+    
+    .qr-code-container img {
+        max-width: 180px;
+    }
+    
+    .verification-input {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .verification-input input {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .mfa-actions {
+        flex-direction: column;
+    }
+    
+    .mfa-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .backup-codes-list {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .mfa-setup {
+        padding: 1rem;
+    }
+    
+    .qr-code-container {
+        padding: 1rem;
+    }
+    
+    .qr-code-container img {
+        max-width: 160px;
+    }
+    
+    .backup-codes-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+
+/* Password Section */
+.password-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.password-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+}
+
+.password-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.status-value {
+    color: var(--text-secondary);
+}
+
+.password-strength {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.strength-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 80px;
+}
+
+.strength-meter {
+    flex: 1;
+    height: 8px;
+    background: var(--border-primary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+    transition: width 0.3s ease;
+}
+
+.strength-text {
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 60px;
+}
+
+.password-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Password Requirements */
+.password-requirements {
+    margin-top: 0.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+}
+
+.password-requirements p {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.password-requirements ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.password-requirements li {
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.password-requirements li:before {
+    content: "✓";
+    color: #10b981;
+    font-weight: bold;
+}
+
+.password-requirements li.invalid:before {
+    content: "✗";
+    color: #ef4444;
+}
+
+.password-requirements li.valid {
+    color: #10b981;
+}
+
+.password-requirements li.invalid {
+    color: #ef4444;
+}
+
+/* Sessions Section */
+.sessions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sessions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sessions-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.session-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.session-item:hover {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 2px 8px rgba(0, 153, 153, 0.1);
+}
+
+.session-item.current-session {
+    border-color: var(--siemens-petrol);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(0, 153, 153, 0.05) 100%);
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.session-device {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.session-device i {
+    font-size: 1.25rem;
+    color: var(--siemens-petrol);
+}
+
+.device-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.current-badge {
+    background: var(--siemens-petrol);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.session-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.session-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.session-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.no-sessions {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+    font-style: italic;
+}
+
+.empty-sessions {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-sessions .empty-icon {
+    font-size: 3rem;
+    color: var(--siemens-petrol);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-sessions h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.empty-sessions p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 1rem;
+}
+
+
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.modal-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: var(--siemens-petrol);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.modal-close:hover {
+    background: var(--siemens-petrol-dark);
+    transform: scale(1.1);
+}
+
+.close {
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* Button Styles */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-family: 'Siemens Sans', sans-serif;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background-color: var(--siemens-petrol);
+    color: white;
+    border: 1px solid var(--siemens-petrol);
+}
+
+.btn-primary:hover {
+    background-color: var(--siemens-petrol-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+}
+
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+    border: 1px solid #ef4444;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Success/Error Notification Styles */
+.notification {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 500;
+    z-index: 1001;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease;
+}
+
+.notification-success {
+    background-color: #10b981;
+}
+
+.notification-error {
+    background-color: #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .settings-content {
+        padding: 1rem;
+    }
+    
+    .security-overview {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .session-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .sessions-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles for accessibility */
+.btn:focus,
+input:focus,
+.switch input:focus + .slider {
+    outline: 2px solid var(--siemens-petrol);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .settings-card {
+        border: 2px solid var(--text-primary);
+    }
+    
+    .session-item {
+        border: 2px solid var(--text-primary);
+    }
+}
+
+/* =============================================================================
+   SECURITY SCORE HELP MODAL
+   ============================================================================= */
+
+.security-score {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.help-icon {
+    background: var(--siemens-petrol);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0, 153, 153, 0.3);
+    z-index: 10;
+    position: relative;
+}
+
+.help-icon:hover {
+    background: var(--siemens-petrol-dark);
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 153, 153, 0.4);
+}
+
+.security-score-modal {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.3s ease;
+    background: var(--bg-card);
+    border: 2px solid var(--siemens-petrol);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 153, 153, 0.2);
+    /* Remove conflicting positioning - let flexbox handle centering */
+}
+
+.modal-show .security-score-modal {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.score-explanation {
+    color: var(--text-primary);
+}
+
+.score-intro {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--siemens-petrol);
+}
+
+.score-breakdown h4 {
+    color: var(--siemens-petrol);
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.score-category {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.category-header {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.category-header i {
+    color: var(--siemens-petrol);
+    font-size: 1.1rem;
+    width: 1.5rem;
+    text-align: center;
+}
+
+.category-name {
+    flex: 1;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.category-points {
+    background: var(--siemens-petrol);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.category-details {
+    padding: 1rem;
+}
+
+.category-details p {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.score-ranges {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+}
+
+.score-ranges h4 {
+    color: var(--siemens-petrol);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.range-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.75rem 0;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.25rem;
+}
+
+.range-color {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.range-color.excellent {
+    background: #10b981;
+}
+
+.range-color.good {
+    background: #f59e0b;
+}
+
+.range-color.fair {
+    background: #f97316;
+}
+
+.range-color.poor {
+    background: #ef4444;
+}
+
+.range-text {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.score-tips {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+}
+
+.score-tips h4 {
+    color: var(--siemens-petrol);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.score-tips ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.score-tips li {
+    margin: 0.75rem 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.score-tips li strong {
+    color: var(--siemens-petrol);
+}
+
+/* MFA Disable Confirmation Modal */
+.mfa-disable-modal {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.mfa-disable-warning {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.warning-icon {
+    flex-shrink: 0;
+    width: 4rem;
+    height: 4rem;
+    background: var(--siemens-orange);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.warning-content h4 {
+    color: var(--siemens-orange);
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.warning-content p {
+    color: var(--text-secondary);
+    margin: 0 0 1.5rem 0;
+    line-height: 1.5;
+}
+
+.security-risks {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.security-risks h5 {
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.security-risks ul {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.security-risks li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.security-risks li i {
+    color: var(--siemens-orange);
+    font-size: 0.9rem;
+    width: 1rem;
+    text-align: center;
+}
+
+.confirmation-text {
+    background: var(--bg-secondary);
+    border: 2px solid var(--siemens-orange);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.confirmation-text p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.modal-footer .btn {
+    min-width: 120px;
+}
+
+/* Responsive modal centering */
+@media (max-width: 768px) {
+    .security-score-modal {
+        max-width: 95vw;
+        max-height: 95vh;
+        margin: 2.5vh auto;
+        padding: 1.5rem;
+    }
+    
+    .mfa-disable-modal {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+    
+    .mfa-disable-warning {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .warning-icon {
+        align-self: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .security-score-modal {
+        max-width: 98vw;
+        max-height: 98vh;
+        margin: 1vh auto;
+        padding: 1rem;
+    }
+    
+    .mfa-disable-modal {
+        max-width: 98vw;
+        max-height: 98vh;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+    }
+}

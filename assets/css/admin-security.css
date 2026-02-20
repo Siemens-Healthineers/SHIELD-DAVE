@@ -1,0 +1,1730 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* Import Siemens Healthineers Brand Variables */
+@import url('../css/brand-variables.css');
+
+/* =============================================================================
+   USER INFO AND ROLE DISPLAY
+   ============================================================================= */
+
+.user-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+}
+
+.user-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.user-role {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+}
+
+.role-admin {
+    background: var(--siemens-petrol);
+    color: white;
+}
+
+.role-user {
+    background: var(--gray-500);
+    color: white;
+}
+
+.alert {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left-color: var(--siemens-orange);
+    color: var(--text-primary);
+}
+
+.alert-warning i {
+    color: var(--siemens-orange);
+    margin-right: 0.5rem;
+}
+
+/* =============================================================================
+   SECURITY PAGE LAYOUT
+   ============================================================================= */
+
+.metrics-section {
+    margin-bottom: 1.5rem;
+    background: var(--bg-card);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-primary);
+}
+
+.metrics-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-primary);
+}
+
+.metrics-header h2 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    font-family: 'Siemens Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.metrics-header h2 i {
+    color: var(--siemens-petrol);
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    background: rgba(0, 153, 153, 0.1);
+    border-radius: 0.5rem;
+    border: 2px solid rgba(0, 153, 153, 0.2);
+}
+
+.metrics-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.security-tabs {
+    margin-top: 1rem;
+    background: var(--bg-card);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* =============================================================================
+   TAB NAVIGATION - SIEMENS HEALTHINEERS STYLE
+   ============================================================================= */
+
+.tab-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    border-bottom: 3px solid var(--siemens-petrol-dark);
+    padding: 0;
+    margin: 0;
+}
+
+.tab-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 0.9rem;
+    position: relative;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 150px;
+    justify-content: center;
+}
+
+.tab-button:last-child {
+    border-right: none;
+}
+
+.tab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tab-button.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    box-shadow: inset 0 -3px 0 var(--siemens-orange);
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--siemens-orange);
+    animation: slideIn 0.3s ease;
+}
+
+.tab-button i {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.tab-button.active i {
+    color: var(--siemens-orange);
+    opacity: 1;
+}
+
+/* =============================================================================
+   TAB CONTENT
+   ============================================================================= */
+
+.tab-content {
+    display: none;
+    padding: 0;
+    background: var(--bg-primary);
+    overflow: visible;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================================
+   SECURITY CARDS - SIEMENS HEALTHINEERS DESIGN
+   ============================================================================= */
+
+.security-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: visible;
+    transition: all 0.3s ease;
+}
+
+.security-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--siemens-petrol) 0%, var(--siemens-orange) 100%);
+}
+
+.security-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.security-card h2 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Siemens Sans', sans-serif;
+}
+
+.security-card h2 i {
+    color: var(--siemens-petrol);
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    background: rgba(0, 153, 153, 0.1);
+    border-radius: 0.5rem;
+    border: 2px solid rgba(0, 153, 153, 0.2);
+}
+
+.security-card h3 {
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.security-card h3 i {
+    color: var(--siemens-orange);
+    font-size: 1.1rem;
+}
+
+/* =============================================================================
+   FORM STYLING - SIEMENS HEALTHINEERS STANDARDS
+   ============================================================================= */
+
+.form-group {
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: 'Siemens Sans', sans-serif;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--border-primary);
+    border-radius: 0.75rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: 'Siemens Sans', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 4px rgba(0, 153, 153, 0.1);
+    background: var(--bg-primary);
+    transform: translateY(-1px);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* =============================================================================
+   RANGE SLIDER - SIEMENS HEALTHINEERS STYLE
+   ============================================================================= */
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    background: var(--bg-hover);
+    border-radius: 4px;
+    outline: none;
+    margin: 1rem 0;
+    position: relative;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+    transition: all 0.3s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 153, 153, 0.4);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.3);
+}
+
+.range-value {
+    font-weight: 700;
+    color: var(--siemens-petrol);
+    margin-left: 0.75rem;
+    font-size: 1.1rem;
+    background: rgba(0, 153, 153, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 153, 153, 0.2);
+}
+
+/* =============================================================================
+   CHECKBOX GROUP - SIEMENS HEALTHINEERS LAYOUT
+   ============================================================================= */
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-primary);
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    margin-bottom: 0;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.checkbox-group label:hover {
+    background: rgba(0, 153, 153, 0.05);
+    transform: translateX(4px);
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--siemens-petrol);
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"]:checked + span {
+    color: var(--siemens-petrol);
+    font-weight: 600;
+}
+
+/* =============================================================================
+   FORM ACTIONS - SIEMENS HEALTHINEERS BUTTONS
+   ============================================================================= */
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border-primary);
+    flex-wrap: wrap;
+}
+
+/* =============================================================================
+   FILTER CONTROLS - ENHANCED DESIGN
+   ============================================================================= */
+
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 0.5rem;
+    border: 2px solid var(--border-primary);
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+/* =============================================================================
+   DATA TABLES - SIEMENS HEALTHINEERS STYLE
+   ============================================================================= */
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 1rem;
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    background: var(--bg-card);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    font-family: 'Siemens Sans', sans-serif;
+}
+
+.data-table th {
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    color: white;
+    font-weight: 700;
+    padding: 1.25rem 1.5rem;
+    text-align: left;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+.data-table td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.data-table tr {
+    transition: all 0.3s ease;
+}
+
+.data-table tr:hover {
+    background: var(--bg-hover);
+    transform: scale(1.01);
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* =============================================================================
+   SECURITY SCORE - SIEMENS HEALTHINEERS GAUGE
+   ============================================================================= */
+
+.security-score {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+    border-radius: 1rem;
+    border: 1px solid var(--border-primary);
+}
+
+.score-gauge {
+    position: relative;
+    width: 250px;
+    height: 250px;
+}
+
+.score-circle {
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: conic-gradient(
+        var(--siemens-petrol) 0deg,
+        var(--siemens-petrol) var(--score-angle, 0deg),
+        var(--bg-hover) var(--score-angle, 0deg),
+        var(--bg-hover) 360deg
+    );
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.5s ease;
+}
+
+.score-circle::before {
+    content: '';
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.score-value {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    z-index: 1;
+    font-family: 'Siemens Sans', sans-serif;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.score-label {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    z-index: 1;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.score-circle.score-excellent {
+    background: conic-gradient(#10b981 0deg, #10b981 var(--score-angle, 0deg), var(--bg-hover) var(--score-angle, 0deg), var(--bg-hover) 360deg);
+}
+
+.score-circle.score-good {
+    background: conic-gradient(#3b82f6 0deg, #3b82f6 var(--score-angle, 0deg), var(--bg-hover) var(--score-angle, 0deg), var(--bg-hover) 360deg);
+}
+
+.score-circle.score-fair {
+    background: conic-gradient(#f59e0b 0deg, #f59e0b var(--score-angle, 0deg), var(--bg-hover) var(--score-angle, 0deg), var(--bg-hover) 360deg);
+}
+
+.score-circle.score-poor {
+    background: conic-gradient(#ef4444 0deg, #ef4444 var(--score-angle, 0deg), var(--bg-hover) var(--score-angle, 0deg), var(--bg-hover) 360deg);
+}
+
+.score-circle.score-critical {
+    background: conic-gradient(#dc2626 0deg, #dc2626 var(--score-angle, 0deg), var(--bg-hover) var(--score-angle, 0deg), var(--bg-hover) 360deg);
+}
+
+/* =============================================================================
+   HARDENING CATEGORIES - SIEMENS HEALTHINEERS CARDS
+   ============================================================================= */
+
+.hardening-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.hardening-category {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.hardening-category::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--siemens-petrol);
+}
+
+.hardening-category:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.category-header h4 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: 'Siemens Sans', sans-serif;
+}
+
+.category-score {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.category-score.score-excellent {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.category-score.score-good {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.category-score.score-fair {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.category-score.score-poor {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.category-score.score-critical {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+}
+
+.recommendation {
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.recommendation::before {
+    content: '•';
+    color: var(--siemens-petrol);
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+.critical-issue {
+    color: #ef4444;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.critical-issue::before {
+    content: '⚠';
+    position: absolute;
+    left: 0;
+    font-size: 1rem;
+}
+
+/* =============================================================================
+   RECOMMENDATIONS - SIEMENS HEALTHINEERS STYLE
+   ============================================================================= */
+
+.recommendation-section {
+    margin-bottom: 2rem;
+    background: var(--bg-card);
+    border-radius: 1rem;
+    padding: 2rem;
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.recommendation-section h4 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: 'Siemens Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.recommendation-section h4::before {
+    content: '';
+    width: 4px;
+    height: 24px;
+    background: var(--siemens-petrol);
+    border-radius: 2px;
+}
+
+.recommendation-section.critical h4 {
+    color: #ef4444;
+}
+
+.recommendation-section.critical h4::before {
+    background: #ef4444;
+}
+
+/* =============================================================================
+   INCIDENT RESPONSE - SIEMENS HEALTHINEERS EMERGENCY STYLE
+   ============================================================================= */
+
+.incident-actions {
+    margin-bottom: 3rem;
+    background: linear-gradient(135deg, #fef2f2 0%, #fef7f7 100%);
+    border: 2px solid #fecaca;
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.incident-actions h3 {
+    color: #dc2626;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.incident-actions h3::before {
+    content: '🚨';
+    font-size: 1.25rem;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    overflow: visible;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+/* =============================================================================
+   INCIDENTS LIST - SIEMENS HEALTHINEERS CARDS
+   ============================================================================= */
+
+.incidents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.incident-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.incident-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--siemens-petrol);
+}
+
+.incident-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.incident-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.incident-type {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.incident-severity,
+.incident-status {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.severity-low {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.severity-medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.severity-high {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.severity-critical {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+}
+
+.status-open {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.status-investigating {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.status-resolved {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.status-closed {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+}
+
+.incident-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.incident-time {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* =============================================================================
+   EVENT TYPES - SIEMENS HEALTHINEERS BADGES
+   ============================================================================= */
+
+.event-type {
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    color: white;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================================================
+   NOTIFICATIONS - SIEMENS HEALTHINEERS TOASTS
+   ============================================================================= */
+
+.notification {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 1000;
+    padding: 1.25rem 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 400px;
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.notification-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 600;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* =============================================================================
+   BUTTONS - SIEMENS HEALTHINEERS STANDARD
+   ============================================================================= */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    border: 2px solid transparent;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Siemens Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    color: white;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 4px 16px rgba(0, 153, 153, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--siemens-petrol-dark) 0%, #005555 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 153, 153, 0.4);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border-color: #ef4444;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-color: #f59e0b;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+}
+
+.btn-sm {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+}
+
+/* =============================================================================
+   LOADING STATES - SIEMENS HEALTHINEERS ANIMATIONS
+   ============================================================================= */
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 3px solid var(--siemens-petrol);
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN - SIEMENS HEALTHINEERS MOBILE
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .tab-navigation {
+        flex-direction: column;
+    }
+    
+    .tab-button {
+        justify-content: center;
+        min-width: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .tab-button:last-child {
+        border-bottom: none;
+    }
+    
+    .filter-controls {
+    flex-direction: column;
+    }
+    
+    .filter-group {
+        min-width: auto;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .btn-with-help {
+        flex: none;
+        width: 100%;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        flex: none;
+    }
+    
+    .help-icon[data-tooltip]:hover::after {
+        max-width: 280px !important;
+        min-width: 180px !important;
+        font-size: 0.8rem !important;
+        padding: 10px 12px !important;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .hardening-categories {
+        grid-template-columns: 1fr;
+    }
+    
+    .incident-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .security-card {
+        padding: 1.5rem;
+    }
+    
+    .score-gauge {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .score-circle {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .score-circle::before {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .score-value {
+        font-size: 2.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .security-card {
+        padding: 1rem;
+    margin-bottom: 1rem;
+    }
+    
+    .security-card h2 {
+        font-size: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+}
+
+    .notification {
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+    }
+}
+
+/* =============================================================================
+   ACCESSIBILITY - SIEMENS HEALTHINEERS STANDARDS
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus indicators for keyboard navigation */
+.tab-button:focus,
+.btn:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 3px solid var(--siemens-petrol);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .security-card {
+        border: 2px solid var(--text-primary);
+    }
+    
+    .btn {
+        border-width: 2px;
+    }
+}
+
+/* Button with Help Icon Container */
+.btn-with-help {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: visible;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Button Alignment in Action Buttons */
+.action-buttons .btn {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    text-align: center;
+    justify-content: center;
+}
+
+/* Help Icon Styles */
+.help-icon {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.help-icon:hover {
+    color: var(--siemens-petrol);
+}
+
+/* Criticality Slider Styles (from locations.css) */
+.criticality-slider {
+    margin-top: 0.5rem;
+}
+
+.slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-primary);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--siemens-petrol);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--siemens-petrol);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+#minLengthValue {
+    font-weight: 600;
+    color: var(--siemens-petrol);
+}
+
+/* Help Modal Styles */
+.help-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    animation: modalFadeIn 0.3s ease;
+}
+
+.help-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-modal-content {
+    background: var(--bg-card);
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.help-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+    color: white;
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.help-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.3s ease;
+}
+
+.help-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.help-modal-body {
+    padding: 1.5rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.help-modal-body p {
+    margin-bottom: 1rem;
+}
+
+.help-modal-body ul {
+    margin: 0.5rem 0 1rem 1.5rem;
+}
+
+.help-modal-body li {
+    margin-bottom: 0.5rem;
+}
+
+.help-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-primary);
+    text-align: right;
+    background: var(--bg-secondary);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Lockdown Status Styles */
+.lockdown-status {
+    margin-bottom: 2rem;
+}
+
+.lockdown-alert {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+    border: 2px solid #ef4444;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1);
+}
+
+.lockdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.lockdown-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #ef4444;
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.lockdown-header i {
+    font-size: 1.5rem;
+}
+
+.lockdown-details {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.lockdown-details p {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.lockdown-details strong {
+    color: var(--text-primary);
+}
+
+.time-remaining {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.lockdown-status-normal {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+        padding: 1rem;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+    border: 2px solid #10b981;
+    border-radius: 0.75rem;
+    color: #10b981;
+    font-weight: 600;
+}
+
+.lockdown-status-normal i {
+    font-size: 1.25rem;
+}
+
+/* Lockdown Banner Styles */
+.lockdown-status-banner {
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.5s ease;
+}
+
+.lockdown-banner-alert {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+    border: 2px solid #ef4444;
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.lockdown-banner-alert::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    animation: pulse 2s infinite;
+}
+
+.lockdown-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.lockdown-banner-left {
+    display: flex;
+    align-items: center;
+        gap: 1rem;
+    flex: 1;
+}
+
+.lockdown-banner-left i {
+    font-size: 1.5rem;
+    color: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+.lockdown-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.lockdown-banner-text strong {
+    color: #ef4444;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lockdown-banner-text span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.lockdown-banner-right {
+    flex-shrink: 0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Navigation Lockdown Indicator */
+.lockdown-nav-indicator {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%);
+    border: 2px solid #ef4444;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.lockdown-nav-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    animation: pulse 2s infinite;
+}
+
+.lockdown-nav-indicator i {
+    font-size: 0.9rem;
+    animation: pulse 2s infinite;
+}
+
+/* Print styles */
+@media print {
+    .tab-navigation,
+    .filter-controls,
+    .form-actions,
+    .action-buttons {
+        display: none;
+    }
+    
+    .security-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}
+
+/* =============================================================================
+   LOCATION INFORMATION STYLING
+   ============================================================================= */
+
+.location-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.location-info .country-flag {
+    font-size: 1.2em;
+}
+
+.ip-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    transition: all 0.2s ease;
+}
+
+.ip-address:hover {
+    background: var(--bg-hover);
+    border-color: var(--siemens-petrol);
+    color: var(--text-primary);
+}
+
+/* Event type styling */
+.event-type {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-secondary);
+}

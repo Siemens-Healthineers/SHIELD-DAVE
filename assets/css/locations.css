@@ -1,0 +1,865 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* Location Management Page Styles */
+.locations-section {
+    background: var(--bg-card);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    border: 1px solid var(--border-primary);
+}
+
+.locations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.locations-header h2 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.tree-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Location Tree Styles */
+.locations-tree {
+    min-height: 400px;
+}
+
+.location-tree-item {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: var(--bg-card);
+    transition: all 0.2s ease;
+}
+
+.location-tree-item:hover {
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 2px 8px rgba(0, 153, 153, 0.1);
+}
+
+.location-tree-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.location-tree-toggle {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+}
+
+.location-tree-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.location-tree-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+}
+
+.location-tree-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.location-tree-info {
+    flex: 1;
+}
+
+.location-tree-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.location-tree-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.location-tree-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.location-tree-children {
+    margin-left: 2rem;
+    border-left: 2px solid var(--border-primary);
+    padding-left: 1rem;
+    display: none;
+}
+
+.location-tree-children.expanded {
+    display: block;
+}
+
+/* Criticality Badge Styles */
+.criticality-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.criticality-1, .criticality-2, .criticality-3 {
+    background: #10b981;
+    color: white;
+}
+
+.criticality-4, .criticality-5, .criticality-6 {
+    background: #f59e0b;
+    color: white;
+}
+
+.criticality-7, .criticality-8 {
+    background: #ef4444;
+    color: white;
+}
+
+.criticality-9, .criticality-10 {
+    background: #dc2626;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* Location Type Icons */
+.location-type-building { background: #6b7280; color: white; }
+.location-type-floor { background: #9ca3af; color: white; }
+.location-type-department { background: var(--siemens-petrol); color: white; }
+.location-type-ward { background: var(--siemens-orange); color: white; }
+.location-type-lab { background: #8b5cf6; color: white; }
+.location-type-room { background: #06b6d4; color: white; }
+.location-type-other { background: #64748b; color: white; }
+
+/* IP Range Display */
+.ip-range-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.ip-range-item-display {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-family: 'Courier New', monospace;
+    color: var(--text-primary);
+}
+
+.ip-range-cidr {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+.ip-range-startend {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fcd34d;
+}
+
+/* Filters Section */
+.filters-section {
+    background: var(--bg-card);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    border: 1px solid var(--border-primary);
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+/* Modal Styles for Location Management */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    margin: auto;
+    transform: none;
+}
+
+.modal.large .modal-content {
+    max-width: 800px;
+    width: 90vw;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    margin-bottom: 1.5rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Checkbox form group should not be compressed by grid */
+.form-group.checkbox-group {
+    display: flex;
+    align-items: center;
+    min-height: 2.5rem;
+    grid-column: 1 / -1;
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--siemens-petrol);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Criticality Slider */
+.criticality-slider {
+    margin-top: 0.5rem;
+}
+
+.slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-primary);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--siemens-petrol);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--siemens-petrol);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Criticality Value Display - High specificity to override admin.css */
+.locations-section #criticalityValue,
+.modal #criticalityValue {
+    font-weight: 600;
+    color: white !important;
+    background: #ef4444;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    display: inline-block;
+    min-width: 2rem;
+    text-align: center;
+}
+
+/* Checkbox Styles - High specificity to override admin.css */
+.locations-section .checkbox-label,
+.modal .checkbox-label {
+    display: flex !important;
+    align-items: center !important;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    gap: 0.75rem;
+}
+
+.locations-section .checkbox-label input[type="checkbox"],
+.modal .checkbox-label input[type="checkbox"] {
+    display: none !important;
+}
+
+.locations-section .checkmark,
+.modal .checkmark {
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid var(--border-primary) !important;
+    border-radius: 0.25rem !important;
+    position: relative;
+    transition: all 0.2s ease;
+    background: var(--bg-card) !important;
+    flex-shrink: 0;
+    margin-right: 0;
+}
+
+.locations-section .checkbox-label:hover .checkmark,
+.modal .checkbox-label:hover .checkmark {
+    border-color: var(--siemens-petrol) !important;
+    box-shadow: 0 0 0 2px rgba(0, 153, 153, 0.1) !important;
+}
+
+.locations-section .checkbox-label input[type="checkbox"]:checked + .checkmark,
+.modal .checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: var(--siemens-petrol) !important;
+    border-color: var(--siemens-petrol) !important;
+}
+
+.locations-section .checkbox-label input[type="checkbox"]:checked + .checkmark::after,
+.modal .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '' !important;
+    position: absolute;
+    top: 3px;
+    left: 6px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* IP Ranges Section */
+.ip-ranges-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.ip-ranges-section h4 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.ip-range-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ip-range-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.ip-range-fields {
+    margin-bottom: 0.75rem;
+}
+
+.cidr-field, .startend-fields {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.startend-fields {
+    display: none;
+}
+
+.range-separator {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.range-description {
+    margin-top: 0.5rem;
+}
+
+/* Loading and Empty States */
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .locations-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .tree-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        justify-content: stretch;
+    }
+    
+    .filter-actions .btn {
+        flex: 1;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .location-tree-children {
+        margin-left: 1rem;
+    }
+    
+    .location-tree-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .location-tree-actions {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Animation for tree expansion */
+.location-tree-children {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 1000px;
+    }
+}
+
+/* Success/Error Messages */
+.assignment-results {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+}
+
+.assignment-results.success {
+    background: #f0fdf4;
+    border-color: #10b981;
+    color: #065f46;
+}
+
+.assignment-results.error {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.assignment-results.warning {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    text-align: center;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 2000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 400px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification-content i {
+    font-size: 1.25rem;
+}
+
+.notification-success {
+    border-left: 4px solid #10b981;
+}
+
+.notification-success .notification-content i {
+    color: #10b981;
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-error .notification-content i {
+    color: #ef4444;
+}
+
+.notification-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.notification-warning .notification-content i {
+    color: #f59e0b;
+}
+
+/* Ensure modals are above everything and properly positioned */
+.modal {
+    z-index: 1000 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+/* Fix modal backdrop click */
+.modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: -1;
+}
+
+/* Ensure modal content is centered */
+.modal.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Auto Assignment Modal Specific Styles */
+#autoAssignmentModal .modal-content {
+    max-width: 600px;
+    min-width: 500px;
+    width: 90vw;
+}
+
+#autoAssignmentModal .modal-body {
+    padding: 1.5rem;
+}
+
+#autoAssignmentModal .form-group {
+    display: block;
+    margin-bottom: 1.5rem;
+    grid-template-columns: none;
+    gap: 0;
+    padding: 0.5rem 0;
+}
+
+#autoAssignmentModal .form-group:last-child {
+    margin-bottom: 0;
+}
+
+#autoAssignmentModal .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    padding: 0.5rem 0;
+    line-height: 1.5;
+    gap: 0.75rem;
+}
+
+#autoAssignmentModal .checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-primary);
+    border-radius: 0.25rem;
+    margin-right: 0;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+#autoAssignmentModal .checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: var(--siemens-petrol);
+    border-color: var(--siemens-petrol);
+}
+
+#autoAssignmentModal .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 6px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Ensure checkbox text has proper spacing and doesn't get compressed */
+#autoAssignmentModal .checkbox-label {
+    min-height: 2rem;
+}
+
+#autoAssignmentModal .checkbox-label span:not(.checkmark) {
+    flex: 1;
+    padding-left: 0.25rem;
+}
+
+/* Override any parent container styles that might affect modals */
+.dashboard-container .modal,
+.dashboard-main .modal,
+.locations-section .modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+}
+
+/* Alert Notice Styles */
+.alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert i {
+    font-size: 1.125rem;
+}

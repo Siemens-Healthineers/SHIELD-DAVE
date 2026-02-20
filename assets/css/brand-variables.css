@@ -1,0 +1,105 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+:root {
+    /* Siemens Healthineers Brand Colors */
+    --siemens-petrol: #009999;
+    --siemens-petrol-dark: #007777;
+    --siemens-petrol-light: #00bbbb;
+    --siemens-orange: #ff6b35;
+    --siemens-orange-dark: #e55a2b;
+    --siemens-orange-light: #ff8c5a;
+    
+    /* Status Colors */
+    --success-green: #10b981;
+    --warning-orange: #f59e0b;
+    --error-red: #ef4444;
+    --info-blue: var(--siemens-petrol);
+    
+    /* Neutral Colors */
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-500: #6b7280;
+    --gray-900: #111827;
+    
+    /* Dark Mode - Black Base (Siemens Healthineers Compliant) */
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #1a1a1a;
+    --bg-card: #111111;
+    --bg-hover: #1a1a1a;
+    --bg-input: #0a0a0a;
+    --bg-modal: #000000;
+    --bg-overlay: rgba(0, 0, 0, 0.8);
+    
+    /* Text Colors - High Contrast */
+    --text-primary: #ffffff;
+    --text-secondary: #e5e7eb;
+    --text-muted: #9ca3af;
+    --text-inverse: #000000;
+    
+    /* Border Colors */
+    --border-primary: #1f2937;
+    --border-secondary: #374151;
+    --border-focus: var(--siemens-petrol);
+    --border-input: #374151;
+    --border-card: #1f2937;
+    
+    /* Form States */
+    --input-focus-border: var(--siemens-petrol);
+    --input-focus-shadow: rgba(0, 153, 153, 0.2);
+    --input-error-border: var(--error-red);
+    --input-error-shadow: rgba(239, 68, 68, 0.2);
+    --input-valid-border: var(--success-green);
+    --input-valid-shadow: rgba(16, 185, 129, 0.2);
+    
+    /* Typography */
+    --font-family: 'Siemens Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-h1: 2.25rem; /* 36px */
+    --font-size-h2: 1.875rem; /* 30px */
+    --font-size-h3: 1.5rem; /* 24px */
+    --font-size-body: 1rem; /* 16px */
+    --font-size-small: 0.875rem; /* 14px */
+    
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* Spacing Scale */
+    --spacing-xs: 0.25rem; /* 4px */
+    --spacing-sm: 0.5rem; /* 8px */
+    --spacing-md: 1rem; /* 16px */
+    --spacing-lg: 1.5rem; /* 24px */
+    --spacing-xl: 2rem; /* 32px */
+    --spacing-2xl: 3rem; /* 48px */
+    
+    /* Component Spacing */
+    --card-padding: 1.5rem;
+    --button-padding: 0.75rem 1.5rem;
+    --input-padding: 0.75rem 1rem;
+    --section-margin: 2rem 0;
+    
+    /* Transitions */
+    --transition-duration: 0.2s;
+    --transition-easing: ease;
+    
+    /* Dark Mode Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 20px rgba(0, 153, 153, 0.2);
+    --shadow-glow-orange: 0 0 20px rgba(255, 107, 53, 0.2);
+    
+    /* Border Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+}

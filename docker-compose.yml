@@ -1,0 +1,55 @@
+# /*
+# * SPDX-License-Identifier: AGPL-3.0-or-later
+# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+# */
+version: '3.8'
+
+services:
+  dave:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: dave:1.0.0
+    container_name: dave-app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5432:5432"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    volumes:
+      # Persistent data volumes
+      - dave-logs:/var/www/html/logs
+      - dave-uploads:/var/www/html/uploads
+      - dave-db:/var/lib/postgresql/16/main
+      # Optional: Mount config for easy editing
+      # - ./config:/var/www/html/config
+    environment:
+      - TZ=UTC
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - dave-network
+
+volumes:
+  dave-logs:
+    driver: local
+  dave-uploads:
+    driver: local
+  dave-db:
+    driver: local
+
+networks:
+  dave-network:
+    driver: bridge

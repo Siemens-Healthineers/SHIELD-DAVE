@@ -1,0 +1,224 @@
+# /*
+# * SPDX-License-Identifier: AGPL-3.0-or-later
+# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+# */
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache files
+temp/cache/
+*.cache
+
+# Log files
+logs/
+logs/*.log
+*.log
+
+# Debug and test files (but exclude tests/browser/ directory for CI/CD)
+*debug*
+*diagnostic*
+*debug*.php
+*diagnostic*.php
+
+
+
+# Exception: CI workflow YAML files (needed for GitHub Actions)
+!.github/workflows/*.yml
+
+# Sensitive configuration files
+config/database.php
+config/settings.json
+config/*.local.php
+config/*.prod.php
+
+# Package lock files
+# package-lock.json - needed for GitHub Actions caching (see line 118)
+yarn.lock
+composer.lock
+
+# Upload directories (user uploads)
+uploads/
+uploads/*/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE and editor files
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Performance testing artifacts
+performance-results/
+test-results/
+
+# Session and diagnostic files (temporary)
+*session-check.php
+*performance-check.php
+*diagnostic.php
+fix-session-management.php
+optimize-performance.php
+latency-diagnostic.php
+session-diagnostic.php
+performance-diagnostic.php
+simple-performance-check.php
+simple-session-check.php
+
+# Cookie files (contain sensitive session data)
+cookies.txt
+*.cookies
+
+# Test pages (temporary)
+test-page.php
+test-session-flow.php
+browser-performance-test.html
+
+# Shell scripts (temporary)
+check-performance.sh
+monitor-performance.sh
+run-browser-tests.sh
+run-full-app-test.sh
+
+# Package files
+# package-lock.json is now tracked in git (removed from ignore list above) for GitHub Actions caching
+
+# Environment files
+.env
+.env.local
+.env.production
+!.env.example
+
+# API Keys and sensitive configuration
+config/nvd_api_key.txt
+config/*_api_key.txt
+config/*_secret.txt
+
+# Backup files
+*.bak
+*.backup
+
+# Composer dependencies
+vendor/
+composer.phar
+composer.lock
+
+# PHPUnit cache
+.phpunit.result.cache
+
+# ====================================================================================
+# DATABASE MIGRATIONS (KEPT LOCALLY FOR REFERENCE, NOT IN REPO)
+# ====================================================================================
+# Individual migration files are kept on dev server for reference but not in GitHub
+# Users will use schema-production.sql for fresh installs (simpler, faster)
+database/migrations/
+database/migrations/*.sql
+
+# ====================================================================================
+# DIAGNOSTIC FILES DIRECTORY
+# ====================================================================================
+# All diagnostic, testing, and debugging files should be placed in the diagnostics/
+# directory and are automatically ignored by Git. This prevents temporary files
+# from cluttering the main codebase.
+
+# Diagnostics directory (temporary files only)
+diagnostics/
+diagnostics/*/
+diagnostics/**/*
+
+# Project management and planning files (not needed for users)
+tasks/
+tasks/*/
+tasks/**/*
+
+# Legacy diagnostic files (should be moved to diagnostics/ directory)
+*_test.php
+*_debug.php
+*_analysis.php
+*_verification.php
+*_diagnostic.php
+*_check.php
+*_fix.php
+*_temp.php
+*_simple.php
+*_final.php
+*_find.php
+*_calculate.php
+*_verify.php
+*_validate.php
+*_trace.php
+*_check.php
+*_monitor.php
+*_optimize.php
+*_latency.php
+*_performance.php
+*_session.php
+*_auth.php
+*_db.php
+*_api.php
+*_ci.php
+*_browser.php
+*_puppeteer.php
+*_risk.php
+*_tier.php
+*_action.php
+*_score.php
+*_decimal.php
+*_optimal.php
+*_compliance.php
+*_independent.php
+*_full_action.php
+*_recalculate.php
+*_revalidate.php
+*_trace.php
+*_check.php
+*_monitor.php
+*_optimize.php
+*_latency.php
+*_performance.php
+*_session.php
+*_auth.php
+*_db.php
+*_api.php
+*_ci.php
+*_browser.php
+*_puppeteer.php
+*_risk.php
+*_tier.php
+*_action.php
+*_score.php
+*_decimal.php
+*_optimal.php
+*_compliance.php
+*_independent.php
+*_full_action.php
+*_recalculate.php
+*_revalidate.php
+
+venv/
+venv/*
+venv/**/*

@@ -1,0 +1,516 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* ============================================================================
+ * Priority Tier Badges
+ * ============================================================================ */
+
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Siemens Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    gap: 0.375rem;
+}
+
+.priority-badge-tier-1 {
+    background-color: #ef4444;
+    color: white;
+    border: 2px solid #dc2626;
+}
+
+.priority-badge-tier-2 {
+    background-color: #f59e0b;
+    color: white;
+    border: 2px solid #d97706;
+}
+
+.priority-badge-tier-3 {
+    background-color: #009999; /* Siemens Petrol */
+    color: white;
+    border: 2px solid: #007777;
+}
+
+.priority-badge-tier-4 {
+    background-color: #6b7280; /* Gray */
+    color: white;
+    border: 2px solid #4b5563;
+}
+
+.priority-badge-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ============================================================================
+ * KEV Badge (Shield Overlay)
+ * ============================================================================ */
+
+.kev-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background-color: #7c3aed;
+    color: white;
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    font-family: 'Siemens Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    gap: 0.25rem;
+    border: 1px solid #6d28d9;
+}
+
+.kev-badge-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+/* ============================================================================
+ * Overdue Indicator
+ * ============================================================================ */
+
+.overdue-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background-color: #dc2626;
+    color: white;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Siemens Sans', sans-serif;
+    gap: 0.375rem;
+    animation: pulse-red 2s infinite;
+}
+
+.overdue-badge-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ============================================================================
+ * Vendor Status Badges - Dark Mode
+ * ============================================================================ */
+
+.vendor-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: 'Siemens Sans', sans-serif;
+    border: 1px solid;
+}
+
+.vendor-status-not-contacted {
+    background-color: rgba(107, 114, 128, 0.15);
+    color: #9ca3af;
+    border-color: #4b5563;
+}
+
+.vendor-status-contacted {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-color: #3b82f6;
+}
+
+.vendor-status-patch-available {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #4ade80;
+    border-color: #10b981;
+}
+
+.vendor-status-patch-pending {
+    background-color: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border-color: #f59e0b;
+}
+
+.vendor-status-no-patch {
+    background-color: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    border-color: #f97316;
+}
+
+.vendor-status-eol {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ff6b6b;
+    border-color: #ef4444;
+}
+
+/* ============================================================================
+ * Risk Score Indicator - Dark Mode
+ * ============================================================================ */
+
+.risk-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-family: 'Siemens Sans', sans-serif;
+    border: 2px solid;
+}
+
+.risk-score-critical {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ff6b6b;
+    border-color: #ef4444;
+}
+
+.risk-score-high {
+    background-color: rgba(249, 115, 22, 0.2);
+    color: #fb923c;
+    border-color: #f97316;
+}
+
+.risk-score-medium {
+    background-color: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border-color: #f59e0b;
+}
+
+.risk-score-low {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border-color: #3b82f6;
+}
+
+/* ============================================================================
+ * Priority Tier Cards
+ * ============================================================================ */
+
+.priority-tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    align-items: stretch;
+}
+
+.tier-card {
+    background: var(--bg-card, #111111);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    box-shadow: var(--shadow-md, 0 2px 3px rgba(0, 0, 0, 0.4));
+    border: 1px solid;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tier-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.5));
+}
+
+.tier-card-tier-1 {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #1a0a0a 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.tier-card-tier-2 {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #1a1205 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.tier-card-tier-3 {
+    border-color: var(--siemens-petrol, #009999);
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #0a1515 100%);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.2);
+}
+
+.tier-card-tier-4 {
+    border-color: #6b7280;
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #0f0f0f 100%);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
+}
+
+.tier-card-kev {
+    border-color: #9333ea;
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #1a0f1f 100%);
+    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.2);
+}
+
+.tier-card-epss {
+    border-color: var(--siemens-petrol, #009999);
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #0f1a1a 100%);
+    box-shadow: 0 4px 12px rgba(0, 153, 153, 0.2);
+}
+
+.tier-card-recall {
+    border-color: #dc2626;
+    background: linear-gradient(135deg, var(--bg-card, #111111) 0%, #1f0f0f 100%);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.tier-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.tier-card h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Siemens Sans', sans-serif;
+    color: var(--text-primary, #ffffff);
+    margin: 0;
+}
+
+.tier-card-icon {
+    width: 1rem;
+    height: 1rem;
+    opacity: 0.7;
+}
+
+.tier-card .metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: 'Siemens Sans', sans-serif;
+    line-height: 1;
+    margin: 0.375rem 0;
+}
+
+.tier-card-tier-1 .metric-value {
+    color: #ff6b6b;
+}
+
+.tier-card-tier-2 .metric-value {
+    color: #ffa94d;
+}
+
+.tier-card-tier-3 .metric-value {
+    color: var(--siemens-petrol-light, #00bbbb);
+}
+
+.tier-card-tier-4 .metric-value {
+    color: #9ca3af;
+}
+
+.tier-card-kev .metric-value {
+    color: #c084fc;
+}
+
+.tier-card-epss .metric-value {
+    color: var(--siemens-petrol-light, #00bbbb);
+}
+
+.tier-card-recall .metric-value {
+    color: #fca5a5;
+}
+
+.tier-description {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #e5e7eb);
+    margin-bottom: 0.5rem;
+}
+
+.tier-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.375rem;
+    margin: 0.5rem 0;
+    flex-grow: 1;
+}
+
+.tier-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.tier-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #9ca3af);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.tier-stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: 'Siemens Sans', sans-serif;
+    color: var(--text-primary, #ffffff);
+}
+
+/* ============================================================================
+ * Criticality Badges
+ * ============================================================================ */
+
+.criticality-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Siemens Sans', sans-serif;
+    border: 1px solid;
+}
+
+.criticality-clinical-high {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ff6b6b;
+    border-color: #ef4444;
+}
+
+.criticality-business-medium {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #ffa94d;
+    border-color: #f59e0b;
+}
+
+.criticality-non-essential {
+    background-color: rgba(0, 153, 153, 0.15);
+    color: var(--siemens-petrol-light, #00bbbb);
+    border-color: var(--siemens-petrol, #009999);
+}
+
+/* ============================================================================
+ * Location Criticality Indicator
+ * ============================================================================ */
+
+.location-criticality {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted, #9ca3af);
+}
+
+.location-criticality-dots {
+    display: flex;
+    gap: 0.125rem;
+}
+
+.location-criticality-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--border-secondary, #374151);
+}
+
+.location-criticality-dot.active {
+    background-color: var(--siemens-petrol, #009999);
+}
+
+.location-criticality-dot.active-high {
+    background-color: #ff6b6b;
+}
+
+/* ============================================================================
+ * Status Pill
+ * ============================================================================ */
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: 'Siemens Sans', sans-serif;
+}
+
+.status-open {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ff6b6b;
+}
+
+.status-in-progress {
+    background-color: rgba(0, 153, 153, 0.15);
+    color: var(--siemens-petrol-light, #00bbbb);
+}
+
+.status-resolved {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #4ade80;
+}
+
+.status-mitigated {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #ffa94d;
+}
+
+/* ============================================================================
+ * Badge Containers
+ * ============================================================================ */
+
+.badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.badge-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* ============================================================================
+ * Responsive Design
+ * ============================================================================ */
+
+@media (max-width: 768px) {
+    .priority-tiers {
+        grid-template-columns: 1fr;
+    }
+    
+    .tier-card .metric-value {
+        font-size: 1rem;
+    }
+    
+    .tier-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================================
+ * Print Styles
+ * ============================================================================ */
+
+@media print {
+    .priority-badge,
+    .kev-badge,
+    .vendor-status-badge,
+    .tier-card {
+        border: 1px solid #000 !important;
+        background: white !important;
+        box-shadow: none !important;
+    }
+    
+    .tier-card:hover {
+        transform: none !important;
+    }
+}
+

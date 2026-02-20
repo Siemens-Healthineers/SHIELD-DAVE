@@ -1,0 +1,376 @@
+<?php
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+class DatabaseConfig {
+    // Database connection parameters - read from environment variables
+    private static function getDBHost() {
+        return getenv('DB_HOST') ?: $_ENV['DB_HOST'] ?? '';
+    }
+    
+    private static function getDBPort() {
+        return getenv('DB_PORT') ?: $_ENV['DB_PORT'] ?? '';
+    }
+    
+    private static function getDBName() {
+        return getenv('DB_NAME') ?: $_ENV['DB_NAME'] ?? '';
+    }
+    
+    private static function getDBUser() {
+        return getenv('DB_USER') ?: $_ENV['DB_USER'] ?? '';
+    }
+    
+    private static function getDBPass() {
+        return getenv('DB_PASSWORD') ?: $_ENV['DB_PASSWORD'] ?? '';
+    }
+    
+    private const DB_CHARSET = 'utf8';
+    
+    // Connection options - OPTIMIZED for performance
+    private const DB_OPTIONS = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_PERSISTENT => false  // Disabled persistent connections to prevent pooling issues
+    ];
+    
+    private static $instance = null;
+    private $pdo = null;
+    
+    /**
+     * Private constructor for singleton pattern
+     */
+    private function __construct() {
+        $this->connect();
+    }
+    
+    /**
+     * Get database instance (singleton)
+     */
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+    
+    /**
+     * Establish database connection
+     */
+    private function connect() {
+        try {
+            $dsn = "pgsql:host=" . self::getDBHost() . 
+                   ";port=" . self::getDBPort() . 
+                   ";dbname=" . self::getDBName() . 
+                   ";options='--client_encoding=UTF8'";
+            
+            $this->pdo = new PDO($dsn, self::getDBUser(), self::getDBPass(), self::DB_OPTIONS);
+            
+            // Set timezone
+            $this->pdo->exec("SET timezone = 'UTC'");
+            
+            // Ensure READ COMMITTED isolation level for immediate visibility of committed data
+            $this->pdo->exec("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
+            
+        } catch (PDOException $e) {
+            error_log("Database connection failed: " . $e->getMessage());
+            throw new Exception("Database connection failed. Please check your configuration.");
+        }
+    }
+    
+    /**
+     * Get PDO connection
+     */
+    public function getConnection() {
+        if ($this->pdo === null) {
+            $this->connect();
+        }
+        return $this->pdo;
+    }
+    
+    /**
+     * Test database connection
+     */
+    public function testConnection() {
+        try {
+            $stmt = $this->pdo->query("SELECT 1");
+            return $stmt !== false;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Get database information
+     */
+    public function getDatabaseInfo() {
+        try {
+            $stmt = $this->pdo->query("SELECT version()");
+            return $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            return "Unable to retrieve database information";
+        }
+    }
+    
+    /**
+     * Execute a prepared statement
+     */
+    public function prepare($sql) {
+        return $this->pdo->prepare($sql);
+    }
+    
+    /**
+     * Execute a query and return results
+     */
+    public function query($sql, $params = []) {
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt;
+        } catch (PDOException $e) {
+            error_log("Database query failed: " . $e->getMessage());
+            throw new Exception("Database query failed: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Begin transaction
+     */
+    public function beginTransaction() {
+        return $this->pdo->beginTransaction();
+    }
+    
+    /**
+     * Commit transaction
+     */
+    public function commit() {
+        return $this->pdo->commit();
+    }
+    
+    /**
+     * Rollback transaction
+     */
+    public function rollback() {
+        return $this->pdo->rollback();
+    }
+    
+    /**
+     * Check if currently in a transaction
+     */
+    public function inTransaction() {
+        return $this->pdo->inTransaction();
+    }
+    
+    /**
+     * Get last insert ID
+     */
+    public function lastInsertId() {
+        return $this->pdo->lastInsertId();
+    }
+    
+    /**
+     * Close database connection
+     */
+    public function close() {
+        $this->pdo = null;
+    }
+    
+    /**
+     * Get database configuration for environment
+     */
+    public static function getConfig() {
+        return [
+            'host' => self::getDBHost(),
+            'port' => self::getDBPort(),
+            'name' => self::getDBName(),
+            'user' => self::getDBUser(),
+            'charset' => self::DB_CHARSET
+        ];
+    }
+}
+
+/**
+ * Database utility functions
+ */
+class DatabaseUtils {
+    
+    /**
+     * Sanitize input for database queries
+     */
+    public static function sanitize($input) {
+        return dave_htmlspecialchars(strip_tags(trim($input)), ENT_QUOTES, 'UTF-8');
+    }
+    
+    /**
+     * Validate UUID format
+     */
+    public static function isValidUUID($uuid) {
+        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid);
+    }
+    
+    /**
+     * Generate UUID
+     */
+    public static function generateUUID() {
+        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+    
+    /**
+     * Format date for database
+     */
+    public static function formatDate($date, $format = 'Y-m-d H:i:s') {
+        if (empty($date)) {
+            return null;
+        }
+        
+        if (is_string($date)) {
+            $date = new DateTime($date);
+        }
+        
+        return $date->format($format);
+    }
+    
+    /**
+     * Parse database date
+     */
+    public static function parseDate($dateString) {
+        if (empty($dateString)) {
+            return null;
+        }
+        
+        try {
+            return new DateTime($dateString);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Build WHERE clause from array
+     */
+    public static function buildWhereClause($conditions) {
+        if (empty($conditions)) {
+            return ['', []];
+        }
+        
+        $whereParts = [];
+        $params = [];
+        $paramCount = 0;
+        
+        foreach ($conditions as $field => $value) {
+            if (is_null($value)) {
+                $whereParts[] = "$field IS NULL";
+            } elseif (is_array($value)) {
+                $placeholders = [];
+                foreach ($value as $v) {
+                    $placeholders[] = ':param' . $paramCount;
+                    $params['param' . $paramCount] = $v;
+                    $paramCount++;
+                }
+                $whereParts[] = "$field IN (" . implode(',', $placeholders) . ")";
+            } else {
+                $whereParts[] = "$field = :param$paramCount";
+                $params["param$paramCount"] = $value;
+                $paramCount++;
+            }
+        }
+        
+        $whereClause = 'WHERE ' . implode(' AND ', $whereParts);
+        return [$whereClause, $params];
+    }
+    
+    /**
+     * Build ORDER BY clause
+     */
+    public static function buildOrderClause($orderBy) {
+        if (empty($orderBy)) {
+            return '';
+        }
+        
+        $orderParts = [];
+        foreach ($orderBy as $field => $direction) {
+            $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+            $orderParts[] = "$field $direction";
+        }
+        
+        return 'ORDER BY ' . implode(', ', $orderParts);
+    }
+    
+    /**
+     * Build LIMIT clause
+     */
+    public static function buildLimitClause($limit, $offset = 0) {
+        if (empty($limit)) {
+            return '';
+        }
+        
+        return "LIMIT $limit OFFSET $offset";
+    }
+}
+
+/**
+ * Database migration utilities
+ */
+class DatabaseMigration {
+    
+    /**
+     * Check if migration table exists
+     */
+    public static function checkMigrationTable() {
+        $db = DatabaseConfig::getInstance();
+        $stmt = $db->query("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'migrations')");
+        return $stmt->fetchColumn();
+    }
+    
+    /**
+     * Create migration table
+     */
+    public static function createMigrationTable() {
+        $db = DatabaseConfig::getInstance();
+        $sql = "CREATE TABLE IF NOT EXISTS migrations (
+            id SERIAL PRIMARY KEY,
+            migration VARCHAR(255) NOT NULL,
+            batch INTEGER NOT NULL,
+            executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )";
+        $db->query($sql);
+    }
+    
+    /**
+     * Record migration execution
+     */
+    public static function recordMigration($migration, $batch) {
+        $db = DatabaseConfig::getInstance();
+        $sql = "INSERT INTO migrations (migration, batch) VALUES (?, ?)";
+        $db->query($sql, [$migration, $batch]);
+    }
+    
+    /**
+     * Get executed migrations
+     */
+    public static function getExecutedMigrations() {
+        $db = DatabaseConfig::getInstance();
+        $stmt = $db->query("SELECT migration FROM migrations ORDER BY id");
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+}
+
+// Initialize database connection
+try {
+    $db = DatabaseConfig::getInstance();
+    if (!$db->testConnection()) {
+        throw new Exception("Database connection test failed");
+    }
+} catch (Exception $e) {
+    error_log("Database initialization failed: " . $e->getMessage());
+    // In production, you might want to show a user-friendly error page
+    die("Database connection failed. Please contact the administrator.");
+}

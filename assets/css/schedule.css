@@ -1,0 +1,2214 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+
+/* ============================================================================
+ * 1. Filters Section (Accordion Style)
+ * ============================================================================ */
+
+.filters-section {
+    max-width: 1400px;
+    margin: 0 auto 2rem auto;
+}
+
+.search-bar-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+    max-width: 500px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.5rem;
+    color: var(--text-primary, #ffffff);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--siemens-petrol, #009999);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.875rem;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+    color: var(--text-primary, #ffffff);
+    background: var(--bg-hover, #333333);
+}
+
+.btn-toggle-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.5rem;
+    color: var(--text-primary, #ffffff);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-toggle-filters:hover {
+    background: var(--bg-hover, #333333);
+    border-color: var(--siemens-petrol, #009999);
+}
+
+.btn-toggle-filters.active {
+    background: var(--siemens-petrol, #009999);
+    border-color: var(--siemens-petrol, #009999);
+    color: white;
+}
+
+.filter-count {
+    background: var(--siemens-orange, #ff6b35);
+    color: white;
+    border-radius: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.25rem;
+}
+
+.filters-panel {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-primary, #333333);
+}
+
+.filters-header h4 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-clear-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-secondary, #555555);
+    border-radius: 0.5rem;
+    color: var(--text-secondary, #cbd5e1);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-clear-filters:hover {
+    background: var(--bg-hover, #333333);
+    border-color: var(--siemens-orange, #ff6b35);
+    color: var(--siemens-orange, #ff6b35);
+}
+
+/* ============================================================================
+ * 2. Page Header
+ * ============================================================================ */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+}
+
+.page-title h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-title p {
+    margin: 0;
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 1rem;
+}
+
+.page-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* ============================================================================
+ * 2. Filters Panel
+ * ============================================================================ */
+
+.filters-panel {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--bg-secondary, #0f0f0f);
+    border-bottom: 1px solid var(--border-primary, #333333);
+}
+
+.filters-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary, #cbd5e1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 0.75rem;
+    border: 1px solid var(--border-secondary, #555555);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary, #0f0f0f);
+    color: var(--text-primary, #ffffff);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: var(--siemens-petrol, #009999);
+    box-shadow: 0 0 0 3px rgba(0, 153, 153, 0.1);
+}
+
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+/* ============================================================================
+ * 3. Summary Cards
+ * ============================================================================ */
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.summary-icon {
+    width: 3rem;
+    height: 3rem;
+    background: var(--siemens-petrol, #009999);
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.summary-content {
+    flex: 1;
+}
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary, #ffffff);
+    margin-bottom: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #cbd5e1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================================================
+ * 4. View Toggle
+ * ============================================================================ */
+
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: var(--bg-secondary, #0f0f0f);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    width: fit-content;
+}
+
+.toggle-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary, #cbd5e1);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-btn:hover {
+    color: var(--text-primary, #ffffff);
+    background: var(--bg-hover, #222222);
+}
+
+.toggle-btn.active {
+    background: var(--siemens-petrol, #009999);
+    color: white;
+}
+
+/* ============================================================================
+ * 5. Tasks Table
+ * ============================================================================ */
+
+.tasks-table-container {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    overflow-x: auto;
+    max-width: 100%;
+    position: relative;
+}
+
+.tasks-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.tasks-table-container::-webkit-scrollbar-track {
+    background: var(--bg-secondary, #0f0f0f);
+    border-radius: 4px;
+}
+
+.tasks-table-container::-webkit-scrollbar-thumb {
+    background: var(--siemens-petrol, #009999);
+    border-radius: 4px;
+}
+
+.tasks-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--siemens-petrol-dark, #007777);
+}
+
+.tasks-table {
+    width: 100%;
+    min-width: 1000px;
+    border-collapse: collapse;
+}
+
+.tasks-table th {
+    background: var(--bg-secondary, #0f0f0f);
+    color: var(--text-secondary, #cbd5e1);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-primary, #333333);
+    white-space: nowrap;
+}
+
+.tasks-table th:nth-child(1) { width: 100px; } /* Task Type */
+.tasks-table th:nth-child(2) { width: 160px; } /* Device */
+.tasks-table th:nth-child(3) { width: 120px; } /* Package/CVE */
+.tasks-table th:nth-child(4) { width: 120px; } /* Assigned To */
+.tasks-table th:nth-child(5) { width: 140px; } /* Scheduled Date */
+.tasks-table th:nth-child(6) { width: 80px; } /* Downtime */
+.tasks-table th:nth-child(7) { width: 80px; } /* Dept Notified */
+.tasks-table th:nth-child(8) { width: 100px; } /* Approval Status */
+.tasks-table th:nth-child(9) { width: 80px; } /* Status */
+.tasks-table th:nth-child(10) { width: 100px; } /* Actions */
+
+.tasks-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-primary, #333333);
+    color: var(--text-primary, #ffffff);
+    vertical-align: top;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+}
+
+.tasks-table tr:hover {
+    background: var(--bg-hover, #222222);
+}
+
+.tasks-table tr:last-child td {
+    border-bottom: none;
+}
+
+.loading-cell,
+.empty-cell,
+.error-cell {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted, #94a3b8);
+    font-style: italic;
+}
+
+/* ============================================================================
+ * 6. Task Type Badges
+ * ============================================================================ */
+
+.task-type-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.task-type-package_remediation {
+    background: var(--siemens-petrol, #009999);
+    color: white;
+}
+
+.task-type-cve_remediation {
+    background: var(--siemens-orange, #ff6b35);
+    color: white;
+}
+
+.task-type-patch_application {
+    background: #10b981;
+    color: white;
+}
+
+.task-type-badge.task-type-recall_maintenance {
+    background: #dc2626 !important;
+    color: white !important;
+    border: 2px solid #b91c1c !important;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3) !important;
+    transition: all 0.2s ease;
+}
+
+.task-type-badge.task-type-recall_maintenance:hover {
+    background: #b91c1c !important;
+    border-color: #991b1b !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* ============================================================================
+ * 7. Device Information
+ * ============================================================================ */
+
+.device-info {
+    min-width: 160px;
+}
+
+.device-name {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin-bottom: 0.125rem;
+    font-size: 0.875rem;
+}
+
+.device-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+}
+
+.device-details span {
+    background: var(--bg-tertiary, #222222);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.device-criticality {
+    font-weight: 600;
+}
+
+.criticality-clinical_high {
+    background: #dc2626 !important;
+    color: white !important;
+}
+
+.criticality-business_medium {
+    background: #f59e0b !important;
+    color: white !important;
+}
+
+.criticality-non_essential {
+    background: #10b981 !important;
+    color: white !important;
+}
+
+/* ============================================================================
+ * 8. Package/CVE Information
+ * ============================================================================ */
+
+.package-cve-info {
+    min-width: 200px;
+}
+
+.package-name {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin-bottom: 0.25rem;
+}
+
+.package-vendor {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+    margin-bottom: 0.5rem;
+}
+
+.cve-id {
+    font-weight: 600;
+    color: var(--siemens-orange, #ff6b35);
+    margin-bottom: 0.25rem;
+}
+
+.cve-severity {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.severity-critical {
+    background: #dc2626;
+    color: white;
+}
+
+.severity-high {
+    background: #ea580c;
+    color: white;
+}
+
+.severity-medium {
+    background: #f59e0b;
+    color: white;
+}
+
+.severity-low {
+    background: #10b981;
+    color: white;
+}
+
+/* ============================================================================
+ * 9. User Information
+ * ============================================================================ */
+
+.user-info {
+    min-width: 120px;
+}
+
+.username {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin-bottom: 0.125rem;
+    font-size: 0.875rem;
+}
+
+.user-email {
+    font-size: 0.7rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+/* ============================================================================
+ * 10. Date Information
+ * ============================================================================ */
+
+.date-info {
+    min-width: 150px;
+}
+
+.scheduled-date {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin-bottom: 0.25rem;
+}
+
+.implementation-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+/* ============================================================================
+ * 11. Downtime Information
+ * ============================================================================ */
+
+.downtime-info {
+    min-width: 100px;
+}
+
+.estimated-downtime {
+    font-weight: 600;
+    color: var(--siemens-petrol, #009999);
+    margin-bottom: 0.25rem;
+}
+
+.actual-downtime {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+/* ============================================================================
+ * 12. Status Badges
+ * ============================================================================ */
+
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.status-info {
+    /* Container for status badge - no background, badge has its own styling */
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Status badge color variants - applied as .status-badge.status-{variant} */
+.status-badge.status-info {
+    background: var(--siemens-petrol, #009999);
+    color: white;
+}
+
+.status-badge.status-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.status-badge.status-success {
+    background: #10b981;
+    color: white;
+}
+
+.status-badge.status-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.status-badge.status-danger {
+    background: #ef4444;
+    color: white;
+}
+
+/* ============================================================================
+ * 13. Action Buttons
+ * ============================================================================ */
+
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: auto;
+}
+
+/* ============================================================================
+ * 15. Overdue Tasks Section
+ * ============================================================================ */
+
+.overdue-section {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-left: 4px solid #ef4444;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.section-header {
+    margin-bottom: 1rem;
+}
+
+.section-header h3 {
+    color: var(--text-primary, #ffffff);
+    margin: 0;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.overdue-tasks-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.overdue-task-item {
+    background: var(--bg-secondary, #0f0f0f);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.overdue-task-item:hover {
+    border-color: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.overdue-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.overdue-badge {
+    background: #ef4444;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.overdue-task-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.overdue-task-details div strong {
+    color: var(--text-primary, #ffffff);
+    margin-right: 0.5rem;
+}
+
+.overdue-task-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* ============================================================================
+ * 16. Calendar Navigation
+ * ============================================================================ */
+
+.calendar-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-month-display {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+}
+
+.calendar-navigation .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.completed-day {
+    border-left: 4px solid #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.completed-day .day-date {
+    color: #10b981;
+}
+
+.day-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-primary, #333333);
+    text-align: center;
+}
+
+.day-actions .btn {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+/* ============================================================================
+ * Schedule Page Modal Styles - Scoped to avoid conflicts
+ * ============================================================================ */
+
+/* Base Modal Styles - Schedule Page Specific */
+.schedule-page-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(4px);
+    z-index: 11000 !important;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.schedule-page-modal-content {
+    position: relative !important;
+    background: var(--bg-card, #1a1a1a) !important;
+    border: 1px solid var(--border-primary, #333333) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 11001 !important;
+    animation: scheduleModalSlideIn 0.3s ease-out;
+}
+
+.schedule-page-modal-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 1.5rem !important;
+    border-bottom: 1px solid var(--border-primary, #333333) !important;
+    background: var(--bg-secondary, #1a1a1a) !important;
+}
+
+.schedule-page-modal-header h2 {
+    margin: 0 !important;
+    color: var(--text-primary, #ffffff) !important;
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    font-family: 'Siemens Sans', sans-serif !important;
+}
+
+.schedule-page-modal-close {
+    background: none !important;
+    border: none !important;
+    color: var(--text-secondary, #cbd5e1) !important;
+    font-size: 2rem !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 0.25rem !important;
+    transition: all 0.2s ease !important;
+    line-height: 1 !important;
+}
+
+.schedule-page-modal-close:hover {
+    background: var(--bg-hover, #333333) !important;
+    color: var(--text-primary, #ffffff) !important;
+}
+
+.schedule-page-modal-body {
+    padding: 1.5rem !important;
+    color: var(--text-primary, #ffffff) !important;
+}
+
+.schedule-page-modal-footer {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 0.75rem !important;
+    padding: 1.5rem !important;
+    border-top: 1px solid var(--border-primary, #333333) !important;
+    background: var(--bg-secondary, #1a1a1a) !important;
+}
+
+/* Completed Tasks Modal - Special Styling */
+.schedule-page-modal.modal-completed {
+    background: rgba(0, 0, 0, 0.85) !important;
+}
+
+.schedule-page-modal-content.modal-content-completed {
+    border: 2px solid #10b981 !important;
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.3) !important;
+    max-width: 1000px !important;
+}
+
+.schedule-page-modal-content.modal-content-completed .schedule-page-modal-header {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
+    border-bottom: 2px solid #10b981 !important;
+}
+
+.schedule-page-modal-content.modal-content-completed .schedule-page-modal-header h2 {
+    color: #10b981 !important;
+}
+
+.schedule-page-modal-content.modal-content-completed .schedule-page-modal-footer {
+    border-top: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Modal Backdrop - Schedule Page Specific */
+.schedule-modal-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(4px);
+    z-index: 10999 !important;
+}
+
+/* Animation */
+@keyframes scheduleModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================================================
+ * 14. Calendar View
+ * ============================================================================ */
+
+.calendar-container {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.calendar-day {
+    background: var(--bg-secondary, #0f0f0f);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.calendar-day:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-primary, #333333);
+}
+
+.day-date {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.overdue-indicator {
+    color: #ef4444;
+    font-size: 0.875rem;
+}
+
+.calendar-day.overdue-day {
+    border-left: 4px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.overdue-day .day-date {
+    color: #ef4444;
+}
+
+.day-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.task-count {
+    font-size: 0.875rem;
+    color: var(--siemens-petrol, #009999);
+    font-weight: 600;
+}
+
+.downtime-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.status-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.status-item {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-item.scheduled {
+    background: #3b82f6;
+    color: white;
+}
+
+.status-item.in_progress {
+    background: #f59e0b;
+    color: white;
+}
+
+.status-item.completed {
+    background: #10b981;
+    color: white;
+}
+
+.status-item.cancelled {
+    background: #6b7280;
+    color: white;
+}
+
+.status-item.failed {
+    background: #ef4444;
+    color: white;
+}
+
+.impact-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.impact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.impact-item.critical {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.impact-item i {
+    color: var(--siemens-petrol, #009999);
+}
+
+/* ============================================================================
+ * 15. Modal Styling for Task Assignment
+ * ============================================================================ */
+
+.device-selection-container {
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary, #0f0f0f);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.device-selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-primary, #333333);
+    background: var(--bg-tertiary, #222222);
+}
+
+.selected-count {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #cbd5e1);
+    font-weight: 600;
+}
+
+.device-list {
+    padding: 0.5rem;
+}
+
+.device-item {
+    margin-bottom: 0.5rem;
+}
+
+.device-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.device-checkbox:hover {
+    background: var(--bg-hover, #222222);
+}
+
+.device-checkbox input[type="checkbox"] {
+    margin: 0;
+    margin-top: 0.25rem;
+}
+
+.device-info {
+    flex: 1;
+}
+
+.device-name {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin-bottom: 0.25rem;
+}
+
+.device-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.device-details span {
+    background: var(--bg-tertiary, #222222);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.downtime-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.downtime-input-group input {
+    flex: 1;
+}
+
+.form-help {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-primary, #333333);
+}
+
+/* ============================================================================
+ * 16. Responsive Design
+ * ============================================================================ */
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .page-actions {
+        justify-content: center;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .tasks-table {
+        font-size: 0.875rem;
+    }
+
+    .tasks-table th,
+    .tasks-table td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .device-details {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .calendar-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .day-stats {
+        align-items: flex-start;
+    }
+
+    .impact-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .page-title h1 {
+        font-size: 1.5rem;
+    }
+
+    .summary-card {
+        padding: 1rem;
+    }
+
+    .summary-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1.25rem;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+    }
+
+    .tasks-table th,
+    .tasks-table td {
+        padding: 0.5rem 0.25rem;
+    }
+
+    .device-checkbox {
+        padding: 0.5rem;
+    }
+}
+
+/* ============================================================================
+ * 10. Approval Status Badges
+ * ============================================================================ */
+
+.approval-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.approval-badge.pending {
+    background: #f59e0b;
+    color: white;
+}
+
+.approval-badge.approved {
+    background: #10b981;
+    color: white;
+}
+
+.approval-badge.denied {
+    background: #ef4444;
+    color: white;
+}
+
+.approval-badge.not-required {
+    background: #6b7280;
+    color: white;
+}
+
+.approval-contact {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    margin-top: 0.25rem;
+}
+
+/* ============================================================================
+ * 11. Consolidation Opportunities
+ * ============================================================================ */
+
+.consolidation-opportunity {
+    background: #fff3cd;
+    border-left: 4px solid var(--siemens-orange, #ff6b35);
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.375rem;
+}
+
+.consolidation-opportunity h4 {
+    margin: 0 0 0.5rem 0;
+    color: #856404;
+    font-size: 1rem;
+}
+
+.consolidation-opportunity .device-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.consolidation-opportunity .device-name {
+    font-weight: 600;
+    color: #856404;
+}
+
+.consolidation-opportunity .task-count {
+    background: var(--siemens-orange, #ff6b35);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.consolidation-opportunity .downtime-info {
+    font-size: 0.875rem;
+    color: #856404;
+}
+
+.consolidation-opportunity .consolidate-btn {
+    background: var(--siemens-orange, #ff6b35);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.consolidation-opportunity .consolidate-btn:hover {
+    background: #e55a2b;
+}
+
+/* ============================================================================
+ * 12. Grouping Options
+ * ============================================================================ */
+
+.grouping-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    background: var(--bg-secondary, #0f0f0f);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    width: fit-content;
+}
+
+.grouping-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary, #cbd5e1);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.grouping-btn:hover {
+    color: var(--text-primary, #ffffff);
+    background: var(--bg-hover, #222222);
+}
+
+.grouping-btn.active {
+    background: var(--siemens-petrol, #009999);
+    color: white;
+}
+
+/* ============================================================================
+ * 13. Task Group Headers
+ * ============================================================================ */
+
+.task-group-header {
+    background: var(--bg-secondary, #0f0f0f);
+    padding: 1rem;
+    margin: 1rem 0 0.5rem 0;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--siemens-petrol, #009999);
+}
+
+.task-group-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin: 0 0 0.25rem 0;
+}
+
+.task-group-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #cbd5e1);
+    margin: 0;
+}
+
+.task-group-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.task-group-stat {
+    color: var(--text-muted, #94a3b8);
+}
+
+.task-group-stat .value {
+    color: var(--text-primary, #ffffff);
+    font-weight: 600;
+}
+
+/* ============================================================================
+ * 14. Consolidation Panel
+ * ============================================================================ */
+
+.consolidation-panel {
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-primary, #333333);
+    background: var(--bg-secondary, #0f0f0f);
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: var(--text-primary, #ffffff);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.panel-header h3 i {
+    color: var(--siemens-orange, #ff6b35);
+    margin-right: 0.5rem;
+}
+
+.btn-close-panel {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.btn-close-panel:hover {
+    color: var(--text-primary, #ffffff);
+    background: var(--bg-hover, #333333);
+}
+
+.consolidation-content {
+    padding: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.consolidation-opportunity {
+    background: #fff3cd;
+    border-left: 4px solid var(--siemens-orange, #ff6b35);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.375rem;
+    color: #856404;
+}
+
+.consolidation-opportunity:last-child {
+    margin-bottom: 0;
+}
+
+.consolidation-opportunity .device-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.consolidation-opportunity .device-name {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.consolidation-opportunity .task-count {
+    background: var(--siemens-orange, #ff6b35);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.consolidation-opportunity .downtime-info {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.consolidation-opportunity .time-range {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.consolidation-opportunity .location-info {
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: #6c5ce7;
+}
+
+.consolidation-opportunity .location-info i {
+    margin-right: 0.25rem;
+}
+
+.consolidation-opportunity .department {
+    color: #856404;
+}
+
+.consolidation-actions {
+    text-align: right;
+}
+
+.consolidate-btn {
+    background: var(--siemens-orange, #ff6b35);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+}
+
+.consolidate-btn:hover {
+    background: #e55a2b;
+}
+
+.consolidate-btn i {
+    margin-right: 0.25rem;
+}
+
+/* ============================================================================
+ * 8. Consolidated Column Styles
+ * ============================================================================ */
+
+/* Schedule & Downtime Column */
+.schedule-downtime-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.schedule-downtime-info .scheduled-date {
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    font-size: 0.875rem;
+}
+
+.schedule-downtime-info .implementation-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.schedule-downtime-info .downtime-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--border-primary, #333333);
+}
+
+.schedule-downtime-info .downtime-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+}
+
+.schedule-downtime-info .estimated-downtime {
+    font-weight: 600;
+    color: var(--siemens-orange, #ff6b35);
+    font-size: 0.875rem;
+}
+
+.schedule-downtime-info .actual-downtime {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+/* Approval Status Column */
+.approval-status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.approval-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.approval-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+    min-width: 50px;
+}
+
+.approval-status-info .approval-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.approval-status-info .approval-contact {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--border-primary, #333333);
+}
+
+/* Device & Location Column - Enhanced */
+.device-info .device-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    margin-top: 0.25rem;
+}
+
+.device-info .device-location,
+.device-info .device-department {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.device-info .device-criticality {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Responsive adjustments for consolidated columns */
+@media (max-width: 1200px) {
+    .schedule-downtime-info .downtime-info {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    
+    .approval-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .approval-label {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .schedule-downtime-info {
+        gap: 0.125rem;
+    }
+    
+    .approval-status-info {
+        gap: 0.125rem;
+    }
+    
+    .device-info .device-details {
+        gap: 0.0625rem;
+    }
+}
+
+/* ============================================================================
+ * 9. Action Dropdown Styles (Matching Assets Page)
+ * ============================================================================ */
+
+.action-dropdown {
+    position: relative;
+    display: inline-block;
+    overflow: visible;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.dropdown-trigger:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    min-width: 180px;
+    display: none;
+    overflow: hidden;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-hover);
+}
+
+.dropdown-item i {
+    width: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.dropdown-item span {
+    flex: 1;
+}
+
+/* Action Icon Colors */
+.dropdown-item.view i {
+    color: var(--siemens-petrol);
+}
+
+.dropdown-item.edit i {
+    color: var(--info-blue);
+}
+
+.dropdown-item.delete i {
+    color: var(--error-red);
+}
+
+/* Hover effects for action icons */
+.dropdown-item.view:hover i {
+    color: var(--siemens-petrol-dark);
+}
+
+.dropdown-item.edit:hover i {
+    color: #0284c7;
+}
+
+.dropdown-item.delete:hover i {
+    color: #dc2626;
+}
+
+/* Fix table cell overflow for dropdown visibility */
+.tasks-table td {
+    overflow: visible;
+}
+
+.tasks-table-container {
+    overflow: visible;
+}
+
+/* Specifically fix the action column to allow dropdown visibility */
+.tasks-table td:last-child {
+    overflow: visible !important;
+    position: relative;
+}
+
+/* ============================================================================
+ * 8. Notification System
+ * ============================================================================ */
+
+.notification {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 11004 !important;
+    background: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-primary, #333333);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    max-width: 400px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification-content i {
+    font-size: 1.25rem;
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-green, #10b981);
+}
+
+.notification-success .notification-content i {
+    color: var(--success-green, #10b981);
+}
+
+.notification-error {
+    border-left: 4px solid var(--error-red, #ef4444);
+}
+
+.notification-error .notification-content i {
+    color: var(--error-red, #ef4444);
+}
+
+.notification-info {
+    border-left: 4px solid var(--siemens-petrol, #009999);
+}
+
+.notification-info .notification-content i {
+    color: var(--siemens-petrol, #009999);
+}
+
+        .notification-content span {
+            color: var(--text-primary, #ffffff);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Task Selection Interface */
+        .consolidation-opportunity {
+            background: var(--bg-card, #1a1a1a);
+            border: 1px solid var(--border-primary, #333333);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .opportunity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-primary, #333333);
+        }
+
+        .asset-info .asset-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary, #ffffff);
+            margin-bottom: 0.25rem;
+        }
+
+        .asset-info .task-count {
+            font-size: 0.875rem;
+            color: var(--text-secondary, #cbd5e1);
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary, #cbd5e1);
+        }
+
+        .location-info i {
+            color: var(--siemens-petrol, #009999);
+        }
+
+        .task-selection {
+            margin-bottom: 1rem;
+        }
+
+        .selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .select-all-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-primary, #ffffff);
+        }
+
+        .select-all-checkbox input[type="checkbox"] {
+            display: none;
+        }
+
+        .select-all-checkbox .checkmark {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-secondary, #555555);
+            border-radius: 3px;
+            background: var(--bg-card, #1a1a1a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .select-all-checkbox input[type="checkbox"]:checked + .checkmark {
+            background: var(--siemens-petrol, #009999);
+            border-color: var(--siemens-petrol, #009999);
+        }
+
+        .select-all-checkbox input[type="checkbox"]:checked + .checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .time-range {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary, #cbd5e1);
+        }
+
+        .time-range i {
+            color: var(--siemens-orange, #ff6b35);
+        }
+
+        .time-spread {
+            color: var(--text-muted, #94a3b8);
+            font-size: 0.75rem;
+        }
+
+        .task-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-primary, #333333);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-primary, #333333);
+            transition: background-color 0.2s ease;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-item:hover {
+            background: var(--bg-hover, #333333);
+        }
+
+        .task-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .task-checkbox input[type="checkbox"] {
+            display: none;
+        }
+
+        .task-checkbox .checkmark {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-secondary, #555555);
+            border-radius: 3px;
+            background: var(--bg-card, #1a1a1a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .task-checkbox input[type="checkbox"]:checked + .checkmark {
+            background: var(--siemens-petrol, #009999);
+            border-color: var(--siemens-petrol, #009999);
+        }
+
+        .task-checkbox input[type="checkbox"]:checked + .checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .task-details {
+            flex: 1;
+        }
+
+        .task-type {
+            font-weight: 600;
+            color: var(--text-primary, #ffffff);
+            margin-bottom: 0.25rem;
+            text-transform: capitalize;
+        }
+
+        .task-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .task-date {
+            color: var(--text-secondary, #cbd5e1);
+        }
+
+        .task-duration {
+            color: var(--siemens-orange, #ff6b35);
+            font-weight: 500;
+        }
+
+        .task-package {
+            color: var(--siemens-petrol, #009999);
+            background: rgba(0, 153, 153, 0.1);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .task-cve {
+            color: var(--error-red, #ef4444);
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .consolidation-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-primary, #333333);
+        }
+
+        .consolidate-selected-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--siemens-petrol, #009999);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .consolidate-selected-btn:disabled {
+            background: var(--bg-secondary, #0f0f0f);
+            color: var(--text-muted, #94a3b8);
+            cursor: not-allowed;
+        }
+
+        .consolidate-selected-btn:not(:disabled):hover {
+            background: var(--siemens-petrol-dark, #007777);
+            transform: translateY(-1px);
+        }
+
+        .selected-count {
+            font-size: 0.875rem;
+            color: var(--text-secondary, #cbd5e1);
+        }
+

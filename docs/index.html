@@ -1,0 +1,281 @@
+<!--
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+*/
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Documentation</title>
+    <link rel="stylesheet" href="/assets/css/brand-variables.css">
+    <link rel="stylesheet" href="/assets/css/brand-components.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-family);
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--siemens-petrol) 0%, var(--siemens-petrol-dark) 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .nav-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-card);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--siemens-petrol);
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        
+        .nav-card h3 {
+            color: var(--siemens-petrol);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .nav-card p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        .nav-card .icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--siemens-petrol);
+        }
+        
+        
+        .quick-links {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-card);
+        }
+        
+        .quick-links h2 {
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .link-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .link-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--siemens-petrol);
+            transform: translateY(-2px);
+        }
+        
+        .link-item a {
+            color: var(--siemens-petrol);
+            text-decoration: none;
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .link-item a:hover {
+            color: var(--siemens-petrol-dark);
+            text-decoration: underline;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-primary);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: var(--success-green);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: var(--font-weight-semibold);
+            margin-left: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .nav {
+                grid-template-columns: 1fr;
+            }
+            
+            
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Documentation</h1>
+            <p>Device Assessment and Vulnerability Exposure - Complete Documentation</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/pages/help/quick-start.php" class="nav-card">
+                <div class="icon">🚀</div>
+                <h3>Quick Start Guide</h3>
+                <p>Get up and running quickly with our step-by-step quick start guide. Perfect for new users who want to start using  immediately.</p>
+            </a>
+            
+            <a href="/pages/help/user-guide.php" class="nav-card">
+                <div class="icon">👤</div>
+                <h3>User Guide</h3>
+                <p>Comprehensive user documentation covering all features and functionality. Learn how to effectively use  for your organization.</p>
+            </a>
+            
+            <a href="/pages/help/administrator-guide.php" class="nav-card">
+                <div class="icon">⚙️</div>
+                <h3>Administrator Guide</h3>
+                <p>Complete administrator documentation for system management, user administration, security configuration, and maintenance procedures.</p>
+            </a>
+            
+            <a href="/docs/swagger-ui.html" class="nav-card">
+                <div class="icon">🔌</div>
+                <h3>API Reference</h3>
+                <p>Comprehensive API documentation for developers. Learn how to integrate  with your existing systems and automate workflows.</p>
+            </a>
+            
+            
+            <a href="vulnerability-kev-integration.php" class="nav-card">
+                <div class="icon">🔍</div>
+                <h3>Vulnerability Management</h3>
+                <p>Comprehensive vulnerability scanning, KEV integration, and security assessment guide for medical device management.</p>
+            </a>
+        </div>
+        
+        
+        <div class="quick-links">
+            <h2>Quick Links</h2>
+            <div class="links-grid">
+                <div class="link-item">
+                    <a href="/pages/help/quick-start.php">Getting Started</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/user-guide.php#asset-management">Asset Management</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/user-guide.php#device-mapping">Device Mapping</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/user-guide.php#vulnerability-management">Vulnerability Management</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/user-guide.php#recall-management">Recall Management</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/user-guide.php#reporting">Reporting</a>
+                </div>
+                <div class="link-item">
+                    <a href="/docs/swagger-ui.html">API Documentation</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/administrator-guide.php#troubleshooting">Troubleshooting</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/administrator-guide.php#backup-and-recovery">Backup & Recovery</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/administrator-guide.php#security-configuration">Security</a>
+                </div>
+                <div class="link-item">
+                    <a href="/pages/help/administrator-guide.php#monitoring-and-logging">Monitoring</a>
+                </div>
+                
+                
+                <div class="quick-links">
+                    <h3>Vulnerability Management</h3>
+                    <a href="vulnerability-kev-integration.php">KEV Integration</a>
+                    <a href="cisa-kev-integration.php">CISA KEV Integration</a>
+                    <a href="epss-integration.php">EPSS Integration</a>
+                    <a href="sbom-evaluation-service.php">SBOM Evaluation</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong> Documentation</strong> - Version 1.0.0</p>
+            <p>Last Updated: January 2024 | For Technical Support: Contact your system administrator</p>
+        </div>
+    </div>
+</body>
+</html>

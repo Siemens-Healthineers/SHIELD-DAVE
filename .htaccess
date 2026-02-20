@@ -1,0 +1,181 @@
+# /*
+# * SPDX-License-Identifier: AGPL-3.0-or-later
+# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+# */
+# Device Assessment and Vulnerability Exposure (DAVE) - Apache Configuration
+# URL rewriting and security configuration
+
+# Enable rewrite engine
+RewriteEngine On
+
+# CORS Headers - Allow all origins for API access
+<IfModule mod_headers.c>
+    # Always set CORS headers for all requests (including OPTIONS)
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-API-Key, X-Requested-With"
+    Header always set Access-Control-Max-Age "86400"
+    Header always set Access-Control-Expose-Headers "Content-Length, Content-Type"
+    
+    # Private Network Access (PNA) - Allow public sites to access localhost
+    # This allows testing from online Swagger editors
+    Header always set Access-Control-Allow-Private-Network "true"
+</IfModule>
+
+# Handle OPTIONS preflight requests - respond with 204 No Content
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ - [R=204,L]
+</IfModule>
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Force HTTPS (uncomment in production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Redirect root to index.php
+DirectoryIndex index.php index.html
+
+# Disable automatic directory slash redirect for API routes
+# This prevents POST->GET conversion on API endpoints
+DirectorySlash Off
+
+# Handle API routes - route ALL API requests through main router (even if file exists)
+# But don't rewrite if we're already requesting index.php to avoid loops
+# Use DPI flag to disable PATH_INFO and prevent directory checks
+RewriteCond %{REQUEST_URI} !^/api/v1/index\.php(?:\?.*)?$
+RewriteRule ^api/v1/(.*)$ /api/v1/index.php [QSA,L,DPI]
+
+# Handle page routes - pass through if file exists
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^pages/(.*)$ - [L]
+
+# Handle asset routes - pass through if file exists
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^assets/(.*)$ - [L]
+
+# Handle download routes - pass through if file exists in uploads
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^downloads/(.*)$ - [L]
+
+# Handle documentation routes - pass through if file exists
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^docs/(.*)$ - [L]
+
+# Default route - redirect to index.php
+RewriteCond %{REQUEST_URI} !^/index\.php$
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !^/pages/
+RewriteCond %{REQUEST_URI} !^/assets/
+RewriteCond %{REQUEST_URI} !^/docs/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.php [QSA,L]
+
+# Security: Deny access to sensitive files
+<Files "*.php">
+    <RequireAll>
+        Require all granted
+    </RequireAll>
+</Files>
+
+<Files "*.sql">
+    Require all denied
+</Files>
+
+<Files "*.log">
+    Require all denied
+</Files>
+
+<Files ".htaccess">
+    Require all denied
+</Files>
+
+<Files "*.env">
+    Require all denied
+</Files>
+
+<Files "*.config">
+    Require all denied
+</Files>
+
+# Deny access to config directory
+RewriteRule ^config/ - [F,L]
+
+# Deny access to logs directory
+RewriteRule ^logs/ - [F,L]
+
+# Deny access to temp directory
+RewriteRule ^temp/ - [F,L]
+
+# Deny access to cache directory
+RewriteRule ^cache/ - [F,L]
+
+# Deny access to includes directory
+RewriteRule ^includes/ - [F,L]
+
+# Cache control for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+</IfModule>
+
+# Compression for better performance
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Error pages
+ErrorDocument 404 /pages/404.php
+ErrorDocument 403 /pages/403.php
+ErrorDocument 500 /pages/500.php
+
+# PHP settings
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 50M
+    php_value post_max_size 50M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+</IfModule>
+
+# Disable server signature
+ServerSignature Off
+
+# Disable directory browsing
+Options -Indexes
+
+# Prevent access to backup files
+<FilesMatch "\.(bak|backup|old|orig|save|swp|tmp)$">
+    Require all denied
+</FilesMatch>
+
+# Prevent access to version control files
+<FilesMatch "\.(git|svn|hg)">
+    Require all denied
+</FilesMatch>

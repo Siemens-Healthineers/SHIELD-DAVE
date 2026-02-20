@@ -1,0 +1,24 @@
+# /*
+# * SPDX-License-Identifier: AGPL-3.0-or-later
+# * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
+# */
+
+# Risk Priority Service - Runs daily at 2:00 AM
+# Auto-dismisses remediated items and refreshes priority calculations
+0 2 * * * /usr/bin/python3 /var/www/html/services/risk_priority_service.py >> /var/www/html/logs/risk_priority_cron.log 2>&1
+
+# Risk Priority Service - Refresh materialized view every 4 hours
+0 */4 * * * /usr/bin/python3 -c "from risk_priority_service import refresh_materialized_view; refresh_materialized_view()" >> /var/www/html/logs/risk_priority_refresh.log 2>&1
+
+# KEV Matching - Runs daily at 1:30 AM (30 minutes after KEV sync at 1:00 AM)
+# Matches existing vulnerabilities with KEV catalog and recalculates risk scores
+30 1 * * * /usr/bin/php /var/www/html/scripts/match-kev-vulnerabilities.php >> /var/www/html/logs/kev_matching.log 2>&1
+
+# To install this cron configuration:
+# sudo crontab -u www-data /var/www/html/services/risk_priority.cron
+#
+# Or append to existing crontab:
+# sudo crontab -u www-data -l > /tmp/current_cron
+# cat /var/www/html/services/risk_priority.cron >> /tmp/current_cron
+# sudo crontab -u www-data /tmp/current_cron
+
