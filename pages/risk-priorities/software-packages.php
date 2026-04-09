@@ -615,15 +615,25 @@ if (!$stats) {
             
             try {
                 const response = await fetch(`/api/v1/software-packages/risk-priorities.php?${params}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error:', response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                }
+                
                 const result = await response.json();
+                console.log('API Response:', result);
                 
                 if (result.success) {
                     renderPackages(result.data);
                     renderPagination(result.pagination);
                 } else {
-                    showError(result.error || 'Failed to load packages');
+                    const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
+                    showError(errorMsg || 'Failed to load packages');
                 }
             } catch (error) {
+                console.error('Fetch error:', error);
                 showError('Error loading packages: ' + error.message);
             }
         }

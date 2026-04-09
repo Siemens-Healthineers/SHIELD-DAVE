@@ -117,8 +117,8 @@ try {
 
 
 // Check file system
-$uploads_dir = '/var/www/html/uploads';
-$logs_dir = '/var/www/html/logs';
+$uploads_dir = _ROOT . '/uploads';
+$logs_dir = _ROOT . '/logs';
 if (is_writable($uploads_dir) && is_writable($logs_dir)) {
     $system_health['file_system'] = 'healthy';
 } else {
@@ -362,6 +362,25 @@ if (is_writable($uploads_dir) && is_writable($logs_dir)) {
                         </div>
                     </a>
 
+                    <a href="/pages/admin/netdisco.php" class="admin-card">
+                        <div class="admin-card-icon">
+                            <i class="fa-solid fa-n"></i>
+                        </div>
+                        <div class="admin-card-content">
+                            <h3>NetDisco Integration</h3>
+                            <p>Manage NetDisco integration settings</p>
+                        </div>
+                    </a>
+
+                    <a href="/pages/admin/blueflow.php" class="admin-card">
+                        <div class="admin-card-icon">
+                            <i class="fa-solid fa-b"></i>
+                        </div>
+                        <div class="admin-card-content">
+                            <h3>BlueFlow Integration</h3>
+                            <p>Manage BlueFlow integration settings</p>
+                        </div>
+                    </a>
                 </div>
             </section>
 

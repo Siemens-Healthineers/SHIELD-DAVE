@@ -8,6 +8,10 @@
 # Enable rewrite engine
 RewriteEngine On
 
+# Disable directory slash redirect - THIS IS CRITICAL for POST requests
+# Without this, Apache will redirect /api/v1/assets -> /api/v1/assets/ (POST becomes GET)
+DirectorySlash Off
+
 # CORS Headers - Allow all origins for API access
 <IfModule mod_headers.c>
     # Always set CORS headers for all requests (including OPTIONS)
@@ -41,15 +45,10 @@ Header always set Referrer-Policy "strict-origin-when-cross-origin"
 # Redirect root to index.php
 DirectoryIndex index.php index.html
 
-# Disable automatic directory slash redirect for API routes
-# This prevents POST->GET conversion on API endpoints
-DirectorySlash Off
-
-# Handle API routes - route ALL API requests through main router (even if file exists)
-# But don't rewrite if we're already requesting index.php to avoid loops
-# Use DPI flag to disable PATH_INFO and prevent directory checks
-RewriteCond %{REQUEST_URI} !^/api/v1/index\.php(?:\?.*)?$
-RewriteRule ^api/v1/(.*)$ /api/v1/index.php [QSA,L,DPI]
+# Handle API routes - MUST come before directory checks
+# Remove the !-f and !-d conditions to prevent Apache from doing directory redirects
+# Use END flag to stop all processing immediately (Apache 2.4+)
+RewriteRule ^api/v1/?(.*)$ /api/v1/index.php/$1 [QSA,END]
 
 # Handle page routes - pass through if file exists
 RewriteCond %{REQUEST_FILENAME} -f [OR]

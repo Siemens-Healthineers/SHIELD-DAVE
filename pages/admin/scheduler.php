@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../services/shell_command_utilities.php';
 
 // Require authentication and admin permission
 $auth->requireAuth();
@@ -30,7 +31,78 @@ if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
     
     switch ($_GET['ajax']) {
+        
+        case 'check_jobs':
+            $input = json_decode(file_get_contents('php://input'), true);
             
+            if (!$input || !isset($input['jobs'])) {
+                echo json_encode(['success' => false, 'error' => 'No jobs provided']);
+                exit;
+            }
+            
+            $results = [];
+            
+            foreach ($input['jobs'] as $job) {
+                if (!isset($job['pid']) || !isset($job['log_file'])) {
+                    $results[] = [
+                        'job_id' => $job['job_id'] ?? null,
+                        'status' => 'error',
+                        'error' => 'Invalid job data'
+                    ];
+                    continue;
+                }
+                
+                // Check if process is still running
+                $isRunning = ShellCommandUtilities::isProcessRunning($job['pid']);
+                
+                if ($isRunning) {
+                    $results[] = [
+                        'job_id' => $job['job_id'],
+                        'type' => $job['type'] ?? 'unknown',
+                        'pid' => $job['pid'],
+                        'status' => 'running'
+                    ];
+                } else {
+                    // Process completed, get results from log file
+                    $output = ShellCommandUtilities::getCommandOutput($job['log_file']);
+                    
+                    if ($output) {
+                        $jobType = $job['type'] ?? 'unknown';
+                        $success = true;
+                        
+                        // Check for errors in output
+                        if (strpos($output, 'ERROR') !== false || 
+                            strpos($output, 'Fatal error') !== false || 
+                            strpos($output, 'fatal') !== false) {
+                            $success = false;
+                        }
+                        
+                        $results[] = [
+                            'job_id' => $job['job_id'],
+                            'type' => $jobType,
+                            'status' => $success ? 'completed' : 'failed',
+                            'data' => [
+                                'output' => $output,
+                                'task_name' => $job['task_name'] ?? 'Unknown'
+                            ],
+                            'error' => $success ? null : 'Task completed with errors'
+                        ];
+                    } else {
+                        $results[] = [
+                            'job_id' => $job['job_id'],
+                            'type' => $job['type'] ?? 'unknown',
+                            'status' => 'failed',
+                            'error' => 'No output from command'
+                        ];
+                    }
+                }
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'results' => $results
+            ]);
+            exit;
             
         case 'run_task':
             $task = $_POST['task'] ?? '';
@@ -43,73 +115,72 @@ if (isset($_GET['ajax'])) {
             // Route to appropriate script based on task
             switch ($task) {
                 case 'health_check':
-                    $command = "cd /var/www/html && php scripts/health-check.php";
+                    $command = "cd " . _ROOT . " && php scripts/health-check.php";
                     break;
                 case 'data_consistency_check':
-                    $command = "cd /var/www/html && php scripts/validate-data-consistency.php";
+                    $command = "cd " . _ROOT . " && php scripts/validate-data-consistency.php";
                     break;
                 case 'process_sbom_queue':
-                    $command = "cd /var/www/html && php services/process-sbom-queue.php";
+                    $command = "cd " . _ROOT . " && php services/process-sbom-queue.php";
                     break;
                 case 'analyze_assets_oui':
                     // Run in background and redirect output to log file
-                    $logFile = '/var/www/html/logs/oui_analysis_' . date('Y-m-d_H-i-s') . '.log';
-                    $command = "cd /var/www/html && nohup php scripts/analyze-assets-oui.php > " . escapeshellarg($logFile) . " 2>&1 &";
-                    shell_exec($command);
+                    $logFile = _ROOT . '/logs/oui_analysis_' . date('Y-m-d_H-i-s') . '.log';
+                    $command = "cd " . _ROOT . " && php scripts/analyze-assets-oui.php";
+                    $result = ShellCommandUtilities::executeShellCommand($command, [
+                        'blocking' => false,
+                        'log_file' => $logFile
+                    ]);
                     // Return immediately - task is running in background
                     echo json_encode([
-                        'success' => true, 
-                        'message' => "OUI analysis task started in background.\n\nLog file: " . basename($logFile) . "\n\nYou can check the logs directory for progress updates.",
+                        'success' => $result['success'], 
+                        'message' => $result['success'] ? 
+                            "OUI analysis task started in background.\n\nLog file: " . basename($logFile) . "\n\nYou can check the logs directory for progress updates." :
+                            "Failed to start OUI analysis: " . ($result['error'] ?? 'Unknown error'),
                         'background' => true,
-                        'log_file' => basename($logFile)
+                        'log_file' => basename($logFile),
+                        'pid' => $result['pid'] ?? null
                     ]);
                     exit;
                 case 'recalculate_risk_scores':
-                    $command = "cd /var/www/html && php scripts/recalculate-risk-scores.php";
+                    $command = "cd " . _ROOT . " && php scripts/recalculate-risk-scores.php";
                     break;
                 case 'match_kev_vulnerabilities':
-                    $command = "cd /var/www/html && php scripts/match-kev-vulnerabilities.php";
+                    $command = "cd " . _ROOT . " && php scripts/match-kev-vulnerabilities.php";
                     break;
                 default:
                     echo json_encode(['success' => false, 'message' => 'Unknown task: ' . $task]);
                     exit;
             }
             
-            $output = shell_exec($command . ' 2>&1');
+            // Execute task in background (non-blocking)
+            $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'task_' . $task . '_' . uniqid() . '.log';
+            $result = ShellCommandUtilities::executeShellCommand($command, [
+                'blocking' => false,
+                'log_file' => $logFile
+            ]);
             
-            // Parse output for success/error indicators
-            $success = true;
-            $message = $output;
-            
-            // Check for fatal errors
-            if (strpos($output, 'ERROR') !== false || strpos($output, 'Fatal error') !== false || strpos($output, 'fatal') !== false) {
-                $success = false;
+            if (!$result['success']) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to start task: ' . ($result['error'] ?? 'Unknown error')
+                ]);
+                exit;
             }
             
-            // For OUI analysis, try to extract statistics
-            if ($task === 'analyze_assets_oui') {
-                $processed = 0;
-                $updated = 0;
-                $skipped = 0;
-                $errors = 0;
-                
-                if (preg_match('/Total processed: (\d+)/', $output, $matches)) {
-                    $processed = intval($matches[1]);
-                }
-                if (preg_match('/Manufacturers found and updated: (\d+)/', $output, $matches)) {
-                    $updated = intval($matches[1]);
-                }
-                if (preg_match('/No manufacturer found: (\d+)/', $output, $matches)) {
-                    $skipped = intval($matches[1]);
-                }
-                if (preg_match('/Errors: (\d+)/', $output, $matches)) {
-                    $errors = intval($matches[1]);
-                }
-                
-                // Success if: updated some assets, OR processed with no errors, OR no assets needed processing (all have manufacturers)
-                if ($updated > 0 || ($processed > 0 && $errors === 0) || ($processed === 0 && stripos($output, 'No assets need manufacturer lookup') !== false)) {
-                    $success = true;
-                    if ($processed === 0) {
+            // Return job info for polling
+            echo json_encode([
+                'success' => true,
+                'message' => 'Task started in background',
+                'job' => [
+                    'job_id' => uniqid('task_'),
+                    'pid' => $result['pid'],
+                    'log_file' => $result['log_file'],
+                    'status' => 'running',
+                    'type' => 'scheduled_task',
+                    'task_name' => $task
+                ]
+            ]);
                         $message = "OUI Analysis completed successfully.\n\nAll assets already have manufacturer information. No lookups needed.";
                     } else {
                         $message = "OUI Analysis completed successfully. Processed: {$processed}, Updated: {$updated}, Not Found: {$skipped}, Errors: {$errors}\n\n" . $output;
@@ -202,32 +273,33 @@ if (isset($_GET['ajax'])) {
             exit;
             
         case 'recalculate_remediation_actions':
-            $command = "cd /var/www/html && php services/vulnerability-monitor.php";
-            $output = shell_exec($command . ' 2>&1');
+            $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'remediation_calc_' . uniqid() . '.log';
+            $command = "cd " . _ROOT . " && php services/vulnerability-monitor.php";
+            $result = ShellCommandUtilities::executeShellCommand($command, [
+                'blocking' => false,
+                'log_file' => $logFile
+            ]);
             
-            // Parse the output to extract results
-            $created = 0;
-            $errors = 0;
-            $total = 0;
-            
-            if (preg_match('/Created: (\d+) remediation actions/', $output, $matches)) {
-                $created = intval($matches[1]);
-            }
-            if (preg_match('/Errors: (\d+)/', $output, $matches)) {
-                $errors = intval($matches[1]);
-            }
-            if (preg_match('/Total processed: (\d+)/', $output, $matches)) {
-                $total = intval($matches[1]);
+            if (!$result['success']) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to start remediation recalculation: ' . ($result['error'] ?? 'Unknown error')
+                ]);
+                exit;
             }
             
-            // Refresh the action_priority_view materialized view to ensure it includes new/updated actions
-            try {
-                $db = DatabaseConfig::getInstance();
-                $db->getConnection()->exec("REFRESH MATERIALIZED VIEW action_priority_view");
-            } catch (Exception $e) {
-                error_log("Failed to refresh action_priority_view after recalculation: " . $e->getMessage());
-                // Don't fail the entire operation if refresh fails
-            }
+            // Return job info for polling
+            echo json_encode([
+                'success' => true,
+                'message' => 'Remediation recalculation started in background',
+                'job' => [
+                    'job_id' => uniqid('remediation_'),
+                    'pid' => $result['pid'],
+                    'log_file' => $result['log_file'],
+                    'status' => 'running',
+                    'type' => 'remediation_recalc'
+                ]
+            ]);
             
             if ($created > 0 || $errors == 0) {
                 echo json_encode([

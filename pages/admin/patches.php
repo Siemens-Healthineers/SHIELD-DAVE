@@ -476,9 +476,18 @@ if ($action === 'schedule' && $patchId) {
                                     echo '<button class="btn btn-warning btn-sm" onclick="schedulePatch(\'' . $patch['patch_id'] . '\')">';
                                     echo '<i class="fas fa-calendar-plus"></i> Schedule';
                                     echo '</button>';
-                                    echo '<button class="btn btn-danger btn-sm" onclick="deletePatch(\'' . $patch['patch_id'] . '\')">';
-                                    echo '<i class="fas fa-trash"></i> Delete';
-                                    echo '</button>';
+                                    
+                                    // Check if patch is linked to remediations
+                                    $remediationCount = $patch['remediation_count'] ?? 0;
+                                    if ($remediationCount > 0) {
+                                        echo '<button class="btn btn-danger btn-sm" disabled title="Cannot delete: linked to ' . $remediationCount . ' remediation(s)" style="opacity: 0.5; cursor: not-allowed;">';
+                                        echo '<i class="fas fa-trash"></i> Delete';
+                                        echo '</button>';
+                                    } else {
+                                        echo '<button class="btn btn-danger btn-sm" onclick="deletePatch(\'' . $patch['patch_id'] . '\')">';
+                                        echo '<i class="fas fa-trash"></i> Delete';
+                                        echo '</button>';
+                                    }
                                     echo '</div>';
                                     echo '</div>';
                                     echo '<div class="patch-meta">';
@@ -552,7 +561,7 @@ if ($action === 'schedule' && $patchId) {
                     </div>
                     <div class="wizard-step" data-step="2">
                         <div class="step-number">2</div>
-                        <div class="step-label">CVE Selection</div>
+                        <div class="step-label">CVE Selection (Optional)</div>
                     </div>
                     <div class="wizard-step" data-step="3">
                         <div class="step-number">3</div>
@@ -577,11 +586,13 @@ if ($action === 'schedule' && $patchId) {
                                 <label class="form-label">Patch Type <span style="color: #ef4444;">*</span></label>
                                 <select name="patch_type" class="form-select" required>
                                     <option value="">Select Type...</option>
-                                    <option value="Software Update">Software Update</option>
-                                    <option value="Firmware">Firmware Update</option>
-                                    <option value="Configuration">Configuration Change</option>
+                                    <option value="Source">Source</option>
+                                    <option value="Binary">Binary</option>
+                                    <option value="Firmware">Firmware</option>
+                                    <option value="Emulator">Emulator</option>
+                                    <option value="Documentation">Documentation</option>
+                                    <option value="Configuration">Configuration</option>
                                     <option value="Security Patch">Security Patch</option>
-                                    <option value="Hotfix">Hotfix</option>
                                 </select>
                             </div>
                             
@@ -664,7 +675,7 @@ if ($action === 'schedule' && $patchId) {
                     <div class="wizard-content" data-step="2" style="display: none;">
                         <div class="form-section">
                             <h2 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary, #ffffff); margin-bottom: 1.5rem;">
-                                Select CVEs to Resolve
+                                Select CVEs to Resolve <span style="color: var(--text-secondary, #cbd5e1); font-size: 0.9rem; font-weight: 400;">(Optional)</span>
                             </h2>
                             
                             <div id="cve-selector">
@@ -1039,7 +1050,22 @@ if ($action === 'schedule' && $patchId) {
                 const result = await response.json();
                 
                 if (result.success && result.data.length > 0) {
-                    container.innerHTML = result.data.map(patch => `
+                    container.innerHTML = result.data.map(patch => {
+                        // Validate patch_id exists
+                        if (!patch.patch_id) {
+                            console.error('Patch missing patch_id:', patch);
+                            return '';
+                        }
+                        
+                        // Check if patch is linked to remediations
+                        const remediationCount = patch.remediation_count || 0;
+                        const canDelete = remediationCount === 0;
+                        const deleteButtonDisabled = canDelete ? '' : 'disabled';
+                        const deleteButtonStyle = canDelete ? '' : 'opacity: 0.5; cursor: not-allowed;';
+                        const deleteButtonTitle = canDelete ? '' : `title="Cannot delete: linked to ${remediationCount} remediation(s)"`;
+                        const deleteButtonOnclick = canDelete ? `onclick="deletePatch('${patch.patch_id}')"` : '';
+                        
+                        return `
                         <div class="patch-card">
                             <div class="patch-header">
                                 <div>
@@ -1059,7 +1085,7 @@ if ($action === 'schedule' && $patchId) {
                             <button class="btn btn-warning btn-sm" onclick="schedulePatch('${patch.patch_id}')">
                                 <i class="fas fa-calendar-plus"></i> Schedule
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="deletePatch('${patch.patch_id}')">
+                            <button class="btn btn-danger btn-sm" ${deleteButtonDisabled} ${deleteButtonTitle} ${deleteButtonOnclick} style="${deleteButtonStyle}">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>
@@ -1088,7 +1114,7 @@ if ($action === 'schedule' && $patchId) {
                                 ${escapeHtml(patch.description || '').substring(0, 150)}${patch.description && patch.description.length > 150 ? '...' : ''}
                             </div>
                         </div>
-                    `).join('');
+                    `;}).join('');
                 } else {
                     container.innerHTML = `
                         <div style="text-align: center; padding: 3rem; background: var(--bg-card, #1a1a1a); border-radius: 0.75rem; border: 1px dashed var(--border-primary, #333333);">
@@ -1156,10 +1182,7 @@ if ($action === 'schedule' && $patchId) {
                 updateWizardDisplay();
                 loadCVEsForSelection();
             } else if (currentStep === 2) {
-                if (selectedCVEs.length === 0) {
-                    showNotification('No CVEs selected. Please select at least one CVE to continue.', 'error');
-                        return;
-                }
+                // CVE selection is now optional - proceed to review
                 currentStep = 3;
                 updateWizardDisplay();
                 showReview();
@@ -2045,11 +2068,13 @@ if ($action === 'schedule' && $patchId) {
                     <div class="form-group">
                         <label class="form-label">Patch Type <span style="color: #ef4444;">*</span></label>
                         <select name="patch_type" class="form-select" required>
-                            <option value="Software Update" ${patch.patch_type === 'Software Update' ? 'selected' : ''}>Software Update</option>
-                            <option value="Firmware" ${patch.patch_type === 'Firmware' ? 'selected' : ''}>Firmware Update</option>
-                            <option value="Configuration" ${patch.patch_type === 'Configuration' ? 'selected' : ''}>Configuration Change</option>
+                            <option value="Source" ${patch.patch_type === 'Source' ? 'selected' : ''}>Source</option>
+                            <option value="Binary" ${patch.patch_type === 'Binary' ? 'selected' : ''}>Binary</option>
+                            <option value="Firmware" ${patch.patch_type === 'Firmware' ? 'selected' : ''}>Firmware</option>
+                            <option value="Emulator" ${patch.patch_type === 'Emulator' ? 'selected' : ''}>Emulator</option>
+                            <option value="Documentation" ${patch.patch_type === 'Documentation' ? 'selected' : ''}>Documentation</option>
+                            <option value="Configuration" ${patch.patch_type === 'Configuration' ? 'selected' : ''}>Configuration</option>
                             <option value="Security Patch" ${patch.patch_type === 'Security Patch' ? 'selected' : ''}>Security Patch</option>
-                            <option value="Hotfix" ${patch.patch_type === 'Hotfix' ? 'selected' : ''}>Hotfix</option>
                         </select>
                     </div>
                     
@@ -2688,6 +2713,24 @@ if ($action === 'schedule' && $patchId) {
         
         // Patch Deletion Functions
         function deletePatch(patchId) {
+            // Validate patchId before proceeding
+            if (!patchId || patchId === 'undefined' || patchId === 'null') {
+                showNotification('Invalid patch ID', 'error');
+                console.error('deletePatch called with invalid patchId:', patchId);
+                return;
+            }
+            
+            // Trim any whitespace
+            patchId = patchId.trim();
+            
+            // Validate UUID format (basic check)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(patchId)) {
+                showNotification('Invalid patch ID format. Expected UUID.', 'error');
+                console.error('Invalid patch ID format:', patchId);
+                return;
+            }
+            
             showPatchDeletionConfirmationModal(patchId);
         }
 
@@ -2796,22 +2839,31 @@ if ($action === 'schedule' && $patchId) {
         }
         
         async function performPatchDeletion(patchId) {
+            console.log('Attempting to delete patch with ID:', patchId);
+            
             try {
-                const response = await fetch(`/api/v1/patches/index.php/${patchId}`, {
+                const url = `/api/v1/patches/index.php/${encodeURIComponent(patchId)}`;
+                console.log('DELETE request URL:', url);
+                
+                const response = await fetch(url, {
                     method: 'DELETE',
                     headers: {'Content-Type': 'application/json'}
                 });
                 
                 const result = await response.json();
+                console.log('Delete response:', result);
                 
                 if (result.success) {
                     showNotification('Patch deleted successfully!', 'success');
                     window.location.href = '?action=list';
                 } else {
-                    showNotification('Error deleting patch: ' + (result.error || 'Unknown error'), 'error');
+                    const errorMsg = result.error?.message || result.error || 'Unknown error';
+                    showNotification('Error deleting patch: ' + errorMsg, 'error');
+                    console.error('Delete failed:', result);
                 }
             } catch (error) {
                 showNotification('Error deleting patch: ' + error.message, 'error');
+                console.error('Delete error:', error);
             }
         }
 

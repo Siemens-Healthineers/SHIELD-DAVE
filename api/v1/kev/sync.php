@@ -13,6 +13,7 @@ ob_start();
 
 require_once __DIR__ . '/../../../config/config.php';
 require_once __DIR__ . '/../../../includes/unified-auth.php';
+require_once __DIR__ . '/../../../services/shell_command_utilities.php';
 
 // Set JSON content type
 header('Content-Type: application/json');
@@ -61,18 +62,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     // Trigger KEV sync in background
-    $command = 'cd /var/www/html && python3 services/kev_sync_service.py > /dev/null 2>&1 &';
-    exec($command, $output, $return_code);
+    $command = 'cd ' . _ROOT . ' && python3 services/kev_sync_service.py';
+    $result = ShellCommandUtilities::executeShellCommand($command, ['blocking' => false]);
     
     // Log the action (if logging is available through UnifiedAuth or direct DB access)
     // Note: UnifiedAuth doesn't have logUserAction, but we can log through audit if needed
     
     ob_clean();
-    echo json_encode([
-        'success' => true,
-        'message' => 'KEV sync started in background. Check sync log for progress.',
-        'timestamp' => date('c')
-    ]);
+    
+    if ($result['success']) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'KEV sync started in background. Check sync log for progress.',
+            'pid' => $result['pid'] ?? null,
+            'timestamp' => date('c')
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Failed to start KEV sync: ' . ($result['error'] ?? 'Unknown error'),
+            'timestamp' => date('c')
+        ]);
+    }
     exit;
     
 } catch (Exception $e) {

@@ -164,6 +164,14 @@ CYNERIO_CLIENT_SECRET=<Cynerio client secret>
 # Cynerio API Endpoints
 CYNERIO_ENDPOINT=<Cynerio endpoint>
 CYNERIO_AUTH_ENDPOINT=<Cynerio Auth endpoint>
+
+# BLUEFLOW CONFIGURATION
+BLUEFLOW_API_URL=https://blueflow-mock-api.fly.dev/api"
+
+# NETDISCO CONFIGURATION
+NETDISCO_API_URL=http://x.x.x.x:5000/api/v1
+
+
 ```
 
 ### 3. Set Proper Permissions

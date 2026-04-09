@@ -158,7 +158,7 @@ function logMessage($level, $message, $context = [], $logFile = null) {
     
     // Use custom log file if provided, otherwise use default
     if ($logFile === null) {
-        $logFile = defined('_LOG_FILE') ? _LOG_FILE : '/var/www/html/logs/dave.log';
+        $logFile = defined('_LOG_FILE') ? _LOG_FILE : _ROOT . '/logs/dave.log';
     }
     
     $logDir = dirname($logFile);
@@ -305,6 +305,13 @@ function hasPermission($permission) {
         'viewer' => [
             'assets.read', 'devices.read', 'vulnerabilities.read',
             'recalls.read', 'reports.read'
+        ],
+        'User' => [
+            'assets.read', 'assets.write', 'assets.create',
+            'devices.read', 'devices.write',
+            'vulnerabilities.read',
+            'recalls.read',
+            'reports.read', 'reports.write'
         ]
     ];
     

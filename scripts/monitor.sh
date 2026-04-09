@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 APP_ROOT="/var/www/html"
-LOG_FILE="/var/www/html/logs/monitor.log"
+LOG_FILE="$APP_ROOT/logs/monitor.log"
 ALERT_EMAIL="admin@dave.local"
 ALERT_THRESHOLD_CPU=80
 ALERT_THRESHOLD_MEMORY=85

@@ -7,8 +7,9 @@
 
 # Check EPSS sync status
 
-LOG_FILE="/var/www/html/logs/epss_sync.log"
-DB_CONFIG_FILE="/var/www/html/config/database.php"
+APP_ROOT="/var/www/html"
+LOG_FILE="$APP_ROOT/logs/epss_sync.log"
+DB_CONFIG_FILE="$APP_ROOT/config/database.php"
 
 echo "=== EPSS Sync Status ==="
 echo

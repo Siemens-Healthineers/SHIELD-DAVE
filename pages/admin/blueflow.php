@@ -29,25 +29,28 @@ if ($user['role'] !== 'Admin') {
     exit;
 }
 
-    
+  
 try {
+
     $log_file = "";
 
     if (is_dir(_LOGS)) {
-        $log_file = _LOGS . DIRECTORY_SEPARATOR . "cynerio_background_job.log";
+        $log_file = _LOGS . DIRECTORY_SEPARATOR . "blueflow_background_job.log";
     }
+
     // Call Python service in background (non-blocking)
-    $command = "cd " . _ROOT . " && python3 python/services/ingest_cynerio.py";
+    $command = "cd " . _ROOT . " && python3 python/services/ingest_blueflow.py";
     $result = ShellCommandUtilities::executeShellCommand($command, [
         'blocking' => false,
         'log_file' => $log_file
     ]);
     if (!$result['success']) {
-        error_log('Cynerio ingestion failed to start: ' . ($result['error'] ?? 'Unknown error'));
+        error_log('BlueFlow ingestion failed to start: ' . ($result['error'] ?? 'Unknown error'));
     }
 } catch (Exception $e) {
-    error_log('Cynerio ingestion failed to start: ' . $e->getMessage());
+    error_log('BlueFlow ingestion failed to start: ' . $e->getMessage());
 }
+    
 ?>
 
 <!DOCTYPE html>
@@ -68,16 +71,16 @@ try {
             <div style="margin-bottom: 2rem;">
                 <h1 style="font-size: 1.875rem; font-weight: 600; color: var(--text-primary, #ffffff); margin-bottom: 0.5rem; display:flex;">
                     <div class="admin-card-icon">
-                        <i class="fa-solid fa-c"></i>
+                        <i class="fa-solid fa-b"></i>
                     </div>
                     <div class="admin-card-content">
-                        <h3>Cynerio Integration</h3>
-                        <p>Manage Cynerio integration settings</p>
+                        <h3>BlueFlow Integration</h3>
+                        <p>Manage BlueFlow integration settings</p>
                     </div>
                 </h1>
             </div>
             <section class="center-content">
-                <p>Cynerio data synchronization initiated. Please check system logs for details.</p>
+                <p>BlueFlow data synchronization initiated. Please check system logs for details.</p>
                 <br>
                 <br>
                 <a href="/pages/admin/index.php" class="admin-card">

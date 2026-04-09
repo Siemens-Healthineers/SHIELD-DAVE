@@ -27,7 +27,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/var/www/html/logs/kev_sync.log'),
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs', 'kev_sync.log')),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -51,7 +51,7 @@ class KEVSyncService:
     
     def _load_db_config(self) -> Dict[str, str]:
         """Load database configuration"""
-        config_file = '/var/www/html/config/database.php'
+        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'database.php')
         
         config = {
             'host': os.getenv('DB_HOST'),

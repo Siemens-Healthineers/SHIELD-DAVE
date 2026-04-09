@@ -106,7 +106,7 @@ paths:
       summary: List all assets
       description: 'Retrieve a paginated list of assets with optional filtering and search capabilities.
 
-        Supports filtering by department, asset type, status, and CVE associations.
+        Supports filtering by department, asset type, status, CVE associations, and medical device identifier.
 
         '
       operationId: listAssets
@@ -176,6 +176,13 @@ paths:
         required: false
         schema:
           type: string
+      - name: k_number
+        in: query
+        description: Filter assets by 510(K) number or K number — returns only assets that are mapped to a medical device with the specified device_identifier value
+        required: false
+        schema:
+          type: string
+        example: K123456
       responses:
         '200':
           description: Successful response
@@ -1633,6 +1640,13 @@ paths:
         required: false
         schema:
           type: string
+      - name: search
+        in: query
+        description: Free text search across patch name, description, vendor, KB article, device type, and package information
+        required: false
+        schema:
+          type: string
+        example: 'security update'
       responses:
         '200':
           description: Successful response
@@ -2002,6 +2016,339 @@ paths:
                       device_name: SOMATOM Drive CT Scanner
                       applied_by_name: john.doe
                       verified_by_name: jane.smith
+  /remediations:
+    get:
+      tags:
+      - Remediations
+      summary: List all remediations
+      description: |
+        Retrieve a paginated list of remediation records with optional filtering.
+        Supports filtering by vulnerability, user, and search terms.
+      operationId: listRemediations
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: limit
+        in: query
+        description: Number of items to return (max 1000)
+        required: false
+        schema:
+          type: integer
+          default: 100
+          maximum: 1000
+      - name: offset
+        in: query
+        description: Number of items to skip
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - name: search
+        in: query
+        description: Search term for remediation description, narrative, or CVE ID
+        required: false
+        schema:
+          type: string
+      - name: vulnerability_id
+        in: query
+        description: Filter by vulnerability ID
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: user_id
+        in: query
+        description: Filter by user ID
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RemediationSummary'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+                      has_more:
+                        type: boolean
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Successful remediation list response
+                  value:
+                    success: true
+                    data:
+                    - remediation_id: rem-12345-abcde
+                      upstream_api: NVD
+                      description: Apply security patch KB5034441
+                      narrative: Critical security update to address buffer overflow vulnerabilities
+                      vulnerability_id: vuln-98765
+                      user_id: user-123
+                      created_at: '2026-02-01T10:30:00'
+                      updated_at: '2026-02-01T10:30:00'
+                      cve_id: CVE-2024-21351
+                      vulnerability_description: Buffer overflow vulnerability
+                      severity: Critical
+                      username: john.doe
+                      user_email: john.doe@hospital.com
+                    pagination:
+                      total: 45
+                      limit: 100
+                      offset: 0
+                      has_more: false
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+      - Remediations
+      summary: Create a new remediation
+      description: |
+        Create a new remediation record with optional links to assets and patches.
+        The user_id is automatically set to the authenticated user's ID based on the API key or session.
+      operationId: createRemediation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemediationCreateRequest'
+            examples:
+              newRemediation:
+                summary: Create new remediation
+                value:
+                  description: Deploy firmware update to affected CT scanners
+                  narrative: This remediation involves deploying firmware v3.2.1 to all affected CT scanners during the next maintenance window. The update addresses CVE-2025-11111 and CVE-2025-22222.
+                  vulnerability_id: vuln-98765
+                  upstream_api: Vendor Advisory
+                  asset_ids:
+                  - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  - b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  patch_ids:
+                  - patch-12345
+      responses:
+        '201':
+          description: Remediation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/RemediationSummary'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+  /remediations/{remediation_id}:
+    get:
+      tags:
+      - Remediations
+      summary: Get remediation details
+      description: Retrieve detailed information about a specific remediation including linked assets and patches
+      operationId: getRemediation
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: remediation_id
+        in: path
+        required: true
+        description: Unique identifier of the remediation
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/RemediationDetailed'
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Detailed remediation response
+                  value:
+                    success: true
+                    data:
+                      remediation_id: rem-12345-abcde
+                      upstream_api: NVD
+                      description: Apply security patch KB5034441
+                      narrative: Critical security update to address buffer overflow vulnerabilities. Schedule deployment during next maintenance window.
+                      vulnerability_id: vuln-98765
+                      user_id: user-123
+                      created_at: '2026-02-01T10:30:00'
+                      updated_at: '2026-02-01T10:30:00'
+                      cve_id: CVE-2024-21351
+                      vulnerability_description: Buffer overflow vulnerability
+                      severity: Critical
+                      cvss_v3_score: 9.8
+                      username: john.doe
+                      user_email: john.doe@hospital.com
+                      linked_assets:
+                      - asset_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        hostname: CT-SCANNER-01
+                        asset_type: Medical Device
+                        manufacturer: Siemens Healthineers
+                        model: SOMATOM Drive
+                      linked_patches:
+                      - patch_id: patch-12345
+                        patch_name: Security Update KB5034441
+                        patch_type: Security Patch
+                        description: Security patch for buffer overflow
+                        release_date: '2024-02-13'
+                    timestamp: '2026-02-02T10:30:45+00:00'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+      - Remediations
+      summary: Update remediation
+      description: |
+        Update an existing remediation's information and linked resources.
+        The user_id is automatically updated to the authenticated user's ID based on the API key or session.
+      operationId: updateRemediation
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: remediation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemediationUpdateRequest'
+            examples:
+              updateRemediation:
+                summary: Update remediation details
+                value:
+                  description: Updated deployment plan for security patch
+                  narrative: Revised timeline - deploy during emergency maintenance window on 2026-02-15
+                  asset_ids:
+                  - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+      responses:
+        '200':
+          description: Remediation updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/RemediationSummary'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+      - Remediations
+      summary: Delete remediation
+      description: Remove a remediation record and its links from the system
+      operationId: deleteRemediation
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      - name: remediation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Remediation deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 components:
   securitySchemes:
     DAVE_API_KEY:
@@ -2961,11 +3308,13 @@ components:
         patch_type:
           type: string
           enum:
-          - Software Update
+          - Source
+          - Binary
           - Firmware
+          - Emulator
+          - Documentation
           - Configuration
           - Security Patch
-          - Hotfix
           example: Security Patch
         target_device_type:
           type: string
@@ -3037,12 +3386,14 @@ components:
         patch_type:
           type: string
           enum:
-          - Software Update
+          - Source
+          - Binary
           - Firmware
+          - Emulator
+          - Documentation
           - Configuration
           - Security Patch
-          - Hotfix
-          default: Software Update
+          default: Security Patch
         target_device_type:
           type: string
         target_package_id:
@@ -3081,11 +3432,13 @@ components:
         patch_type:
           type: string
           enum:
-          - Software Update
+          - Source
+          - Binary
           - Firmware
+          - Emulator
+          - Documentation
           - Configuration
           - Security Patch
-          - Hotfix
         target_device_type:
           type: string
         target_package_id:
@@ -3169,6 +3522,163 @@ components:
         verified_by_name:
           type: string
           nullable: true
+    RemediationSummary:
+      type: object
+      properties:
+        remediation_id:
+          type: string
+          format: uuid
+          example: rem-12345-abcde
+        upstream_api:
+          type: string
+          nullable: true
+          description: Source API or system that provided the remediation information
+          example: NVD
+        description:
+          type: string
+          description: Brief description of the remediation
+          example: Apply security patch KB5034441
+        narrative:
+          type: string
+          nullable: true
+          description: Detailed narrative or explanation of the remediation process
+        vulnerability_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated vulnerability ID
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: User responsible for the remediation
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        cve_id:
+          type: string
+          nullable: true
+          example: CVE-2024-21351
+        vulnerability_description:
+          type: string
+          nullable: true
+        severity:
+          type: string
+          nullable: true
+          enum:
+          - Critical
+          - High
+          - Medium
+          - Low
+        username:
+          type: string
+          nullable: true
+        user_email:
+          type: string
+          nullable: true
+    RemediationDetailed:
+      allOf:
+      - $ref: '#/components/schemas/RemediationSummary'
+      - type: object
+        properties:
+          cvss_v3_score:
+            type: number
+            format: float
+            nullable: true
+          linked_assets:
+            type: array
+            items:
+              type: object
+              properties:
+                asset_id:
+                  type: string
+                  format: uuid
+                hostname:
+                  type: string
+                asset_type:
+                  type: string
+                manufacturer:
+                  type: string
+                model:
+                  type: string
+          linked_patches:
+            type: array
+            items:
+              type: object
+              properties:
+                patch_id:
+                  type: string
+                patch_name:
+                  type: string
+                patch_type:
+                  type: string
+                description:
+                  type: string
+                release_date:
+                  type: string
+                  format: date
+    RemediationCreateRequest:
+      type: object
+      required:
+      - description
+      properties:
+        upstream_api:
+          type: string
+          description: Source API or system providing the remediation information
+          example: Vendor Advisory
+        description:
+          type: string
+          description: Brief description of the remediation (required)
+        narrative:
+          type: string
+          description: Detailed narrative or explanation of the remediation process
+        vulnerability_id:
+          type: string
+          format: uuid
+          description: Associated vulnerability ID
+        asset_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of asset IDs to link to this remediation
+        patch_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of patch IDs to link to this remediation
+    RemediationUpdateRequest:
+      type: object
+      properties:
+        upstream_api:
+          type: string
+          description: Source API or system providing the remediation information
+        description:
+          type: string
+          description: Brief description of the remediation
+        narrative:
+          type: string
+          description: Detailed narrative or explanation of the remediation process
+        vulnerability_id:
+          type: string
+          format: uuid
+          description: Associated vulnerability ID
+        asset_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of asset IDs to link to this remediation (replaces existing links)
+        patch_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of patch IDs to link to this remediation (replaces existing links)
   responses:
     UnauthorizedError:
       description: Authentication required or invalid credentials

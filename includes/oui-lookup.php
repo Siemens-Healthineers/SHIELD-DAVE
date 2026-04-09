@@ -4,6 +4,8 @@
 * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
 */
 
+require_once __DIR__ . '/../services/shell_command_utilities.php';
+
 /**
  * Look up manufacturer from MAC address using Python OUI service
  * 
@@ -27,17 +29,18 @@ function lookupManufacturerFromMac($macAddress) {
         
         // Call Python OUI lookup service
         // Redirect stderr to /dev/null to suppress logging errors
-        $pythonScript = '/var/www/html/python/services/oui_lookup.py';
-        $command = "cd /var/www/html && python3 " . escapeshellarg($pythonScript) . " --lookup " . escapeshellarg($oui) . " 2>/dev/null";
+        $pythonScript = _ROOT . '/python/services/oui_lookup.py';
+        $command = "cd " . _ROOT . " && python3 " . escapeshellarg($pythonScript) . " --lookup " . escapeshellarg($oui) . " 2>/dev/null";
         
-        $output = shell_exec($command);
+        $result = ShellCommandUtilities::executeShellCommand($command, ['trim_output' => true]);
+        $output = $result['success'] ? $result['output'] : '';
         
         if (empty($output)) {
             return null;
         }
         
         // Clean output - the Python script with --lookup should only output the manufacturer name
-        $manufacturer = trim($output);
+        $manufacturer = $output;
         
         // Remove any trailing newlines or whitespace
         $manufacturer = rtrim($manufacturer, " \n\r\t\0\x0B$");

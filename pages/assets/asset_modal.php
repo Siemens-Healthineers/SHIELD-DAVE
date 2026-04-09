@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../services/shell_command_utilities.php';
 
 // Authentication required
 $auth->requireAuth();
@@ -21,6 +22,124 @@ if (!$user) {
 }
 
 $db = DatabaseConfig::getInstance();
+
+// Handle job polling request
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'check_jobs') {
+    header('Content-Type: application/json');
+    
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input || !isset($input['jobs'])) {
+        echo json_encode(['success' => false, 'error' => 'No jobs provided']);
+        exit;
+    }
+    
+    $results = [];
+    
+    foreach ($input['jobs'] as $job) {
+        if (!isset($job['pid']) || !isset($job['log_file'])) {
+            $results[] = [
+                'job_id' => $job['job_id'] ?? null,
+                'status' => 'error',
+                'error' => 'Invalid job data'
+            ];
+            continue;
+        }
+        
+        // Check if process is still running
+        $isRunning = ShellCommandUtilities::isProcessRunning($job['pid']);
+        
+        if ($isRunning) {
+            $results[] = [
+                'job_id' => $job['job_id'],
+                'type' => $job['type'] ?? 'unknown',
+                'pid' => $job['pid'],
+                'status' => 'running'
+            ];
+        } else {
+            // Process completed, get results from log file
+            $output = ShellCommandUtilities::getCommandOutput($job['log_file']);
+            
+            if ($output) {
+                $jobType = $job['type'] ?? 'unknown';
+                
+                switch ($jobType) {
+                    case 'sbom_evaluation':
+                        $sbomResult = json_decode($output, true);
+                        if (json_last_error() === JSON_ERROR_NONE && isset($sbomResult['success'])) {
+                            if ($sbomResult['success']) {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => 'sbom_evaluation',
+                                    'status' => 'completed',
+                                    'data' => [
+                                        'vulnerabilities_found' => $sbomResult['vulnerabilities_found'] ?? 0,
+                                        'vulnerabilities_stored' => $sbomResult['vulnerabilities_stored'] ?? 0,
+                                        'asset_id' => $job['asset_id'] ?? null
+                                    ]
+                                ];
+                            } else {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => 'sbom_evaluation',
+                                    'status' => 'failed',
+                                    'error' => $sbomResult['reason'] ?? 'SBOM evaluation failed'
+                                ];
+                            }
+                        } else {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'sbom_evaluation',
+                                'status' => 'failed',
+                                'error' => 'Failed to parse SBOM evaluation results'
+                            ];
+                        }
+                        break;
+                        
+                    case '510k':
+                        $k510kData = json_decode($output, true);
+                        if (json_last_error() === JSON_ERROR_NONE && !empty($k510kData)) {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => '510k',
+                                'status' => 'completed',
+                                'data' => $k510kData
+                            ];
+                        } else {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => '510k',
+                                'status' => 'failed',
+                                'error' => 'No 510k data found or failed to parse'
+                            ];
+                        }
+                        break;
+                        
+                    default:
+                        $results[] = [
+                            'job_id' => $job['job_id'],
+                            'type' => $jobType,
+                            'status' => 'completed',
+                            'data' => $output
+                        ];
+                }
+            } else {
+                $results[] = [
+                    'job_id' => $job['job_id'],
+                    'type' => $job['type'] ?? 'unknown',
+                    'status' => 'failed',
+                    'error' => 'No output from command'
+                ];
+            }
+        }
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'results' => $results
+    ]);
+    exit;
+}
 
 // Handle SBOM evaluation request
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'evaluate_sbom') {
@@ -47,40 +166,34 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'evaluate_sbom') {
         
         $deviceId = $device['device_id'];
         
-        // Execute Python vulnerability scanner
-        $pythonScript = '/var/www/html/python/services/vulnerability_scanner.py';
-        $command = "cd /var/www/html && python3 $pythonScript --device-id " . escapeshellarg($deviceId) . " --scan-type sbom 2>&1";
+        // Execute Python vulnerability scanner (non-blocking)
+        $pythonScript = _ROOT . '/python/services/vulnerability_scanner.py';
+        $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'sbom_eval_' . $assetId . '_' . uniqid() . '.log';
+        $command = "cd " . _ROOT . " && python3 $pythonScript --device-id " . escapeshellarg($deviceId) . " --scan-type sbom";
         
-        $output = shell_exec($command);
+        $result = ShellCommandUtilities::executeShellCommand($command, [
+            'blocking' => false,
+            'log_file' => $logFile
+        ]);
         
-        if ($output === null) {
-            throw new Exception('Failed to execute Python vulnerability scanner');
+        if (!$result['success']) {
+            throw new Exception('Failed to start vulnerability scanner: ' . ($result['error'] ?? 'Unknown error'));
         }
         
-        // Parse the JSON output from Python script
-        $result = json_decode($output, true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Invalid JSON response from vulnerability scanner: ' . json_last_error_msg());
-        }
-        
-        if (!$result || !isset($result['success'])) {
-            throw new Exception('Invalid response format from vulnerability scanner');
-        }
-        
-        if ($result['success']) {
-            echo json_encode([
-                'success' => true,
-                'vulnerabilities_found' => $result['vulnerabilities_found'] ?? 0,
-                'vulnerabilities_stored' => $result['vulnerabilities_stored'] ?? 0,
-                'message' => 'SBOM evaluation completed successfully'
-            ]);
-        } else {
-            echo json_encode([
-                'success' => false,
-                'error' => $result['reason'] ?? 'SBOM evaluation failed'
-            ]);
-        }
+        // Return job info for polling
+        echo json_encode([
+            'success' => true,
+            'message' => 'SBOM evaluation started',
+            'job' => [
+                'job_id' => uniqid('sbom_eval_'),
+                'pid' => $result['pid'],
+                'log_file' => $result['log_file'],
+                'status' => 'running',
+                'type' => 'sbom_evaluation',
+                'asset_id' => $assetId,
+                'device_id' => $deviceId
+            ]
+        ]);
         
     } catch (Exception $e) {
         error_log("SBOM evaluation error: " . $e->getMessage());
@@ -105,27 +218,34 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'get_510k') {
     }
     
     try {
-        // Call Python FDA service for 510k data
-        $deviceId = escapeshellarg($deviceId);
-        $command = "python3 /var/www/html/python/services/fda_integration.py search_510k $deviceId";
+        // Call Python FDA service for 510k data (non-blocking)
+        $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . '510k_' . uniqid() . '.log';
+        $command = "python3 " . _ROOT . "/python/services/fda_integration.py search_510k " . escapeshellarg($deviceId);
         error_log('510k command: ' . $command);
         
-        $output = shell_exec($command);
-        error_log('510k output: ' . substr($output, 0, 500));
+        $result = ShellCommandUtilities::executeShellCommand($command, [
+            'blocking' => false,
+            'log_file' => $logFile
+        ]);
         
-        if ($output) {
-            $data = json_decode($output, true);
-            
-            if ($data && !empty($data)) {
-                error_log('510k data found, returning all results: ' . count($data));
-                echo json_encode(['success' => true, 'data' => $data]); // Return all results
-            } else {
-                error_log('No 510k data found in response');
-                echo json_encode(['success' => false, 'message' => 'No 510k data found']);
-            }
+        if (!$result['success']) {
+            error_log('Failed to start 510k lookup: ' . ($result['error'] ?? 'Unknown error'));
+            echo json_encode(['success' => false, 'message' => 'Failed to start 510k lookup']);
         } else {
-            error_log('No output from 510k command');
-            echo json_encode(['success' => false, 'message' => 'Failed to fetch 510k data']);
+            error_log('510k lookup started with PID: ' . $result['pid']);
+            // Return job info for polling
+            echo json_encode([
+                'success' => true,
+                'message' => '510k lookup started',
+                'job' => [
+                    'job_id' => uniqid('510k_'),
+                    'pid' => $result['pid'],
+                    'log_file' => $result['log_file'],
+                    'status' => 'running',
+                    'type' => '510k',
+                    'device_id' => $deviceId
+                ]
+            ]);
         }
     } catch (Exception $e) {
         error_log('510k error: ' . $e->getMessage());
@@ -244,7 +364,11 @@ try {
     }
     
     // Get vulnerabilities with KEV information
-    $vulnSql = "SELECT 
+    // Updated to support both SBOM-based links and direct asset links
+    // Using DISTINCT ON to handle potential duplicates from both link paths
+    // Supports both cve_id and vulnerability_id linking
+    $vulnSql = "SELECT DISTINCT ON (v.vulnerability_id)
+        v.vulnerability_id,
         v.cve_id,
         v.description,
         v.cvss_v4_score,
@@ -267,18 +391,31 @@ try {
         sc.name as component_name,
         sc.version as component_version
     FROM vulnerabilities v
-    JOIN device_vulnerabilities_link dvl ON v.cve_id = dvl.cve_id
-    JOIN software_components sc ON dvl.component_id = sc.component_id
-    JOIN sboms s ON sc.sbom_id = s.sbom_id
-    JOIN medical_devices md ON s.device_id = md.device_id
+    JOIN device_vulnerabilities_link dvl ON (v.cve_id = dvl.cve_id OR v.vulnerability_id = dvl.vulnerability_id)
+    LEFT JOIN software_components sc ON dvl.component_id = sc.component_id
+    LEFT JOIN sboms s ON sc.sbom_id = s.sbom_id
+    LEFT JOIN medical_devices md ON s.device_id = md.device_id
     LEFT JOIN users u ON dvl.assigned_to = u.user_id
     LEFT JOIN cisa_kev_catalog k ON v.cve_id = k.cve_id AND v.is_kev = true
-    WHERE md.asset_id = ?
-    ORDER BY v.is_kev DESC, COALESCE(v.cvss_v4_score, v.cvss_v3_score, v.cvss_v2_score) DESC";
+    WHERE (md.asset_id = ? OR dvl.asset_id = ?)
+    ORDER BY v.vulnerability_id, v.is_kev DESC, COALESCE(v.cvss_v4_score, v.cvss_v3_score, v.cvss_v2_score) DESC";
     
     $vulnStmt = $db->prepare($vulnSql);
-    $vulnStmt->execute([$assetId]);
+    $vulnStmt->execute([$assetId, $assetId]);
     $vulnerabilities = $vulnStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug logging
+    error_log("Asset ID: " . $assetId);
+    error_log("Vulnerabilities found: " . count($vulnerabilities));
+    error_log("Vulnerability query: " . $vulnSql);
+    if (empty($vulnerabilities)) {
+        // Check if there are any links at all for this asset
+        $debugSql = "SELECT COUNT(*) as link_count FROM device_vulnerabilities_link WHERE asset_id = ?";
+        $debugStmt = $db->prepare($debugSql);
+        $debugStmt->execute([$assetId]);
+        $linkCount = $debugStmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Direct links for asset: " . json_encode($linkCount));
+    }
     
     // Get recalls
     $recallSql = "SELECT 

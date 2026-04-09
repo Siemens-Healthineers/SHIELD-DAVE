@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../services/shell_command_utilities.php';
 
 // Require authentication
 $auth->requireAuth();
@@ -192,112 +193,171 @@ if (isset($_GET['ajax'])) {
             $assetStmt = $db->query($assetSql);
             $assets = $assetStmt->fetchAll();
             
-            // Debug: log what we found
             error_log("Found " . count($assets) . " SBOMs to evaluate");
             
             if (count($assets) === 0) {
                 echo json_encode([
                     'success' => false, 
                     'message' => 'No SBOMs found in database',
-                    'results' => [],
-                    'summary' => [
-                        'devices_evaluated' => 0,
-                        'total_vulnerabilities' => 0
-                    ]
+                    'jobs' => []
                 ]);
                 exit;
             }
             
-            $results = [];
-            $totalEvaluated = 0;
-            $totalVulnerabilities = 0;
+            // Start all scans non-blocking and return job info
+            $jobs = [];
             
             foreach ($assets as $asset) {
                 // Skip if parsing failed
                 if ($asset['parsing_status'] !== 'Success') {
-                    error_log("Skipping SBOM {$asset['sbom_id']} - parsing status: {$asset['parsing_status']}");
-                    $results[] = [
+                    $jobs[] = [
                         'sbom_id' => $asset['sbom_id'],
-                        'file_name' => $asset['file_name'],
-                        'error' => 'SBOM parsing status is ' . $asset['parsing_status'] . ', not Success',
-                        'status' => 'skipped'
+                        'asset_id' => $asset['asset_id'],
+                        'hostname' => $asset['hostname'],
+                        'status' => 'skipped',
+                        'error' => 'SBOM parsing status is ' . $asset['parsing_status']
                     ];
                     continue;
                 }
                 
                 // Skip if no asset found
                 if (empty($asset['asset_id'])) {
-                    error_log("Skipping SBOM {$asset['sbom_id']} - no asset_id");
-                    $results[] = [
+                    $jobs[] = [
                         'sbom_id' => $asset['sbom_id'],
-                        'file_name' => $asset['file_name'],
-                        'error' => 'No asset associated with this SBOM',
-                        'status' => 'skipped'
+                        'status' => 'skipped',
+                        'error' => 'No asset associated with this SBOM'
                     ];
                     continue;
                 }
                 
                 // Use asset-id if available, otherwise fall back to device-id
                 if (!empty($asset['asset_id'])) {
-                    $command = "cd /var/www/html && python3 python/services/vulnerability_scanner.py --asset-id " . escapeshellarg($asset['asset_id']) . " --scan-type sbom 2>&1";
+                    $command = "cd " . _ROOT . " && python3 python/services/vulnerability_scanner.py --asset-id " . escapeshellarg($asset['asset_id']) . " --scan-type sbom";
                 } else if (!empty($asset['device_id'])) {
-                    $command = "cd /var/www/html && python3 python/services/vulnerability_scanner.py --device-id " . escapeshellarg($asset['device_id']) . " --scan-type sbom 2>&1";
+                    $command = "cd " . _ROOT . " && python3 python/services/vulnerability_scanner.py --device-id " . escapeshellarg($asset['device_id']) . " --scan-type sbom";
                 } else {
-                    $results[] = [
+                    $jobs[] = [
                         'sbom_id' => $asset['sbom_id'],
                         'hostname' => $asset['hostname'],
-                        'error' => 'No asset_id or device_id available',
-                        'status' => 'failed'
+                        'status' => 'skipped',
+                        'error' => 'No asset_id or device_id available'
                     ];
                     continue;
                 }
                 
-                error_log("Executing: $command");
-                $output = shell_exec($command);
-                error_log("Command output: $output");
+                // Execute non-blocking
+                $cmdResult = ShellCommandUtilities::executeShellCommand($command, ['blocking' => false]);
                 
-                try {
-                    $result = json_decode($output, true);
-                    if (json_last_error() === JSON_ERROR_NONE && isset($result['success']) && $result['success']) {
-                        $results[] = [
-                            'asset_id' => $asset['asset_id'],
-                            'device_id' => $asset['device_id'],
-                            'hostname' => $asset['hostname'],
-                            'vulnerabilities_found' => $result['vulnerabilities_found'],
-                            'status' => 'success'
-                        ];
-                        $totalEvaluated++;
-                        $totalVulnerabilities += $result['vulnerabilities_found'];
-                    } else {
-                        $results[] = [
-                            'asset_id' => $asset['asset_id'],
-                            'device_id' => $asset['device_id'],
-                            'hostname' => $asset['hostname'],
-                            'error' => $result['reason'] ?? ($output ?: 'Unknown error - no output'),
-                            'raw_output' => substr($output, 0, 500),
-                            'status' => 'failed'
-                        ];
-                    }
-                } catch (Exception $e) {
-                    $results[] = [
+                if ($cmdResult['success']) {
+                    $jobs[] = [
+                        'sbom_id' => $asset['sbom_id'],
                         'asset_id' => $asset['asset_id'],
                         'device_id' => $asset['device_id'],
                         'hostname' => $asset['hostname'],
-                        'error' => 'JSON decode error: ' . $e->getMessage(),
-                        'raw_output' => substr($output, 0, 500),
-                        'status' => 'failed'
+                        'pid' => $cmdResult['pid'],
+                        'log_file' => $cmdResult['log_file'],
+                        'status' => 'running'
+                    ];
+                    error_log("Started scan for asset {$asset['asset_id']}, PID: {$cmdResult['pid']}");
+                } else {
+                    $jobs[] = [
+                        'sbom_id' => $asset['sbom_id'],
+                        'asset_id' => $asset['asset_id'],
+                        'hostname' => $asset['hostname'],
+                        'status' => 'failed',
+                        'error' => $cmdResult['error'] ?? 'Failed to start scan'
                     ];
                 }
             }
             
             echo json_encode([
                 'success' => true, 
-                'results' => $results,
-                'summary' => [
-                    'devices_evaluated' => $totalEvaluated,
-                    'total_vulnerabilities' => $totalVulnerabilities,
-                    'total_sboms' => count($assets)
-                ]
+                'jobs' => $jobs,
+                'total_jobs' => count($jobs)
+            ]);
+            exit;
+            
+        case 'check_scan_jobs':
+            // Check status of running scan jobs
+            $jobs = json_decode(file_get_contents('php://input'), true);
+            
+            if (!$jobs || !isset($jobs['jobs'])) {
+                echo json_encode(['success' => false, 'error' => 'No jobs provided']);
+                exit;
+            }
+            
+            $results = [];
+            
+            foreach ($jobs['jobs'] as $job) {
+                if (!isset($job['pid']) || !isset($job['log_file'])) {
+                    $results[] = [
+                        'sbom_id' => $job['sbom_id'] ?? null,
+                        'status' => $job['status'] ?? 'unknown',
+                        'error' => $job['error'] ?? 'Invalid job data'
+                    ];
+                    continue;
+                }
+                
+                // Check if process is still running
+                $isRunning = ShellCommandUtilities::isProcessRunning($job['pid']);
+                
+                if ($isRunning) {
+                    $results[] = [
+                        'sbom_id' => $job['sbom_id'],
+                        'asset_id' => $job['asset_id'],
+                        'hostname' => $job['hostname'],
+                        'pid' => $job['pid'],
+                        'status' => 'running'
+                    ];
+                } else {
+                    // Process completed, get results from log file
+                    $output = ShellCommandUtilities::getCommandOutput($job['log_file']);
+                    
+                    if ($output) {
+                        try {
+                            $result = json_decode($output, true);
+                            if (json_last_error() === JSON_ERROR_NONE && isset($result['success']) && $result['success']) {
+                                $results[] = [
+                                    'sbom_id' => $job['sbom_id'],
+                                    'asset_id' => $job['asset_id'],
+                                    'device_id' => $job['device_id'] ?? null,
+                                    'hostname' => $job['hostname'],
+                                    'vulnerabilities_found' => $result['vulnerabilities_found'],
+                                    'status' => 'completed'
+                                ];
+                            } else {
+                                $results[] = [
+                                    'sbom_id' => $job['sbom_id'],
+                                    'asset_id' => $job['asset_id'],
+                                    'hostname' => $job['hostname'],
+                                    'status' => 'failed',
+                                    'error' => $result['reason'] ?? ($output ?: 'Unknown error')
+                                ];
+                            }
+                        } catch (Exception $e) {
+                            $results[] = [
+                                'sbom_id' => $job['sbom_id'],
+                                'asset_id' => $job['asset_id'],
+                                'hostname' => $job['hostname'],
+                                'status' => 'failed',
+                                'error' => 'JSON decode error: ' . $e->getMessage()
+                            ];
+                        }
+                    } else {
+                        $results[] = [
+                            'sbom_id' => $job['sbom_id'],
+                            'asset_id' => $job['asset_id'],
+                            'hostname' => $job['hostname'],
+                            'status' => 'failed',
+                            'error' => 'No output from scan process'
+                        ];
+                    }
+                }
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'results' => $results
             ]);
             exit;
             
@@ -491,6 +551,49 @@ $devicesWithVulns = $stmt->fetchAll();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/dashboard-common.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification i {
+            font-size: 20px;
+        }
+        .notification-success {
+            background-color: #10b981;
+        }
+        .notification-error {
+            background-color: #dc2626;
+        }
+        .notification-warning {
+            background-color: #f59e0b;
+        }
+        .notification-info {
+            background-color: #3b82f6;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -832,58 +935,137 @@ $devicesWithVulns = $stmt->fetchAll();
             const btn = document.getElementById('evaluateSboms');
             const originalText = btn.innerHTML;
             
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Evaluating SBOMs...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting Evaluation...';
             btn.disabled = true;
             
+            // Start all scans non-blocking
             fetch('?ajax=evaluate_sboms', {
                 method: 'GET'
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Evaluation response:', data);
-                if (data.success) {
-                    const summary = data.summary;
-                    if (summary.devices_evaluated === 0) {
-                        // Show detailed error if nothing was evaluated
-                        let errorMsg = `Found ${summary.total_sboms} SBOM(s) but none were evaluated. `;
-                        if (data.results && data.results.length > 0) {
-                            const firstError = data.results[0];
-                            errorMsg += `Error: ${firstError.error || 'Unknown'}`;
-                        }
-                        showNotification(errorMsg, 'warning');
-                        console.log('Evaluation results:', data.results);
+                console.log('Started evaluation jobs:', data);
+                if (data.success && data.jobs && data.jobs.length > 0) {
+                    const runningJobs = data.jobs.filter(j => j.status === 'running');
+                    const skippedJobs = data.jobs.filter(j => j.status === 'skipped');
+                    const failedJobs = data.jobs.filter(j => j.status === 'failed');
+                    
+                    if (runningJobs.length > 0) {
+                        showNotification(`Started ${runningJobs.length} scan(s). Polling for results...`, 'info');
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+                        
+                        // Start polling for results
+                        pollScanJobs(data.jobs, btn, originalText);
+                    } else if (failedJobs.length > 0) {
+                        showNotification(`${failedJobs.length} scan(s) failed to start. ${skippedJobs.length} skipped.`, 'error');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
                     } else {
-                        showNotification(`SBOM evaluation completed! Evaluated ${summary.devices_evaluated} assets and found ${summary.total_vulnerabilities} vulnerabilities.`, 'success');
-                        // Refresh the page to show updated data
-                        setTimeout(() => location.reload(), 2000);
+                        showNotification(`All ${skippedJobs.length} item(s) were skipped.`, 'warning');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
                     }
                 } else {
-                    showNotification(data.message || 'SBOM evaluation failed', 'error');
-                    console.log('Evaluation error:', data);
+                    showNotification(data.message || 'No scans to evaluate', 'warning');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 }
             })
             .catch(error => {
-                console.error('Error evaluating SBOMs:', error);
-                showNotification('Error evaluating SBOMs against NVD', 'error');
-            })
-            .finally(() => {
+                console.error('Error starting evaluation:', error);
+                showNotification('Error starting SBOM evaluation', 'error');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             });
+        }
+        
+        function pollScanJobs(jobs, btn, originalText) {
+            let completedCount = 0;
+            let failedCount = 0;
+            let totalVulnerabilities = 0;
+            const totalJobs = jobs.filter(j => j.status === 'running').length;
+            
+            const pollInterval = setInterval(() => {
+                // Send jobs to check endpoint
+                fetch('?ajax=check_scan_jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ jobs: jobs })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.results) {
+                        // Update jobs array with current status
+                        data.results.forEach(result => {
+                            const jobIndex = jobs.findIndex(j => j.sbom_id === result.sbom_id);
+                            if (jobIndex !== -1) {
+                                jobs[jobIndex] = result;
+                            }
+                        });
+                        
+                        // Count completed and failed jobs
+                        completedCount = jobs.filter(j => j.status === 'completed').length;
+                        failedCount = jobs.filter(j => j.status === 'failed').length;
+                        const runningCount = jobs.filter(j => j.status === 'running').length;
+                        
+                        // Calculate total vulnerabilities from completed jobs
+                        totalVulnerabilities = jobs
+                            .filter(j => j.status === 'completed')
+                            .reduce((sum, j) => sum + (j.vulnerabilities_found || 0), 0);
+                        
+                        // Update button text with progress
+                        if (runningCount > 0) {
+                            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Scanning... (${completedCount + failedCount}/${totalJobs})`;
+                        }
+                        
+                        // Check if all jobs are done
+                        if (runningCount === 0) {
+                            clearInterval(pollInterval);
+                            
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            
+                            if (completedCount > 0) {
+                                showNotification(
+                                    `Evaluation completed! ${completedCount} scan(s) successful, ` +
+                                    `${failedCount} failed. Found ${totalVulnerabilities} vulnerabilities.`,
+                                    'success'
+                                );
+                                // Refresh the page to show updated data
+                                setTimeout(() => location.reload(), 2000);
+                            } else {
+                                showNotification(
+                                    `All scans failed or were skipped.`,
+                                    'error'
+                                );
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error polling scan jobs:', error);
+                    clearInterval(pollInterval);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    showNotification('Error checking scan status', 'error');
+                });
+            }, 2000); // Poll every 2 seconds
         }
 
         function showNotification(message, type) {
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
             notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
                 ${message}
             `;
             document.body.appendChild(notification);
             
             setTimeout(() => {
                 notification.remove();
-            }, 3000);
+            }, type === 'success' ? 3000 : 5000);
         }
 
         // Evaluation Status Management

@@ -167,6 +167,10 @@ include __DIR__ . '/url-config.php';
         <i class="fas fa-band-aid"></i>
         Patches
     </a>
+    <a href="/pages/remediations/list.php" class="nav-item <?php echo (strpos($currentPath, '/remediations/') !== false) ? 'active' : ''; ?>">
+        <i class="fas fa-tools"></i>
+        Remediations
+    </a>
     <a href="/pages/schedule/index.php" class="nav-item <?php echo (strpos($currentPath, '/schedule/') !== false) ? 'active' : ''; ?>">
         <i class="fas fa-calendar-alt"></i>
         Schedule

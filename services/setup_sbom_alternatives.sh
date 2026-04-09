@@ -5,6 +5,7 @@
 # */
 
 
+APP_ROOT="/var/www/html"
 echo "=========================================="
 echo " SBOM Evaluation Alternatives Setup"
 echo "=========================================="
@@ -21,7 +22,7 @@ read -p "Enter your choice (1-4): " choice
 case $choice in
     1)
         echo "Setting up Cron-based processing..."
-        bash /var/www/html/services/setup_sbom_cron.sh
+        bash "$APP_ROOT/services/setup_sbom_cron.sh"
         ;;
     2)
         echo "Setting up Async processing..."
@@ -35,7 +36,7 @@ case $choice in
         ;;
     4)
         echo "Setting up all three approaches..."
-        bash /var/www/html/services/setup_sbom_cron.sh
+        bash "$APP_ROOT/services/setup_sbom_cron.sh"
         echo "✅ Async processing configured"
         echo "✅ Webhook endpoint created"
         ;;
@@ -57,7 +58,7 @@ if [ "$choice" = "1" ] || [ "$choice" = "4" ]; then
     echo "🕒 CRON-BASED PROCESSING:"
     echo "   - Runs every 2 minutes"
     echo "   - Processes one SBOM per run"
-    echo "   - View logs: tail -f /var/www/html/logs/sbom_cron.log"
+    echo "   - View logs: tail -f $APP_ROOT/logs/sbom_cron.log"
     echo "   - Remove: crontab -e (delete sbom_cron_processor.py line)"
     echo ""
 fi
@@ -66,7 +67,7 @@ if [ "$choice" = "2" ] || [ "$choice" = "4" ]; then
     echo "⚡ ASYNC PROCESSING:"
     echo "   - Starts immediately after upload"
     echo "   - No external dependencies"
-    echo "   - View logs: tail -f /var/log/apache2/error.log"
+    echo "   - View logs: tail -f $APP_ROOT/logs/apache2/error.log"
     echo ""
 fi
 

@@ -10,6 +10,8 @@ echo "Setting up  file permissions and user groups..."
 CURRENT_USER=$(whoami)
 echo "Current user: $CURRENT_USER"
 
+APP_ROOT="/var/www/html"
+
 # Check if running with sudo
 if [ "$EUID" -ne 0 ]; then 
     echo "This script needs to be run with sudo privileges"
@@ -28,18 +30,18 @@ else
 fi
 
 # Set proper ownership for the application directory
-echo "Setting ownership for /var/www/html..."
-chown -R www-data:www-data /var/www/html
+echo "Setting ownership for $APP_ROOT..."
+chown -R www-data:www-data "$APP_ROOT"
 
 # Set proper permissions for files (664) and directories (775)
 echo "Setting file permissions..."
-find /var/www/html -type f -exec chmod 664 {} \;
-find /var/www/html -type d -exec chmod 775 {} \;
+find "$APP_ROOT" -type f -exec chmod 664 {} \;
+find "$APP_ROOT" -type d -exec chmod 775 {} \;
 
 # Set executable permissions for scripts
 echo "Setting executable permissions for scripts..."
-chmod +x /var/www/html/scripts/*.sh 2>/dev/null || true
-chmod +x /var/www/html/.github/workflows/*.sh 2>/dev/null || true
+chmod +x "$APP_ROOT/scripts/"*.sh 2>/dev/null || true
+chmod +x "$APP_ROOT/.github/workflows/"*.sh 2>/dev/null || true
 
 # Create and set permissions for session directory
 echo "Setting up PHP session directory..."
@@ -49,30 +51,30 @@ chown www-data:www-data /tmp/php_sessions
 
 # Create and set permissions for logs directory
 echo "Setting up logs directory..."
-mkdir -p /var/www/html/logs
-chmod 775 /var/www/html/logs
-chown www-data:www-data /var/www/html/logs
-touch /var/www/html/logs/.gitkeep
+mkdir -p "$APP_ROOT/logs"
+chmod 775 "$APP_ROOT/logs"
+chown www-data:www-data "$APP_ROOT/logs"
+touch "$APP_ROOT/logs/.gitkeep"
 
 # Create and set permissions for uploads directory
 echo "Setting up uploads directory..."
-mkdir -p /var/www/html/uploads
-chmod 775 /var/www/html/uploads
-chown www-data:www-data /var/www/html/uploads
-touch /var/www/html/uploads/.gitkeep
+mkdir -p "$APP_ROOT/uploads"
+chmod 775 "$APP_ROOT/uploads"
+chown www-data:www-data "$APP_ROOT/uploads"
+touch "$APP_ROOT/uploads/.gitkeep"
 
 # Create and set permissions for temp directory
 echo "Setting up temp directory..."
-mkdir -p /var/www/html/temp
-chmod 775 /var/www/html/temp
-chown www-data:www-data /var/www/html/temp
-touch /var/www/html/temp/.gitkeep
+mkdir -p "$APP_ROOT/temp"
+chmod 775 "$APP_ROOT/temp"
+chown www-data:www-data "$APP_ROOT/temp"
+touch "$APP_ROOT/temp/.gitkeep"
 
 # Create and set permissions for cache directory
 echo "Setting up cache directory..."
-mkdir -p /var/www/html/temp/cache
-chmod 775 /var/www/html/temp/cache
-chown www-data:www-data /var/www/html/temp/cache
+mkdir -p "$APP_ROOT/temp/cache"
+chmod 775 "$APP_ROOT/temp/cache"
+chown www-data:www-data "$APP_ROOT/temp/cache"
 
 # Create and set permissions for backup directory
 echo "Setting up backup directory..."

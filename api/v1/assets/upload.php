@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Create upload directory if it doesn't exist
-        $uploadDir = '/var/www/html/uploads/';
+        $uploadDir = _ROOT . '/uploads/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }

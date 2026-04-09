@@ -3,18 +3,21 @@
 * SPDX-License-Identifier: AGPL-3.0-or-later
 * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
 */
+
+require_once __DIR__ . '/../services/shell_command_utilities.php';
+
 /**
  * Process SBOM evaluation asynchronously
  * This function can be called from the upload process to start evaluation immediately
  */
 function processSBOMAsync($sbomId, $deviceId, $userId) {
     // Start background process
-    $command = "cd /var/www/html && /usr/bin/php /var/www/html/services/async_sbom_processor.php --sbom-id=$sbomId --device-id=$deviceId --user-id=$userId > /dev/null 2>&1 &";
+    $command = "cd " . _ROOT . " && /usr/bin/php " . _ROOT . "/services/async_sbom_processor.php --sbom-id=$sbomId --device-id=$deviceId --user-id=$userId";
     
     // Execute in background
-    exec($command);
+    $result = ShellCommandUtilities::executeShellCommand($command, ['blocking' => false]);
     
-    return true;
+    return $result['success'];
 }
 
 /**
@@ -340,7 +343,7 @@ function searchNVDForCPE($cpe) {
         ];
         
         // Add API key if available
-        $apiKeyFile = '/var/www/html/config/nvd_api_key.txt';
+        $apiKeyFile = _ROOT . '/config/nvd_api_key.txt';
         if (file_exists($apiKeyFile)) {
             $params['apiKey'] = trim(file_get_contents($apiKeyFile));
         }

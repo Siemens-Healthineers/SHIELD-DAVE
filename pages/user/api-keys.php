@@ -115,9 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Handle success message from redirect
 if (isset($_GET['success']) && $_GET['success'] === 'created') {
-    $successMessage = "API key created successfully!";
     if (isset($_GET['key'])) {
         $newlyCreatedApiKey = $_GET['key'];
+        $successMessage = "API key created successfully! Your new API key is:  " . dave_htmlspecialchars($newlyCreatedApiKey) . " Please copy this key now - you won't be able to see it again!</small>";
+    } else {
+        $successMessage = "API key created successfully!";
     }
 }
 
@@ -129,34 +131,50 @@ $availableScopes = [];
 switch (strtolower($user['role'])) {
     case 'admin':
         $availableScopes = [
+            'users:read', 'users:write', 'users:delete',
             'assets:read', 'assets:write', 'assets:delete',
             'vulnerabilities:read', 'vulnerabilities:write', 'vulnerabilities:delete',
             'components:read', 'components:write', 'components:delete',
             'recalls:read', 'recalls:write', 'recalls:delete',
-            'users:read', 'users:write', 'users:delete',
-            'analytics:read', 'analytics:write',
-            'patches:read', 'patches:write',
-            'locations:read', 'locations:write', 'locations:delete',
             'reports:read', 'reports:write', 'reports:delete',
             'risks:read', 'risks:write', 'risks:delete',
             'system:read', 'system:write',
+            'analytics:read', 'analytics:write',
+            'patches:read', 'patches:write',
+            'remediations:read', 'remediations:write', 'remediations:delete',
+            'locations:read', 'locations:write', 'locations:delete',
             'api_keys:read', 'api_keys:write', 'api_keys:delete'
         ];
         break;
     case 'user':
         $availableScopes = [
-            'assets:read',
-            'vulnerabilities:read',
-            'components:read',
-            'recalls:read',
-            'analytics:read',
-            'patches:read',
-            'locations:read',
-            'reports:read'
+            'assets:read', 'assets:write',
+            'vulnerabilities:read', 'vulnerabilities:write',
+            'risks:read', 'risks:write',
+            'components:read', 'components:write',
+            'recalls:read', 'recalls:write',
+            'reports:read', 'reports:write',
+            'analytics:read', 'analytics:write',
+            'patches:read', 'patches:write',
+            'remediations:read', 'remediations:write',
+            'locations:read', 'locations:write',
+            'api_keys:read', 'api_keys:write'
         ];
         break;
     default:
-        $availableScopes = ['assets:read'];
+        $availableScopes = [
+            'assets:read', 'assets:write',
+            'vulnerabilities:read', 'vulnerabilities:write',
+            'risks:read', 'risks:write',
+            'components:read', 'components:write',
+            'recalls:read', 'recalls:write',
+            'reports:read', 'reports:write',
+            'analytics:read', 'analytics:write',
+            'patches:read', 'patches:write',
+            'remediations:read', 'remediations:write',
+            'locations:read', 'locations:write',
+            'api_keys:read', 'api_keys:write'
+        ];
 }
 ?>
 
@@ -437,6 +455,10 @@ switch (strtolower($user['role'])) {
                                             <input type="checkbox" name="scopes[]" value="assets:read" id="assets_read">
                                             <label for="assets_read">Read</label>
                                         </div>
+                                        <div class="permission-checkbox">
+                                            <input type="checkbox" name="scopes[]" value="assets:write" id="assets_write">
+                                            <label for="assets_write">Write</label>
+                                        </div>
                                     </div>
                                 </div>
                                 <?php endif; ?>
@@ -447,6 +469,10 @@ switch (strtolower($user['role'])) {
                                     <div class="permission-checkbox">
                                         <input type="checkbox" name="scopes[]" value="vulnerabilities:read" id="vulns_read">
                                         <label for="vulns_read">Read</label>
+                                    </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="vulnerabilities:write" id="vulns_write">
+                                        <label for="vulns_write">Write</label>
                                     </div>
                                 </div>
                                 <?php endif; ?>
@@ -459,6 +485,10 @@ switch (strtolower($user['role'])) {
                                         <input type="checkbox" name="scopes[]" value="components:read" id="components_read">
                                         <label for="components_read">Read</label>
                                     </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="components:write" id="components_write">
+                                        <label for="components_write">Write</label>
+                                    </div>
                                 </div>
                                 <?php endif; ?>
 
@@ -469,6 +499,10 @@ switch (strtolower($user['role'])) {
                                         <input type="checkbox" name="scopes[]" value="recalls:read" id="recalls_read">
                                         <label for="recalls_read">Read</label>
                                     </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="recalls:write" id="recalls_write">
+                                        <label for="recalls_write">Write</label>
+                                    </div>
                                 </div>
                                 <?php endif; ?>
                                 
@@ -478,6 +512,10 @@ switch (strtolower($user['role'])) {
                                     <div class="permission-checkbox">
                                         <input type="checkbox" name="scopes[]" value="reports:read" id="reports_read">
                                         <label for="reports_read">Read</label>
+                                    </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="reports:write" id="reports_write">
+                                        <label for="reports_write">Write</label>
                                     </div>
                                 </div>
                                 <?php endif; ?>
@@ -494,6 +532,10 @@ switch (strtolower($user['role'])) {
                                         <input type="checkbox" name="scopes[]" value="analytics:read" id="analytics_read">
                                         <label for="analytics_read">Read</label>
                                     </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="analytics:write" id="analytics_write">
+                                        <label for="analytics_write">Write</label>
+                                    </div>
                                 </div>
                                 <?php endif; ?>
                                 
@@ -504,6 +546,10 @@ switch (strtolower($user['role'])) {
                                         <input type="checkbox" name="scopes[]" value="patches:read" id="patches_read">
                                         <label for="patches_read">Read</label>
                                     </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="patches:write" id="patches_write">
+                                        <label for="patches_write">Write</label>
+                                    </div>
                                 </div>
                                 <?php endif; ?>
                                 
@@ -513,6 +559,24 @@ switch (strtolower($user['role'])) {
                                     <div class="permission-checkbox">
                                         <input type="checkbox" name="scopes[]" value="locations:read" id="locations_read">
                                         <label for="locations_read">Read</label>
+                                    </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="locations:write" id="locations_write">
+                                        <label for="locations_write">Write</label>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if (in_array('risks:read', $availableScopes)): ?>
+                                <div class="permission-group">
+                                    <h4>Risks</h4>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="risks:read" id="risks_read">
+                                        <label for="risks_read">Read</label>
+                                    </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="risks:write" id="risks_write">
+                                        <label for="risks_write">Write</label>
                                     </div>
                                 </div>
                                 <?php endif; ?>

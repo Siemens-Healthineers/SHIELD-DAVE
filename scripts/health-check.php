@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../services/shell_command_utilities.php';
 
 class HealthChecker {
     private $db;
@@ -101,7 +102,7 @@ class HealthChecker {
     }
 
     private function checkLogFiles() {
-        $logDir = '/var/www/html/logs';
+        $logDir = _ROOT . '/logs';
         if (!is_dir($logDir)) {
             $this->warnings[] = "Log directory not found: $logDir";
             return;
@@ -115,8 +116,12 @@ class HealthChecker {
             
             // Check for recent errors
             foreach ($logFiles as $logFile) {
-                $recentErrors = shell_exec("grep -i 'error\\|fatal\\|exception' $logFile | tail -5");
-                if (!empty(trim($recentErrors))) {
+                $result = ShellCommandUtilities::executeShellCommand(
+                    "grep -i 'error\\|fatal\\|exception' $logFile | tail -5",
+                    ['trim_output' => true]
+                );
+                $recentErrors = $result['success'] ? $result['output'] : '';
+                if (!empty($recentErrors)) {
                     $this->warnings[] = "Recent errors in " . basename($logFile);
                 }
             }
@@ -124,7 +129,8 @@ class HealthChecker {
     }
 
     private function checkCronJobs() {
-        $cronOutput = shell_exec('crontab -l 2>/dev/null');
+        $result = ShellCommandUtilities::executeShellCommand('crontab -l 2>/dev/null');
+        $cronOutput = $result['success'] ? $result['output'] : '';
         if (empty($cronOutput)) {
             $this->warnings[] = "No cron jobs configured";
         } else {
@@ -140,8 +146,12 @@ class HealthChecker {
         $services = ['apache2', 'postgresql'];
         
         foreach ($services as $service) {
-            $status = shell_exec("systemctl is-active $service 2>/dev/null");
-            if (trim($status) === 'active') {
+            $result = ShellCommandUtilities::executeShellCommand(
+                "systemctl is-active $service 2>/dev/null",
+                ['trim_output' => true]
+            );
+            $status = $result['success'] ? $result['output'] : '';
+            if ($status === 'active') {
                 $this->success[] = "Service '$service': Running";
             } else {
                 $this->issues[] = "Service '$service': Not running";

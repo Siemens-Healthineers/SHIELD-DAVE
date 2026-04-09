@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 # Configuration
 APP_ROOT="/var/www/html"
 BACKUP_DIR="/var/backups/dave"
-LOG_FILE="/var/www/html/logs/deployment.log"
+LOG_FILE="$APP_ROOT/logs/deployment.log"
 ENV_FILE="$APP_ROOT/.env"
 ENV_EXAMPLE="$APP_ROOT/docs/env.example"
 

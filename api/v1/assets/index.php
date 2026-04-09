@@ -48,6 +48,13 @@ $db = DatabaseConfig::getInstance();
 $method = $_SERVER['REQUEST_METHOD'];
 $path = $_GET['path'] ?? '';
 
+// Normalize: strip 'index.php' injected by the central router so that
+// /api/v1/assets/index.php and /api/v1/assets both list assets, and
+// /api/v1/assets/index.php/{uuid} and /api/v1/assets/{uuid} both fetch one asset.
+if (preg_match('#^index\.php(/(.*))?$#', $path, $m)) {
+    $path = $m[2] ?? '';
+}
+
 // Route requests
 switch ($method) {
     case 'GET':
@@ -80,12 +87,13 @@ function handleGetRequest($path) {
             getAsset($path);
         }
     } catch (Exception $e) {
+        error_log("Assets API handleGetRequest error: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
         http_response_code(500);
         echo json_encode([
             'success' => false,
             'error' => [
                 'code' => 'INTERNAL_ERROR',
-                'message' => 'Internal server error'
+                'message' => $e->getMessage()
             ],
             'timestamp' => date('c')
         ]);
@@ -97,7 +105,7 @@ function listAssets() {
     
     // Check if user has permission to read assets
     $unifiedAuth->requirePermission('assets', 'read');
-    
+
     // Get query parameters
     $page = max(1, intval($_GET['page'] ?? 1));
     $limit = min(100, max(1, intval($_GET['limit'] ?? 25)));
@@ -106,6 +114,7 @@ function listAssets() {
     $asset_type = $_GET['asset_type'] ?? '';
     $status = $_GET['status'] ?? '';
     $cve_filter = $_GET['cve_filter'] ?? '';
+    $k_number = $_GET['k_number'] ?? '';
     
     $offset = ($page - 1) * $limit;
     
@@ -159,6 +168,17 @@ function listAssets() {
                 WHERE dvl.cve_id IN ($cve_placeholder_string)
             )";
         }
+    }
+    
+    // K-number filtering - find assets mapped to a specific FDA 510(k) number
+    if (!empty($k_number)) {
+        $where_conditions[] = "a.asset_id IN (
+            SELECT a2.asset_id
+            FROM assets a2
+            INNER JOIN medical_devices md2 ON a2.asset_id = md2.asset_id
+            WHERE UPPER(md2.k_number) = UPPER(:k_number)
+        )";
+        $params[':k_number'] = $k_number;
     }
     
     $where_clause = implode(' AND ', $where_conditions);

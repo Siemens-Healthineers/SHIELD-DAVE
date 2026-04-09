@@ -10,6 +10,8 @@ MAC OUI Lookup Service for Device Assessment and Vulnerability Exposure ()
 Handles MAC address to manufacturer lookups
 """
 
+import os
+
 import requests
 import json
 import logging
@@ -18,7 +20,7 @@ import time
 
 # Configure logging - only if log file is writable
 try:
-    log_file = '/var/www/html/logs/oui_lookup.log'
+    log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'logs', 'oui_lookup.log')
     # Check if log directory exists and is writable
     import os
     log_dir = os.path.dirname(log_file)

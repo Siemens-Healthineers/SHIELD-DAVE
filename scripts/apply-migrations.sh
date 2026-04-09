@@ -42,7 +42,7 @@ DB_PASSWORD=${4:-$DB_PASSWORD}
 log "Applying database migrations..."
 
 # Check if migrations directory exists
-MIGRATIONS_DIR="/var/www/html/database/migrations"
+MIGRATIONS_DIR="$APP_ROOT/database/migrations"
 if [ ! -d "$MIGRATIONS_DIR" ]; then
     error "Migrations directory not found: $MIGRATIONS_DIR"
 fi

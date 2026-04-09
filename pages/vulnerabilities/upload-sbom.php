@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/version-comparison.php';
+require_once __DIR__ . '/../../services/shell_command_utilities.php';
 
 // Require authentication and permission
 $auth->requireAuth();
@@ -119,11 +120,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['sbom_file'])) {
 function processSBOMFile($filepath, $deviceId, $userId) {
     try {
         // Call Python SBOM parser with better error handling
-        $command = "cd /var/www/html && python3 python/services/sbom_parser.py '$filepath'";
-        $output = shell_exec($command . ' 2>&1');
+        $command = "cd " . _ROOT . " && python3 python/services/sbom_parser.py '$filepath'";
+        $result = ShellCommandUtilities::executeShellCommand($command);
+        $output = $result['success'] ? $result['output'] : '';
         
         // Check if command executed successfully
-        if ($output === null) {
+        if (!$result['success'] || $output === null) {
             throw new Exception("Failed to execute Python SBOM parser. Please check if Python 3 is installed and the parser script exists.");
         }
         
@@ -323,10 +325,14 @@ function processSBOMFile($filepath, $deviceId, $userId) {
             // Start async evaluation process with proper device and asset IDs
             $deviceParam = $actualDeviceId ? "--device-id=$actualDeviceId" : "";
             $assetParam = $actualAssetId ? "--asset-id=$actualAssetId" : "";
-            $command = "cd /var/www/html && /usr/bin/php /var/www/html/services/async_sbom_processor.php --sbom-id=$sbomId $deviceParam $assetParam --user-id=$userId > /dev/null 2>&1 &";
-            exec($command);
+            $command = "cd " . _ROOT . " && /usr/bin/php " . _ROOT . "/services/async_sbom_processor.php --sbom-id=$sbomId $deviceParam $assetParam --user-id=$userId";
+            $result = ShellCommandUtilities::executeShellCommand($command, ['blocking' => false]);
             
-            error_log("Started async SBOM evaluation for SBOM: $sbomId (Device: " . ($actualDeviceId ?? 'null') . ", Asset: $actualAssetId)");
+            if ($result['success']) {
+                error_log("Started async SBOM evaluation for SBOM: $sbomId (Device: " . ($actualDeviceId ?? 'null') . ", Asset: $actualAssetId)");
+            } else {
+                error_log("Failed to start async SBOM evaluation: " . ($result['error'] ?? 'Unknown error'));
+            }
         } catch (Exception $asyncError) {
             error_log("Failed to start async SBOM evaluation: " . $asyncError->getMessage());
             // Don't fail the entire operation if async processing fails

@@ -58,7 +58,8 @@ if (empty($segments[0])) {
             'devices' => '/api/v1/devices/',
             'reports' => '/api/v1/reports/',
             'epss' => '/api/v1/epss/',
-            'remediation-actions' => '/api/v1/remediation-actions/'
+            'remediation-actions' => '/api/v1/remediation-actions/',
+            'remediations' => '/api/v1/remediations/'
         ],
         'timestamp' => date('c')
     ]);
@@ -212,6 +213,25 @@ switch ($endpoint) {
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Remediation actions endpoint not found']);
+        }
+        break;
+    
+    case 'remediations':
+        if (file_exists(__DIR__ . '/remediations/index.php')) {
+            $_GET['path'] = $sub_path;
+            include __DIR__ . '/remediations/index.php';
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Remediations endpoint not found']);
+        }
+        break;
+    
+    case 'software-packages':
+        if (file_exists(__DIR__ . '/software-packages/' . $sub_path)) {
+            include __DIR__ . '/software-packages/' . $sub_path;
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Software packages endpoint not found: ' . $sub_path]);
         }
         break;
     

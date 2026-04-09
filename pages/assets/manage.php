@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../services/shell_command_utilities.php';
 require_once __DIR__ . '/../../includes/cache.php';
 
 // Authentication required
@@ -21,40 +22,215 @@ if (!$user) {
     exit;
 }
 
-
 $db = DatabaseConfig::getInstance();
 
-// Get asset types data
-$sql = "SELECT 
-            CASE 
-                WHEN md.device_id IS NOT NULL THEN 'Medical Device'
-                ELSE COALESCE(a.asset_type, 'Unknown')
-            END as asset_type,
-            COUNT(*) as count 
-        FROM assets a
-        LEFT JOIN medical_devices md ON a.asset_id = md.asset_id
-        WHERE a.status = 'Active' 
-        GROUP BY 
-            CASE 
-                WHEN md.device_id IS NOT NULL THEN 'Medical Device'
-                ELSE COALESCE(a.asset_type, 'Unknown')
-            END
-        ORDER BY count DESC";
-
-$stmt = $db->query($sql);
-$assetTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-
-
-// Get total assets
-$totalAssetsSql = "SELECT COUNT(*) as total FROM assets WHERE status = 'Active'";
-$totalAssetsStmt = $db->query($totalAssetsSql);
-$totalAssets = $totalAssetsStmt->fetch()['total'] ?? 0;
+// Helper function to extract JSON array/object from output that may contain debug messages
+function extractJsonFromOutput($output) {
+    if (empty($output)) {
+        return null;
+    }
+    
+    // Try to find JSON array or object in the output
+    // Look for [ or { at the start of a line
+    $lines = explode("\n", $output);
+    $jsonLines = [];
+    $inJson = false;
+    $depth = 0;
+    
+    foreach ($lines as $line) {
+        $trimmed = trim($line);
+        
+        // Skip empty lines
+        if (empty($trimmed)) {
+            continue;
+        }
+        
+        // Start of JSON array or object
+        // Make sure it's actually JSON, not a log timestamp like [2026-03-18 15:19:30]
+        if (!$inJson) {
+            $firstChar = substr($trimmed, 0, 1);
+            if ($firstChar === '[') {
+                // Check if it looks like a timestamp (has a digit after the bracket)
+                if (preg_match('/^\[\d{4}-\d{2}-\d{2}/', $trimmed)) {
+                    continue; // Skip timestamp lines
+                }
+                // Check if it's actually a JSON array
+                if ($trimmed === '[' || substr($trimmed, 1, 1) === '{' || substr($trimmed, 1, 1) === ']') {
+                    $inJson = true;
+                }
+            } elseif ($firstChar === '{') {
+                $inJson = true;
+            }
+        }
+        
+        if ($inJson) {
+            $jsonLines[] = $line;
+            
+            // Count brackets to know when JSON ends
+            $depth += substr_count($line, '[') + substr_count($line, '{');
+            $depth -= substr_count($line, ']') + substr_count($line, '}');
+            
+            if ($depth === 0) {
+                break; // End of JSON
+            }
+        }
+    }
+    
+    if (empty($jsonLines)) {
+        return null;
+    }
+    
+    $jsonString = implode("\n", $jsonLines);
+    $decoded = json_decode($jsonString, true);
+    
+    return (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+}
 
 // Handle AJAX requests
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
+    
+    // Handle job polling request
+    if ($_GET['ajax'] === 'check_jobs') {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$input || !isset($input['jobs'])) {
+            echo json_encode(['success' => false, 'error' => 'No jobs provided']);
+            exit;
+        }
+        
+        $results = [];
+        
+        foreach ($input['jobs'] as $job) {
+            if (!isset($job['pid']) || !isset($job['log_file'])) {
+                $results[] = [
+                    'job_id' => $job['job_id'] ?? null,
+                    'status' => 'error',
+                    'error' => 'Invalid job data'
+                ];
+                continue;
+            }
+            
+            // Check if process is still running
+            $isRunning = ShellCommandUtilities::isProcessRunning($job['pid']);
+            
+            if ($isRunning) {
+                $results[] = [
+                    'job_id' => $job['job_id'],
+                    'type' => $job['type'] ?? 'unknown',
+                    'pid' => $job['pid'],
+                    'status' => 'running'
+                ];
+            } else {
+                // Process completed, get results from log file
+                $output = ShellCommandUtilities::getCommandOutput($job['log_file']);
+                
+                if ($output) {
+                    $jobType = $job['type'] ?? 'unknown';
+                    
+                    switch ($jobType) {
+                        case 'fda_search':
+                            $devices = extractJsonFromOutput($output);
+                            if ($devices !== null && is_array($devices)) {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => 'fda_search',
+                                    'status' => 'completed',
+                                    'data' => [
+                                        'devices' => $devices,
+                                        'count' => count($devices)
+                                    ]
+                                ];
+                            } else {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => 'fda_search',
+                                    'status' => 'failed',
+                                    'error' => 'No devices found'
+                                ];
+                            }
+                            break;
+                            
+                        case '510k_search':
+                            // Extract JSON from log file (skip debug messages)
+                            error_log('510k search raw output: ' . substr($output, 0, 500)); // Log first 500 chars
+                            $k510kData = extractJsonFromOutput($output);
+                            error_log('510k search extracted data: ' . ($k510kData !== null ? 'FOUND' : 'NULL'));
+                            
+                            if ($k510kData !== null) {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => '510k_search',
+                                    'status' => 'completed',
+                                    'data' => $k510kData
+                                ];
+                            } else {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => '510k_search',
+                                    'status' => 'failed',
+                                    'error' => 'No 510k data found',
+                                    'raw_output_preview' => substr($output, 0, 200) // Include preview for debugging
+                                ];
+                            }
+                            break;
+                            
+                        case 'manufacturer_suggestions':
+                            $suggestions = extractJsonFromOutput($output);
+                            if ($suggestions !== null && is_array($suggestions)) {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => 'manufacturer_suggestions',
+                                    'status' => 'completed',
+                                    'data' => [
+                                        'suggestions' => $suggestions
+                                    ]
+                                ];
+                            } else {
+                                $results[] = [
+                                    'job_id' => $job['job_id'],
+                                    'type' => 'manufacturer_suggestions',
+                                    'status' => 'failed',
+                                    'error' => 'No suggestions found'
+                                ];
+                            }
+                            break;
+                            
+                        default:
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => $jobType,
+                                'status' => 'completed',
+                                'data' => $output
+                            ];
+                    }
+                    
+                    // Clean up log file after processing
+                    if (isset($job['log_file']) && file_exists($job['log_file'])) {
+                        @unlink($job['log_file']);
+                    }
+                } else {
+                    $results[] = [
+                        'job_id' => $job['job_id'],
+                        'type' => $job['type'] ?? 'unknown',
+                        'status' => 'failed',
+                        'error' => 'No output from command'
+                    ];
+                    
+                    // Clean up log file even on failure
+                    if (isset($job['log_file']) && file_exists($job['log_file'])) {
+                        @unlink($job['log_file']);
+                    }
+                }
+            }
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'results' => $results
+        ]);
+        exit;
+    }
     
     switch ($_GET['ajax']) {
         case 'get_assets':
@@ -291,21 +467,29 @@ if (isset($_GET['ajax'])) {
     }
     
     try {
-        // Call Python FDA service for 510k data with limit
-        $deviceId = escapeshellarg($deviceId);
-        $limit = escapeshellarg($limit);
-        $command = "python3 /var/www/html/python/services/fda_integration.py search_510k $deviceId --limit $limit";
-        $output = shell_exec($command);
+        // Call Python FDA service for 510k data with limit (non-blocking)
+        $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . '510k_search_' . uniqid() . '.log';
+        $command = "python3 " . _ROOT . "/python/services/fda_integration.py search_510k " . escapeshellarg($deviceId) . " --limit " . escapeshellarg($limit);
+        $result = ShellCommandUtilities::executeShellCommand($command, [
+            'blocking' => false,
+            'log_file' => $logFile
+        ]);
         
-        if ($output) {
-            $data = json_decode($output, true);
-            if ($data && !empty($data)) {
-                echo json_encode(['success' => true, 'data' => $data]);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'No 510k data found']);
-            }
+        if (!$result['success']) {
+            echo json_encode(['success' => false, 'message' => 'Failed to start 510k search']);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to fetch 510k data']);
+            echo json_encode([
+                'success' => true,
+                'message' => '510k search started',
+                'job' => [
+                    'job_id' => uniqid('510k_search_'),
+                    'pid' => $result['pid'],
+                    'log_file' => $result['log_file'],
+                    'status' => 'running',
+                    'type' => '510k_search',
+                    'device_id' => $deviceId
+                ]
+            ]);
         }
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error fetching 510k data: ' . $e->getMessage()]);
@@ -321,28 +505,36 @@ case 'search_fda_devices':
                 exit;
             }
             
-            // Call Python FDA service
-            $manufacturer = escapeshellarg($manufacturer);
-            $brandName = escapeshellarg($brandName);
-            $command = "python3 /var/www/html/python/services/fda_integration.py search_devices $manufacturer $brandName 1000";
-            $output = shell_exec($command);
+            // Call Python FDA service (non-blocking)
+            $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_search_' . uniqid() . '.log';
+            $command = "python3 " . _ROOT . "/python/services/fda_integration.py search_devices " . 
+                       escapeshellarg($manufacturer) . " " . escapeshellarg($brandName) . " 1000";
+            $result = ShellCommandUtilities::executeShellCommand($command, [
+                'blocking' => false,
+                'log_file' => $logFile
+            ]);
             
             // Debug logging
             error_log("FDA Search Command: " . $command);
-            error_log("FDA Search Output: " . substr($output, 0, 500));
             
-            if ($output) {
-                $devices = json_decode($output, true);
-                if ($devices && is_array($devices) && count($devices) > 0) {
-                    error_log("FDA Search Success: Found " . count($devices) . " devices");
-                    echo json_encode(['success' => true, 'devices' => $devices]);
-                } else {
-                    error_log("FDA Search Failed: No devices found or invalid JSON");
-                    echo json_encode(['success' => false, 'message' => 'No devices found']);
-                }
+            if (!$result['success']) {
+                error_log("FDA Search Failed: Could not start command");
+                echo json_encode(['success' => false, 'message' => 'Failed to start FDA search']);
             } else {
-                error_log("FDA Search Failed: No output from command");
-                echo json_encode(['success' => false, 'message' => 'Failed to search FDA database']);
+                error_log("FDA Search Started: PID=" . $result['pid']);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'FDA search started',
+                    'job' => [
+                        'job_id' => uniqid('fda_search_'),
+                        'pid' => $result['pid'],
+                        'log_file' => $result['log_file'],
+                        'status' => 'running',
+                        'type' => 'fda_search',
+                        'manufacturer' => $manufacturer,
+                        'brand_name' => $brandName
+                    ]
+                ]);
             }
             exit;
             
@@ -354,26 +546,29 @@ case 'search_fda_devices':
                 exit;
             }
             
-            // Call Python FDA service for suggestions
-            $partial = escapeshellarg($partial);
-            $command = "cd /var/www/html && python3 python/services/fda_integration.py get_suggestions $partial 2>&1";
-            $output = shell_exec($command);
+            // Call Python FDA service for suggestions (non-blocking)
+            $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_suggestions_' . uniqid() . '.log';
+            $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py get_suggestions " . escapeshellarg($partial);
+            $result = ShellCommandUtilities::executeShellCommand($command, [
+                'blocking' => false,
+                'log_file' => $logFile
+            ]);
             
-            try {
-                // Check if output contains error
-                if (strpos($output, 'Error:') !== false || strpos($output, 'Usage:') !== false) {
-                    echo json_encode(['suggestions' => []]);
-                    exit;
-                }
-                
-                $suggestions = json_decode($output, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($suggestions)) {
-                    echo json_encode(['suggestions' => $suggestions]);
-                } else {
-                    echo json_encode(['suggestions' => []]);
-                }
-            } catch (Exception $e) {
+            if (!$result['success']) {
                 echo json_encode(['suggestions' => []]);
+            } else {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Suggestions lookup started',
+                    'job' => [
+                        'job_id' => uniqid('fda_suggest_'),
+                        'pid' => $result['pid'],
+                        'log_file' => $result['log_file'],
+                        'status' => 'running',
+                        'type' => 'manufacturer_suggestions',
+                        'partial' => $partial
+                    ]
+                ]);
             }
             exit;
             
@@ -606,6 +801,33 @@ case 'search_fda_devices':
             exit;
     }
 }
+
+// Page initialization - only runs when rendering HTML (not for AJAX requests)
+
+// Get asset types data
+$sql = "SELECT 
+            CASE 
+                WHEN md.device_id IS NOT NULL THEN 'Medical Device'
+                ELSE COALESCE(a.asset_type, 'Unknown')
+            END as asset_type,
+            COUNT(*) as count 
+        FROM assets a
+        LEFT JOIN medical_devices md ON a.asset_id = md.asset_id
+        WHERE a.status = 'Active' 
+        GROUP BY 
+            CASE 
+                WHEN md.device_id IS NOT NULL THEN 'Medical Device'
+                ELSE COALESCE(a.asset_type, 'Unknown')
+            END
+        ORDER BY count DESC";
+
+$stmt = $db->query($sql);
+$assetTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get total assets
+$totalAssetsSql = "SELECT COUNT(*) as total FROM assets WHERE status = 'Active'";
+$totalAssetsStmt = $db->query($totalAssetsSql);
+$totalAssets = $totalAssetsStmt->fetch()['total'] ?? 0;
 
 // Get filter options
 $assetTypeOptions = $db->query("SELECT DISTINCT asset_type FROM assets WHERE asset_type IS NOT NULL ORDER BY asset_type")->fetchAll(PDO::FETCH_COLUMN);
@@ -4237,7 +4459,11 @@ $criticalities = $db->query("SELECT DISTINCT criticality FROM assets WHERE criti
                 .then(data => {
                     const suggestions = document.getElementById('mappingManufacturerSuggestions');
                     
-                    if (data.suggestions && data.suggestions.length > 0) {
+                    if (data.success && data.job) {
+                        // Non-blocking: poll for suggestions
+                        pollManufacturerSuggestionsJob(data.job, suggestions);
+                    } else if (data.suggestions && data.suggestions.length > 0) {
+                        // Blocking (backward compatibility): show suggestions directly
                         const suggestionHTML = data.suggestions.map(suggestion => 
                             `<div class="suggestion-item" onclick="selectSuggestion('${suggestion}')">${suggestion}</div>`
                         ).join('');
@@ -4256,6 +4482,62 @@ $criticalities = $db->query("SELECT DISTINCT criticality FROM assets WHERE criti
             } else {
                 document.getElementById('mappingManufacturerSuggestions').style.display = 'none';
             }
+        }
+        
+        function pollManufacturerSuggestionsJob(job, suggestions) {
+            suggestions.innerHTML = '<div class="suggestion-item"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            suggestions.style.display = 'block';
+            
+            const pollInterval = setInterval(() => {
+                fetch('?ajax=check_jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jobs: [job] })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Invalid JSON response:', text.substring(0, 500));
+                        throw new Error('Invalid JSON response from server');
+                    }
+                    
+                    if (data.success && data.results && data.results.length > 0) {
+                        const result = data.results[0];
+                        
+                        if (result.status === 'completed') {
+                            clearInterval(pollInterval);
+                            
+                            if (result.data && result.data.suggestions && result.data.suggestions.length > 0) {
+                                const suggestionHTML = result.data.suggestions.map(suggestion => 
+                                    `<div class="suggestion-item" onclick="selectSuggestion('${suggestion}')">${suggestion}</div>`
+                                ).join('');
+                                suggestions.innerHTML = suggestionHTML;
+                                suggestions.style.display = 'block';
+                            } else {
+                                suggestions.style.display = 'none';
+                            }
+                        } else if (result.status === 'failed') {
+                            clearInterval(pollInterval);
+                            console.error('Suggestions job failed:', result.error);
+                            suggestions.innerHTML = '<div class="suggestion-item">Error loading suggestions</div>';
+                        }
+                        // If still running, keep polling
+                    }
+                })
+                .catch(error => {
+                    console.error('Polling error:', error);
+                    clearInterval(pollInterval);
+                    suggestions.innerHTML = '<div class="suggestion-item">Error: ' + error.message + '</div>';
+                });
+            }, 1000); // Poll every 1 second for suggestions (faster feedback)
         }
 
         function selectSuggestion(suggestion) {
@@ -4300,20 +4582,100 @@ $criticalities = $db->query("SELECT DISTINCT criticality FROM assets WHERE criti
                     return response.json();
                 })
                 .then(data => {
-                    if (data.success && data.data && data.data.length > 0) {
-                        openFDAResultsModal(data.data);
+                    if (data.success && data.job) {
+                        // Non-blocking: start polling for results
+                        poll510kJob(data.job, searchBtn);
+                    } else if (data.success && data.data) {
+                        // Blocking (backward compatibility): show results directly
+                        if (data.data.length > 0) {
+                            openFDAResultsModal(data.data);
+                        } else {
+                            showNotification('No 510k records found', 'warning');
+                        }
+                        searchBtn.disabled = false;
+                        searchBtn.innerHTML = '<i class="fas fa-search"></i> Search 510k Database';
                     } else {
-                        showNotification(data.message || 'No 510k records found', 'warning');
+                        showNotification(data.message || 'Search failed', 'error');
+                        searchBtn.disabled = false;
+                        searchBtn.innerHTML = '<i class="fas fa-search"></i> Search 510k Database';
                     }
                 })
                 .catch(error => {
                     console.error('Error searching 510k:', error);
                     showNotification('Error searching 510k database', 'error');
-                })
-                .finally(() => {
                     searchBtn.disabled = false;
                     searchBtn.innerHTML = '<i class="fas fa-search"></i> Search 510k Database';
                 });
+        }
+        
+        function poll510kJob(job, searchBtn) {
+            const pollInterval = setInterval(() => {
+                fetch('?ajax=check_jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jobs: [job] })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    // Try to parse as JSON
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Invalid JSON response:', text.substring(0, 500));
+                        throw new Error('Invalid JSON response from server');
+                    }
+                    
+                    if (data.success && data.results && data.results.length > 0) {
+                        const result = data.results[0];
+                        
+                        if (result.status === 'running') {
+                            // Still running, keep polling
+                            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+                        } else {
+                            // Job completed
+                            clearInterval(pollInterval);
+                            searchBtn.disabled = false;
+                            searchBtn.innerHTML = '<i class="fas fa-search"></i> Search 510k Database';
+                            
+                            if (result.status === 'completed') {
+                                if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+                                    openFDAResultsModal(result.data);
+                                } else if (result.data && Array.isArray(result.data)) {
+                                    // Empty array - valid response but no results
+                                    showNotification('No 510k records found matching your search', 'info');
+                                } else {
+                                    showNotification('No 510k records found', 'warning');
+                                }
+                            } else {
+                                // Log raw output preview for debugging
+                                if (result.raw_output_preview) {
+                                    console.log('Raw output preview:', result.raw_output_preview);
+                                }
+                                showNotification(result.error || 'Search failed', 'error');
+                            }
+                        }
+                    } else {
+                        console.error('Unexpected response structure:', data);
+                        clearInterval(pollInterval);
+                        searchBtn.disabled = false;
+                        searchBtn.innerHTML = '<i class="fas fa-search"></i> Search 510k Database';
+                        showNotification('Unexpected response from server', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Polling error:', error);
+                    clearInterval(pollInterval);
+                    searchBtn.disabled = false;
+                    searchBtn.innerHTML = '<i class="fas fa-search"></i> Search 510k Database';
+                    showNotification('Error checking search status: ' + error.message, 'error');
+                });
+            }, 2000); // Poll every 2 seconds
         }
 
         function displayFDAResults(devices) {

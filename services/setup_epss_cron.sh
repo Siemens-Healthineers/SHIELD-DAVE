@@ -7,9 +7,10 @@
 
 set -e
 
+APP_ROOT="/var/www/html"
 # Configuration
-SCRIPT_DIR="/var/www/html/services"
-LOG_DIR="/var/www/html/logs"
+SCRIPT_DIR="$APP_ROOT/services"
+LOG_DIR="$APP_ROOT/logs"
 CRON_USER="www-data"
 PYTHON_PATH="/usr/bin/python3"
 
@@ -110,10 +111,10 @@ cat > "$SCRIPT_DIR/test_epss_sync.sh" << 'EOF'
 # Test script for EPSS sync service
 
 echo "Testing EPSS sync service..."
-echo "Logs will be written to /var/www/html/logs/epss_sync.log"
+echo "Logs will be written to $LOG_DIR/epss_sync.log"
 echo "Starting sync..."
 
-/usr/bin/python3 /var/www/html/services/epss_sync_service.py
+/usr/bin/python3 "$SCRIPT_DIR/epss_sync_service.py"
 
 echo "EPSS sync test completed. Check the log file for details."
 EOF
@@ -126,8 +127,8 @@ cat > "$SCRIPT_DIR/check_epss_status.sh" << 'EOF'
 #!/bin/bash
 # Check EPSS sync status
 
-LOG_FILE="/var/www/html/logs/epss_sync.log"
-DB_CONFIG_FILE="/var/www/html/config/database.php"
+LOG_FILE="$APP_ROOT/logs/epss_sync.log"
+DB_CONFIG_FILE="$APP_ROOT/config/database.php"
 
 echo "=== EPSS Sync Status ==="
 echo

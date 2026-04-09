@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../../config/config.php';
 require_once __DIR__ . '/../../../includes/unified-auth.php';
+require_once __DIR__ . '/../../../services/shell_command_utilities.php';
 
 // Set JSON content type
 header('Content-Type: application/json');
@@ -503,8 +504,9 @@ function checkMemoryHealth() {
 
 function getSystemUptime() {
     if (function_exists('sys_getloadavg')) {
-        $uptime = shell_exec('uptime');
-        return trim($uptime);
+        $result = ShellCommandUtilities::executeShellCommand('uptime', ['trim_output' => true]);
+        $uptime = $result['success'] ? $result['output'] : 'Unknown';
+        return $uptime;
     }
     return 'Unknown';
 }

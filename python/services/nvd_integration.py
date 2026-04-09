@@ -27,7 +27,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/var/www/html/logs/nvd_integration.log'),
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'logs', 'nvd_integration.log')),
         logging.StreamHandler()
     ]
 )
@@ -47,7 +47,7 @@ class NVDIntegration:
             # If not found, try to read from config file
             if not self.api_key:
                 try:
-                    config_file = '/var/www/html/config/nvd_api_key.txt'
+                    config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'config', 'nvd_api_key.txt')
                     if os.path.exists(config_file):
                         with open(config_file, 'r') as f:
                             self.api_key = f.read().strip()

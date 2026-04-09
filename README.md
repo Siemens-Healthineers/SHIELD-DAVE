@@ -20,7 +20,7 @@ The **Device Assessment and Vulnerability Exposure (DAVE)** is a comprehensive p
 ### Fresh Installation
 
 1. **Run the Installation Script**
-   - Create the folder /var/www/html if it doesnt exist and copy the contents of c01-csms into the html folder. 
+   - Create the folder /var/www/html if it doesnt exist and copy the contents of SHIELD-DAVE into the html folder. 
    Copy docs/env.example to .env and update the following fields with your own defaults
    The values you specify here will be used by the installation scripts to create the specific accounts/databases 
 
@@ -56,19 +56,11 @@ The **Device Assessment and Vulnerability Exposure (DAVE)** is a comprehensive p
 ## Documentation
 
 ### Installation & Setup
-- **[Setup Guide](SETUP.md)** - Complete installation and configuration guide
-- **[Deployment Guide](docs/deployment-guide.md)** - Production deployment instructions
-- **[Environment Configuration](docs/ENVIRONMENT_CONFIGURATION.md)** - Configuration management
-
-### User Guides
-- **[Quick Start Guide](docs/quick-start.md)** - Get started with DAVE
-- **[User Guide](docs/user-guide.md)** - Complete user documentation
-- **[Administrator Guide](docs/administrator-guide.md)** - System administration
+- **[Setup Guide](README.md)** - Follow the instructions in this document
+- **[Docker Install](docker-compose.yml)** - Install using the docker-compose file
 
 ### Technical Documentation
-- **[API Documentation](docs/api-fields-reference.md)** - REST API reference
-- **[Development Setup](docs/DEVELOPMENT-SETUP.md)** - Development environment setup
-- **[Security Guide](docs/admin-security-guide.md)** - Security best practices
+- **[API Documentation](docs/openapi-spec.yaml)** - REST API reference
 
 ## System Architecture
 
@@ -98,26 +90,6 @@ The **Device Assessment and Vulnerability Exposure (DAVE)** is a comprehensive p
 - **PHP**: 7.4+ (8.0+ recommended) with required extensions
 - **PostgreSQL**: 13+ (14+ recommended)
 - **Python**: 3.8+ (3.9+ recommended) for background services
-
-### Development/Testing Requirements (Optional)
-- Additional development tools (Composer, PHPUnit, etc.)
-
-## Installation Methods
-
-### 1. Automated Installation (Recommended)
-```bash
-# Clone or extract application files
-cd /var/www/html
-
-# Run installation script
-sudo bash scripts/install.sh
-
-# Complete setup wizard
-# Visit: http://your-server-ip/setup.php
-```
-
-### 2. Manual Installation
-See [Deployment Guide](docs/deployment-guide.md) for detailed manual installation steps.
 
 
 ## Web-Based Setup Wizard
@@ -181,13 +153,10 @@ After running the installation script, access the setup wizard at:
 - Python 3.8+ with pip (3.9+ recommended)
 - Apache 2.4+ or Nginx 1.18+
 
-#### Development/Testing (Optional)
-- Composer (for PHP dependencies)
-
 ### Development Setup
 ```bash
 # Clone repository
-git clone https://github.com/your-org/dave.git
+git clone https://github.com/your-org/SHIELD-DAVE
 cd dave
 
 # Set up development environment
@@ -247,8 +216,6 @@ This software is licensed under the [GNU Affero General Public License version 3
 ## Version History
 
 - **v1.0.0** - Initial release with web-based setup wizard
-- **v0.9.0** - Beta release with core functionality
-- **v0.8.0** - Alpha release with basic features
 
 ## Acknowledgments
 

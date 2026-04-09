@@ -395,7 +395,7 @@ function handleGetActionDetails($db, $unifiedAuth, $actionId) {
 function handleGetActionDevices($db, $unifiedAuth, $actionId) {
     $sql = "SELECT 
                 adl.*,
-                rpv.asset_name,
+                rpv.hostname,
                 rpv.location_name,
                 rpv.asset_criticality,
                 rpv.location_criticality,

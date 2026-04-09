@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../../config/config.php';
 require_once __DIR__ . '/../../../includes/unified-auth.php';
+require_once __DIR__ . '/../../../services/shell_command_utilities.php';
 
 // Set JSON content type
 header('Content-Type: application/json');
@@ -514,12 +515,14 @@ function triggerPythonSbomEvaluation($eval_id, $asset_id, $evaluation_type) {
             ];
         }
         
+        // Show a debug alert
+        echo "<script>alert('Starting SBOM evaluation for device: " . $device['device_id'] . "');</script>";
         // Execute Python SBOM evaluator
-        $python_script = '/var/www/html/python/services/vulnerability_scanner.py';
-        $command = "cd /var/www/html && python3 $python_script --device-id " . escapeshellarg($device['device_id']) . " --scan-type sbom";
+        $python_script = _ROOT . '/python/services/vulnerability_scanner.py';
+        $command = "cd " . _ROOT . " && python3 $python_script --device-id " . escapeshellarg($device['device_id']) . " --scan-type sbom";
         
         // Run in background
-        $output = shell_exec($command . " 2>&1 &");
+        $result = ShellCommandUtilities::executeShellCommand($command, ['blocking' => false]);
         
         // For now, mark as completed (in real implementation, this would be async)
         $complete_sql = "UPDATE vulnerability_scans SET status = 'Completed', completed_at = CURRENT_TIMESTAMP, vulnerabilities_found = 0, vulnerabilities_stored = 0 WHERE scan_id = :eval_id";

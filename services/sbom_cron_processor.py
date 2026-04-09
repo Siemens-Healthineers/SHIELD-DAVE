@@ -24,7 +24,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/var/www/html/logs/sbom_cron.log'),
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','logs', 'sbom_cron.log')),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -47,7 +47,7 @@ class SBOMCronProcessor:
     def _load_nvd_api_key(self) -> Optional[str]:
         """Load NVD API key from file"""
         try:
-            key_file = '/var/www/html/config/nvd_api_key.txt'
+            key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'nvd_api_key.txt')
             if os.path.exists(key_file):
                 with open(key_file, 'r') as f:
                     return f.read().strip()

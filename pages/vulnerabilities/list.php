@@ -140,6 +140,7 @@ if (isset($_GET['ajax'])) {
                 
                 // Get vulnerabilities
                 $sql = "SELECT 
+                            v.vulnerability_id,
                             v.cve_id,
                             v.description,
                             v.cvss_v4_score,
@@ -165,7 +166,7 @@ if (isset($_GET['ajax'])) {
                         LEFT JOIN vulnerability_overrides vo ON vo.cve_id = v.cve_id
                         LEFT JOIN vulnerability_overrides_device vod ON vod.cve_id = v.cve_id AND vod.device_id = dvl.device_id
                         $whereClause
-                        GROUP BY v.cve_id, v.description, v.cvss_v4_score, v.cvss_v4_vector,
+                        GROUP BY v.vulnerability_id, v.cve_id, v.description, v.cvss_v4_score, v.cvss_v4_vector,
                                  v.cvss_v3_score, v.cvss_v3_vector, v.cvss_v2_score, v.cvss_v2_vector,
                                  v.severity, v.published_date, v.last_modified_date,
                                  v.epss_score, v.epss_percentile, v.epss_date, v.epss_last_updated,
@@ -201,14 +202,27 @@ if (isset($_GET['ajax'])) {
             
         case 'get_vulnerability_details':
             try {
-                $cveId = $_GET['cve_id'] ?? '';
+                $vulnerabilityId = $_GET['vulnerability_id'] ?? '';
                 
-                if (empty($cveId)) {
-                    throw new Exception('CVE ID required');
+                if (empty($vulnerabilityId)) {
+                    throw new Exception('Vulnerability ID required');
                 }
                 
-                // Get vulnerability details
-                $sql = "SELECT v.*, 
+                // Get vulnerability basic details first
+                $sql = "SELECT v.*
+                        FROM vulnerabilities v
+                        WHERE v.vulnerability_id = ?";
+                
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$vulnerabilityId]);
+                $vulnerability = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$vulnerability) {
+                    throw new Exception('Vulnerability not found');
+                }
+                
+                // Get aggregated counts separately
+                $countSql = "SELECT 
                                COUNT(DISTINCT dvl.device_id) as total_affected,
                                COUNT(DISTINCT CASE WHEN dvl.remediation_status = 'Open' AND vod.device_id IS NULL THEN dvl.device_id END) as open_count,
                                COUNT(DISTINCT CASE WHEN dvl.remediation_status = 'In Progress' THEN dvl.device_id END) as in_progress_count,
@@ -219,16 +233,14 @@ if (isset($_GET['ajax'])) {
                         FROM vulnerabilities v
                         LEFT JOIN device_vulnerabilities_link dvl ON v.cve_id = dvl.cve_id
                         LEFT JOIN vulnerability_overrides_device vod ON vod.cve_id = v.cve_id AND vod.device_id = dvl.device_id
-                        WHERE v.cve_id = ?
-                        GROUP BY v.cve_id";
+                        WHERE v.vulnerability_id = ?";
                 
-                $stmt = $db->prepare($sql);
-                $stmt->execute([$cveId]);
-                $vulnerability = $stmt->fetch();
+                $countStmt = $db->prepare($countSql);
+                $countStmt->execute([$vulnerabilityId]);
+                $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
                 
-                if (!$vulnerability) {
-                    throw new Exception('Vulnerability not found');
-                }
+                // Merge counts into vulnerability array
+                $vulnerability = array_merge($vulnerability, $counts);
                 
                 // Get affected devices
                 $deviceSql = "SELECT DISTINCT ON (dvl.device_id) dvl.*, 
@@ -263,7 +275,7 @@ if (isset($_GET['ajax'])) {
                               ORDER BY dvl.device_id, device_name, sc.name";
                 
                 $deviceStmt = $db->prepare($deviceSql);
-                $deviceStmt->execute([$cveId]);
+                $deviceStmt->execute([$vulnerability['cve_id']]);
                 $affectedDevices = $deviceStmt->fetchAll();
                 
                 echo json_encode([
@@ -604,6 +616,9 @@ try {
                 <table class="data-table" id="vulnerabilitiesTable">
                     <thead>
                         <tr>
+                            <th class="sortable" data-sort="vulnerability_id">
+                                ID <i class="fas fa-sort"></i>
+                            </th>
                             <th class="sortable" data-sort="cve_id">
                                 CVE ID <i class="fas fa-sort"></i>
                             </th>
@@ -633,7 +648,7 @@ try {
                     </thead>
                     <tbody id="vulnerabilitiesTableBody">
                         <tr>
-                            <td colspan="8" class="loading-cell">
+                            <td colspan="9" class="loading-cell">
                                 <div class="loading-content">
                                     <i class="fas fa-spinner fa-spin"></i>
                                     <span>Loading vulnerabilities...</span>
@@ -827,7 +842,7 @@ try {
             if (vulnerabilities.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="empty-cell">
+                        <td colspan="9" class="empty-cell">
                             <i class="fas fa-search"></i>
                             <p>No vulnerabilities found</p>
                             <small>Try adjusting your search criteria</small>
@@ -840,9 +855,12 @@ try {
             tbody.innerHTML = vulnerabilities.map(vuln => `
                 <tr ${vuln.is_kev ? 'class="kev-row"' : ''}>
                     <td>
-                        <a href="#" onclick="showVulnerabilityDetails('${vuln.cve_id}')" class="cve-link">
-                            ${vuln.cve_id}
+                        <a href="#" onclick="showVulnerabilityDetails('${vuln.vulnerability_id}'); return false;" class="cve-link">
+                            ${vuln.vulnerability_id}
                         </a>
+                    </td>
+                    <td>
+                        ${vuln.cve_id}
                         ${vuln.is_kev ? '<span class="kev-badge" title="CISA Known Exploited Vulnerability">🔥 KEV</span>' : ''}
                     </td>
                     <td class="description-cell">
@@ -906,8 +924,8 @@ try {
             `).join('');
         }
 
-        function showVulnerabilityDetails(cveId) {
-            fetch(`?ajax=get_vulnerability_details&cve_id=${encodeURIComponent(cveId)}`)
+        function showVulnerabilityDetails(vulnerabilityId) {
+            fetch(`?ajax=get_vulnerability_details&vulnerability_id=${encodeURIComponent(vulnerabilityId)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -923,7 +941,7 @@ try {
         }
 
         function displayVulnerabilityModal(vulnerability, affectedDevices) {
-            document.getElementById('modalTitle').textContent = vulnerability.cve_id;
+            document.getElementById('modalTitle').textContent = `Vulnerability #${vulnerability.vulnerability_id} - ${vulnerability.cve_id}`;
             
             const modalBody = document.getElementById('modalBody');
             modalBody.innerHTML = `

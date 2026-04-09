@@ -491,22 +491,33 @@ class ApiKeyManager {
         switch (strtolower($role)) {
             case 'admin':
                 return [
+                    'users:read', 'users:write', 'users:delete',
                     'assets:read', 'assets:write', 'assets:delete',
                     'vulnerabilities:read', 'vulnerabilities:write', 'vulnerabilities:delete',
+                    'components:read', 'components:write', 'components:delete',
                     'recalls:read', 'recalls:write', 'recalls:delete',
-                    'users:read', 'users:write', 'users:delete',
                     'reports:read', 'reports:write', 'reports:delete',
                     'risks:read', 'risks:write', 'risks:delete',
-                    'components:read', 'components:write', 'components:delete',
-                    'system:read', 'system:write'
+                    'system:read', 'system:write',
+                    'analytics:read', 'analytics:write',
+                    'patches:read', 'patches:write',
+                    'remediations:read', 'remediations:write', 'remediations:delete',
+                    'locations:read', 'locations:write', 'locations:delete',
+                    'api_keys:read', 'api_keys:write', 'api_keys:delete'
                 ];
             case 'user':
                 return [
-                    'assets:read',
-                    'vulnerabilities:read',
-                    'components:read',
-                    'recalls:read',
-                    'reports:read'
+                    'assets:read', 'assets:write',
+                    'vulnerabilities:read', 'vulnerabilities:write',
+                    'risks:read', 'risks:write',
+                    'components:read', 'components:write',
+                    'recalls:read', 'recalls:write',
+                    'reports:read', 'reports:write',
+                    'analytics:read', 'analytics:write',
+                    'patches:read', 'patches:write',
+                    'remediations:read', 'remediations:write',
+                    'locations:read', 'locations:write',
+                    'api_keys:read', 'api_keys:write'
                 ];
             default:
                 return ['assets:read'];

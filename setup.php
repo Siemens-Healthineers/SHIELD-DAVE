@@ -98,7 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
                 'client_secret' => $_POST['cynerio_client_secret'] ?? '',
                 'endpoint' => $_POST['cynerio_endpoint'] ?? '',
                 'auth_endpoint' => $_POST['cynerio_auth_endpoint'] ?? '',
+            ],
+            'blueflow' => [
+                'endpoint' => $_POST['blueflow_endpoint'] ?? ''
+            ],
+            'netdisco' => [
+                'endpoint' => $_POST['netdisco_endpoint'] ?? ''
             ]
+
         ];
         
         // Save configuration
@@ -193,6 +200,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
         $envContent .= "CYNERIO_CLIENT_SECRET=" . $config['cynerio']['client_secret'] . "\n";
         $envContent .= "CYNERIO_ENDPOINT=" . $config['cynerio']['endpoint'] . "\n";
         $envContent .= "CYNERIO_AUTH_ENDPOINT=" . $config['cynerio']['auth_endpoint'] . "\n";
+
+        $envContent .= "BLUEFLOW_API_URL=" . $config['blueflow']['endpoint'] . "\n";
+
+        $envContent .= "NETDISCO_API_URL=" . $config['netdisco']['endpoint'] . "\n";
 
         file_put_contents(__DIR__ . '/.env', $envContent);
         
@@ -572,7 +583,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
                         <input type="text" id="cynerio_auth_endpoint" name="cynerio_auth_endpoint" 
                                value="<?php echo dave_htmlspecialchars($_POST['cynerio_auth_endpoint'] ?? ''); ?>">
                     </div>
-                </div>                
+                </div>   
+
+                <h3 style="margin: 30px 0 20px 0; color: #2d3748;">Blueflow Configuration (Optional)</h3>
+                
+                <div class="form-group">
+                    <label for="blueflow_endpoint">Blueflow Endpoint</label>
+                    <input type="text" id="blueflow_endpoint" name="blueflow_endpoint" 
+                            value="<?php echo dave_htmlspecialchars($_POST['blueflow_endpoint'] ?? ''); ?>">
+                </div>
+                
+                <h3 style="margin: 30px 0 20px 0; color: #2d3748;">Netdisco Configuration (Optional)</h3>
+                
+                <div class="form-group">
+                    <label for="netdisco_endpoint">Netdisco Endpoint</label>
+                    <input type="text" id="netdisco_endpoint" name="netdisco_endpoint" 
+                            value="<?php echo dave_htmlspecialchars($_POST['netdisco_endpoint'] ?? ''); ?>">
+                </div>
 
                 <button type="submit" class="btn">
                     <i class="fas fa-cog"></i> Complete Setup

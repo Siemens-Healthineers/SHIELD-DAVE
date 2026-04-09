@@ -693,7 +693,7 @@ try {
                     <td class="text-center">
                         ${risk.tags_exploited_in_the_wild ? 
                             '<span class="exploited-badge" title="Exploited in the Wild"><i class="fas fa-exclamation-triangle"></i></span>' : 
-                            '<span class="text-muted">â€”</span>'
+                            '<span class="text-muted">—</span>'
                         }
                     </td>
                 </tr>

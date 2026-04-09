@@ -90,21 +90,21 @@ setup_cron_jobs() {
 # Note: Backup operations are manual only - use Admin → Manual Tasks
 
 # Daily system monitoring at 6:00 AM
-0 6 * * * $APP_ROOT/scripts/monitor.sh --type full >> /var/www/html/logs/monitor.log 2>&1
+0 6 * * * $APP_ROOT/scripts/monitor.sh --type full >> $APP_ROOT/logs/monitor.log 2>&1
 
 # Hourly system monitoring
-0 * * * * $APP_ROOT/scripts/monitor.sh --type resources >> /var/www/html/logs/monitor.log 2>&1
+0 * * * * $APP_ROOT/scripts/monitor.sh --type resources >> $APP_ROOT/logs/monitor.log 2>&1
 
 # Daily log rotation and cleanup
-0 3 * * * find $APP_ROOT/logs -name "*.log" -mtime +30 -delete >> /var/www/html/logs/cleanup.log 2>&1
+0 3 * * * find $APP_ROOT/logs -name "*.log" -mtime +30 -delete >> $APP_ROOT/logs/cleanup.log 2>&1
 
 # Note: Update operations are manual only - use Admin → Manual Tasks
 
 # Database maintenance (vacuum and analyze) - daily at 1:00 AM
-0 1 * * * PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -c "VACUUM ANALYZE;" >> /var/www/html/logs/db_maintenance.log 2>&1
+0 1 * * * PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -c "VACUUM ANALYZE;" >> $APP_ROOT/logs/db_maintenance.log 2>&1
 
 # Check for failed services every 15 minutes
-*/15 * * * * $APP_ROOT/scripts/monitor.sh --type services >> /var/www/html/logs/monitor.log 2>&1
+*/15 * * * * $APP_ROOT/scripts/monitor.sh --type services >> $APP_ROOT/logs/monitor.log 2>&1
 
 # Note: Backup cleanup is handled by backup scripts when run manually
 EOF
@@ -159,7 +159,7 @@ $APP_ROOT/logs/*.log {
     endscript
 }
 
-/var/www/html/logs/*.log {
+$APP_ROOT/logs/*.log {
     daily
     missingok
     rotate 30
@@ -259,7 +259,7 @@ create_maintenance_scripts() {
 set -e
 
 APP_ROOT="/var/www/html"
-LOG_FILE="/var/www/html/logs/maintenance.log"
+LOG_FILE="$APP_ROOT/logs/maintenance.log"
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -298,7 +298,7 @@ EOF
 set -e
 
 APP_ROOT="/var/www/html"
-LOG_FILE="/var/www/html/logs/maintenance.log"
+LOG_FILE="$APP_ROOT/logs/maintenance.log"
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"

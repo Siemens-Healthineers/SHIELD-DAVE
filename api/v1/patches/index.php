@@ -33,9 +33,33 @@ $db = DatabaseConfig::getInstance();
 // Handle different operations
 $method = $_SERVER['REQUEST_METHOD'];
 
-//$pathInfo = $_SERVER['PATH_INFO'] ?? '';
-
-$pathInfo = $_GET['path'] ?? '';
+// Extract path info from URL - try multiple methods
+$pathInfo = '';
+if (isset($_SERVER['PATH_INFO'])) {
+    $pathInfo = $_SERVER['PATH_INFO'];
+} elseif (isset($_GET['path'])) {
+    $pathInfo = $_GET['path'];
+} elseif (isset($_SERVER['REQUEST_URI'])) {
+    // Parse REQUEST_URI to extract path after /patches/
+    $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    // Remove query parameters if any
+    $requestUri = strtok($requestUri, '?');
+    
+    // Remove index.php from the path if present
+    $requestUri = preg_replace('#/index\.php#', '', $requestUri);
+    
+    // Find the position of /patches in the URI
+    $patchesPos = strpos($requestUri, '/patches');
+    if ($patchesPos !== false) {
+        // Extract everything after /patches
+        $afterPatches = substr($requestUri, $patchesPos + strlen('/patches'));
+        // Only set pathInfo if there's actually something after /patches
+        // This handles /patches, /patches/, and /patches/something
+        if ($afterPatches && $afterPatches !== '/') {
+            $pathInfo = $afterPatches;
+        }
+    }
+}
 
 // Initialize unified authentication
 $unifiedAuth = new UnifiedAuth();
@@ -60,15 +84,41 @@ $user = $unifiedAuth->getCurrentUser();
 try {
     switch ($method) {
         case 'GET':
-            if (empty($pathInfo) || $pathInfo === '/') {
+            // Clean up pathInfo - remove any trailing slashes and whitespace
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
+            // Remove 'patches/index.php/' or 'index.php/' prefix if present
+            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
+            // Additional check: if pathInfo is literally "patches", treat as empty
+            if (empty($pathInfo) || $pathInfo === 'patches') {
+                // No path specified - list all patches
                 handleListPatches($db);
             } else {
-                $parts = explode('/', trim($pathInfo, '/'));
+                $parts = explode('/', $pathInfo);
                 $patchId = $parts[0];
+                
+                // Skip validation if patchId is empty or just whitespace or "patches"
+                if (empty(trim($patchId)) || $patchId === 'patches') {
+                    handleListPatches($db);
+                    break;
+                }
+                
+                // Validate patch ID is a valid UUID
+                if (!isValidUuid($patchId)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'Invalid patch ID format. Expected UUID.',
+                        'provided_value' => $patchId
+                    ]);
+                    exit;
+                }
                 
                 if (count($parts) === 1) {
                     handleGetPatch($db, $patchId);
-                } elseif ($parts[1] === 'applications') {
+                } elseif (isset($parts[1]) && $parts[1] === 'applications') {
                     handleGetPatchApplications($db, $patchId);
                 } else {
                     http_response_code(404);
@@ -78,13 +128,38 @@ try {
             break;
             
         case 'POST':
-            if (empty($pathInfo) || $pathInfo === '/') {
+            // Clean up pathInfo
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
+            // Remove 'patches/index.php/' or 'index.php/' prefix if present
+            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
+            // Additional check: if pathInfo is literally "patches", treat as empty
+            if (empty($pathInfo) || $pathInfo === 'patches') {
                 handleCreatePatch($db, $user);
             } else {
-                $parts = explode('/', trim($pathInfo, '/'));
+                $parts = explode('/', $pathInfo);
                 $patchId = $parts[0];
                 
-                if (count($parts) === 2 && $parts[1] === 'apply') {
+                // Skip validation if patchId is empty or "patches"
+                if (empty(trim($patchId)) || $patchId === 'patches') {
+                    handleCreatePatch($db, $user);
+                    break;
+                }
+                
+                // Validate patch ID is a valid UUID
+                if (!isValidUuid($patchId)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'Invalid patch ID format. Expected UUID.',
+                        'provided_value' => $patchId
+                    ]);
+                    exit;
+                }
+                
+                if (count($parts) === 2 && isset($parts[1]) && $parts[1] === 'apply') {
                     handleApplyPatch($db, $patchId, $user);
                 } else {
                     http_response_code(404);
@@ -94,8 +169,29 @@ try {
             break;
             
         case 'PUT':
+            // Clean up pathInfo
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
+            // Remove 'patches/index.php/' or 'index.php/' prefix if present
+            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
             if (!empty($pathInfo)) {
-                $patchId = trim($pathInfo, '/');
+                // Extract just the UUID (first path segment)
+                $parts = explode('/', $pathInfo);
+                $patchId = $parts[0];
+                
+                // Validate patch ID is a valid UUID
+                if (!isValidUuid($patchId)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'Invalid patch ID format. Expected UUID.',
+                        'provided_value' => $patchId
+                    ]);
+                    exit;
+                }
+                
                 handleUpdatePatch($db, $patchId, $user);
             } else {
                 http_response_code(400);
@@ -104,8 +200,30 @@ try {
             break;
             
         case 'DELETE':
+            // Clean up pathInfo
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
+            // Remove 'patches/index.php/' or 'index.php/' prefix if present
+            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
+            
             if (!empty($pathInfo)) {
-                $patchId = trim($pathInfo, '/');
+                // Extract just the UUID (first path segment)
+                $parts = explode('/', $pathInfo);
+                $patchId = $parts[0];
+                
+                // Validate patch ID is a valid UUID
+                if (!isValidUuid($patchId)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'Invalid patch ID format. Expected UUID.',
+                        'provided_value' => $patchId,
+                        'debug_pathInfo' => $pathInfo
+                    ]);
+                    exit;
+                }
+                
                 handleDeletePatch($db, $patchId, $user);
             } else {
                 http_response_code(400);
@@ -120,6 +238,16 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+}
+
+/**
+ * Validate UUID format
+ */
+function isValidUuid($uuid) {
+    if (empty($uuid)) {
+        return false;
+    }
+    return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid);
 }
 
 /**
@@ -158,6 +286,7 @@ function convertToMinutes($timeInput) {
 function handleListPatches($db) {
     $activeOnly = isset($_GET['active_only']) && $_GET['active_only'] === 'true';
     $deviceType = isset($_GET['device_type']) ? $_GET['device_type'] : null;
+    $search = isset($_GET['search']) ? trim($_GET['search']) : null;
     
     $filters = [];
     $params = [];
@@ -171,6 +300,12 @@ function handleListPatches($db) {
         $params[] = $deviceType;
     }
     
+    if (!empty($search)) {
+        $filters[] = "(p.patch_name ILIKE ? OR p.description ILIKE ? OR p.vendor ILIKE ? OR p.kb_article ILIKE ? OR p.target_device_type ILIKE ? OR sp.name ILIKE ? OR sp.vendor ILIKE ?)";
+        $searchTerm = '%' . $search . '%';
+        $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    }
+    
     $whereClause = !empty($filters) ? 'WHERE ' . implode(' AND ', $filters) : '';
     
     $sql = "SELECT 
@@ -179,6 +314,7 @@ function handleListPatches($db) {
                 sp.vendor as package_vendor,
                 u.username as created_by_name,
                 (SELECT COUNT(*) FROM patch_applications WHERE patch_id = p.patch_id) as application_count,
+                (SELECT COUNT(*) FROM remediation_patches_link WHERE patch_id = p.patch_id) as remediation_count,
                 CASE 
                     WHEN p.cve_list IS NULL THEN 0
                     ELSE jsonb_array_length(p.cve_list)
@@ -243,8 +379,8 @@ function handleCreatePatch($db, $user) {
     }
     
     // Validate patch_type
-    $validPatchTypes = ['Software Update', 'Firmware', 'Configuration', 'Security Patch', 'Hotfix'];
-    $patchType = $input['patch_type'] ?? 'Software Update';
+    $validPatchTypes = ['Source', 'Binary', 'Firmware', 'Emulator', 'Documentation', 'Configuration', 'Security Patch'];
+    $patchType = $input['patch_type'] ?? 'Security Patch';
     
     if (!in_array($patchType, $validPatchTypes)) {
         http_response_code(400);
@@ -314,7 +450,7 @@ function handleUpdatePatch($db, $patchId, $user) {
     
     // Validate patch_type if provided
     if (isset($input['patch_type'])) {
-        $validPatchTypes = ['Software Update', 'Firmware', 'Configuration', 'Security Patch', 'Hotfix'];
+        $validPatchTypes = ['Source', 'Binary', 'Firmware', 'Emulator', 'Documentation', 'Configuration', 'Security Patch'];
         
         if (!in_array($input['patch_type'], $validPatchTypes)) {
             http_response_code(400);
@@ -388,17 +524,66 @@ function handleDeletePatch($db, $patchId, $user) {
         return;
     }
     
-    $sql = "UPDATE patches SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE patch_id = ?";
-    $stmt = $db->prepare($sql);
-    $stmt->execute([$patchId]);
-    
-    // Log the action
-    logPatchAudit($db, $user['user_id'], 'DELETE_PATCH', 'patches', $patchId, []);
-    
-    echo json_encode([
-        'success' => true,
-        'message' => 'Patch deactivated successfully'
-    ]);
+    try {
+        // Start transaction
+        $pdo = $db->getConnection();
+        $pdo->beginTransaction();
+        
+        // Check if patch is linked to any remediations
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM remediation_patches_link WHERE patch_id = ?");
+        $stmt->execute([$patchId]);
+        $remediationCount = $stmt->fetch()['count'];
+        
+        if ($remediationCount > 0) {
+            $pdo->rollBack();
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Cannot delete patch that is linked to remediations. Please remove the patch from all remediations first.',
+                'remediation_count' => $remediationCount
+            ]);
+            return;
+        }
+        
+        // Delete related records first (to maintain referential integrity)
+        // Delete patch applications history
+        $stmt = $pdo->prepare("DELETE FROM patch_applications WHERE patch_id = ?");
+        $stmt->execute([$patchId]);
+        
+        // Delete remediation-patch links
+        $stmt = $pdo->prepare("DELETE FROM remediation_patches_link WHERE patch_id = ?");
+        $stmt->execute([$patchId]);
+        
+        // Delete the patch itself
+        $stmt = $pdo->prepare("DELETE FROM patches WHERE patch_id = ?");
+        $stmt->execute([$patchId]);
+        
+        // Check if patch was actually deleted
+        if ($stmt->rowCount() === 0) {
+            $pdo->rollBack();
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Patch not found']);
+            return;
+        }
+        
+        // Log the action
+        logPatchAudit($db, $user['user_id'], 'DELETE_PATCH', 'patches', $patchId, []);
+        
+        // Commit transaction
+        $pdo->commit();
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Patch deleted successfully'
+        ]);
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Failed to delete patch: ' . $e->getMessage()
+        ]);
+    }
 }
 
 /**

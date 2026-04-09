@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/var/www/html/logs/sbom_evaluation.log'),
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs', 'sbom_evaluation.log')),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -100,7 +100,7 @@ class SBOMEvaluationService:
     
     def _load_db_config(self) -> Dict[str, str]:
         """Load database configuration"""
-        config_file = '/var/www/html/config/database.php'
+        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'database.php')
         
         # Parse PHP config file
         config = {
@@ -130,7 +130,7 @@ class SBOMEvaluationService:
     
     def _load_nvd_api_key(self) -> Optional[str]:
         """Load NVD API key if available"""
-        api_key_file = '/var/www/html/config/nvd_api_key.txt'
+        api_key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'nvd_api_key.txt')
         
         if os.path.exists(api_key_file):
             try:
@@ -501,7 +501,7 @@ class SBOMEvaluationService:
             # Call KEV sync service
             import subprocess
             result = subprocess.run(
-                ['python3', '/var/www/html/services/kev_sync_service.py'],
+                ['python3', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'services', 'kev_sync_service.py')],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout

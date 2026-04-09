@@ -101,7 +101,7 @@ function handleGetCurrentUser() {
 function getUserPermissions($role) {
     $permissions = [
         'Admin' => [
-            'assets.read', 'assets.write', 'assets.delete',
+            'assets.read', 'assets.write', 'assets.delete', 'assets.create',
             'devices.read', 'devices.write', 'devices.delete',
             'vulnerabilities.read', 'vulnerabilities.write', 'vulnerabilities.delete',
             'recalls.read', 'recalls.write', 'recalls.delete',
@@ -110,7 +110,7 @@ function getUserPermissions($role) {
             'system.read', 'system.write'
         ],
         'User' => [
-            'assets.read', 'assets.write',
+            'assets.read', 'assets.write', 'assets.create',
             'devices.read', 'devices.write',
             'vulnerabilities.read',
             'recalls.read',

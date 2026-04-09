@@ -1027,6 +1027,18 @@ $users = $usersStmt->fetchAll();
                                         <label for="patches_write">Write</label>
                                     </div>
                                 </div>
+
+                                <div class="permission-group">
+                                    <h4>Remediations</h4>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="remediations:read" id="remediations_read">
+                                        <label for="remediations_read">Read</label>
+                                    </div>
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox" name="scopes[]" value="remediations:write" id="remediations_write">
+                                        <label for="remediations_write">Write</label>
+                                    </div>
+                                </div>
                                 
                                 <div class="permission-group">
                                     <h4>Locations</h4>
@@ -1208,7 +1220,8 @@ $users = $usersStmt->fetchAll();
                     'recalls:read', 'recalls:write', 'recalls:delete',
                     'users:read', 'users:write', 'users:delete',
                     'analytics:read', 'analytics:write',
-                    'patches:read', 'patches:write',
+                    'patches:read', 'patches:write',                    
+                    'remediations:read', 'remediations:write', 'remediations:delete',
                     'locations:read', 'locations:write', 'locations:delete',
                     'reports:read', 'reports:write', 'reports:delete',
                     'risks:read', 'risks:write', 'risks:delete',
@@ -1216,14 +1229,17 @@ $users = $usersStmt->fetchAll();
                     'api_keys:read', 'api_keys:write', 'api_keys:delete'
                 ],
                 'user': [
-                    'assets:read',
-                    'vulnerabilities:read',
-                    'components:read',
-                    'recalls:read',
-                    'analytics:read',
-                    'patches:read',
-                    'locations:read',
-                    'reports:read'
+                    'assets:read', 'assets:write',
+                    'vulnerabilities:read', 'vulnerabilities:write',
+                    'risks:read', 'risks:write',
+                    'components:read', 'components:write',
+                    'recalls:read', 'recalls:write',
+                    'reports:read', 'reports:write',
+                    'analytics:read', 'analytics:write',
+                    'patches:read', 'patches:write',                    
+                    'remediations:read', 'remediations:write',
+                    'locations:read', 'locations:write',
+                    'api_keys:read', 'api_keys:write'
                 ],
                 'viewer': [
                     'assets:read'

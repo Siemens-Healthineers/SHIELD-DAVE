@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../../config/config.php';
 require_once __DIR__ . '/../../../includes/unified-auth.php';
+require_once __DIR__ . '/../../../services/shell_command_utilities.php';
 
 // Set JSON content type
 header('Content-Type: application/json');
@@ -97,6 +98,9 @@ function handlePostRequest($path) {
             break;
         case 'bulk-map':
             bulkMapDevices();
+            break;
+        case 'check_jobs':
+            checkFDAJobs();
             break;
         default:
             http_response_code(404);
@@ -269,16 +273,32 @@ function searchFDADevices() {
     $limit = min($limit, 1000);
     
     try {
-        // Call Python FDA service with limit parameter
-        $command = "cd /var/www/html && python3 python/services/fda_integration.py search_devices '$manufacturer' '$model' $limit";
-        $output = shell_exec($command . ' 2>&1');
+        // Call Python FDA service with limit parameter (non-blocking)
+        $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_search_' . uniqid() . '.log';
+        $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py search_devices '$manufacturer' '$model' $limit";
+        $result = ShellCommandUtilities::executeShellCommand($command, [
+            'blocking' => false,
+            'log_file' => $logFile
+        ]);
         
-        $devices = json_decode($output, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            echo json_encode(['success' => true, 'devices' => $devices, 'count' => count($devices)]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to parse FDA response']);
+        if (!$result['success']) {
+            echo json_encode(['success' => false, 'error' => 'Failed to start FDA search: ' . ($result['error'] ?? 'Unknown error')]);
+            return;
         }
+        
+        // Return job info for polling
+        echo json_encode([
+            'success' => true,
+            'job' => [
+                'job_id' => uniqid('fda_search_'),
+                'pid' => $result['pid'],
+                'log_file' => $result['log_file'],
+                'status' => 'running',
+                'type' => 'search',
+                'manufacturer' => $manufacturer,
+                'model' => $model
+            ]
+        ]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => 'FDA search failed: ' . $e->getMessage()]);
     }
@@ -293,18 +313,36 @@ function getManufacturerSuggestions() {
     }
     
     try {
-        // Call Python FDA service for suggestions
-        $command = "cd /var/www/html && python3 python/services/fda_integration.py get_suggestions '$partial'";
-        $output = shell_exec($command . ' 2>&1');
+        // Call Python FDA service for suggestions (non-blocking)
+        $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_suggestions_' . uniqid() . '.log';
+        $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py get_suggestions '$partial'";
+        $result = ShellCommandUtilities::executeShellCommand($command, [
+            'blocking' => false,
+            'log_file' => $logFile
+        ]);
         
-        $suggestions = json_decode($output, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            echo json_encode(['suggestions' => $suggestions]);
-        } else {
-            echo json_encode(['suggestions' => []]);
+        if (!$result['success']) {
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Failed to start suggestion lookup'
+            ]);
+            return;
         }
+        
+        // Return job info for polling
+        echo json_encode([
+            'success' => true,
+            'job' => [
+                'job_id' => uniqid('fda_suggest_'),
+                'pid' => $result['pid'],
+                'log_file' => $result['log_file'],
+                'status' => 'running',
+                'type' => 'suggestions',
+                'partial' => $partial
+            ]
+        ]);
     } catch (Exception $e) {
-        echo json_encode(['suggestions' => []]);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
 
@@ -377,35 +415,41 @@ function mapDevice() {
             }
         }
         
-        // If we have a K number, fetch the full 510k details
+        // If we have a K number, fetch the full 510k details (non-blocking)
+        $k510kJob = null;
         if ($kNumber) {
             try {
-                $command = "cd /var/www/html && python3 python/services/fda_integration.py search_510k '$kNumber'";
-                $output = shell_exec($command . ' 2>&1');
-                $k510kResults = json_decode($output, true);
+                $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_510k_' . uniqid() . '.log';
+                $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py search_510k '$kNumber'";
+                $cmdResult = ShellCommandUtilities::executeShellCommand($command, [
+                    'blocking' => false,
+                    'log_file' => $logFile
+                ]);
                 
-                if ($k510kResults && is_array($k510kResults) && count($k510kResults) > 0) {
-                    $k510kData = $k510kResults[0]; // Get the first result
+                if ($cmdResult['success']) {
+                    $k510kJob = [
+                        'job_id' => uniqid('fda_510k_'),
+                        'pid' => $cmdResult['pid'],
+                        'log_file' => $cmdResult['log_file'],
+                        'status' => 'running',
+                        'type' => '510k',
+                        'k_number' => $kNumber,
+                        'asset_id' => $assetId
+                    ];
                 }
             } catch (Exception $e) {
                 // Continue without 510k details if fetch fails
-                error_log("Failed to fetch 510k details for $kNumber: " . $e->getMessage());
+                error_log("Failed to start 510k fetch for $kNumber: " . $e->getMessage());
             }
         }
         
-        // Insert medical device record with 510k information
+        // Insert medical device record (without 510k data initially - will be updated async)
         $sql = "INSERT INTO medical_devices (
             asset_id, device_identifier, brand_name, model_number, 
             manufacturer_name, device_description, gmdn_term, 
             is_implantable, fda_class, udi, mapping_confidence, mapping_method, 
-            mapped_by, mapped_at, k_number, decision_code, decision_date, 
-            decision_description, clearance_type, date_received, statement_or_summary,
-            applicant, contact, address_1, address_2, city, state, zip_code,
-            postal_code, country_code, advisory_committee, advisory_committee_description,
-            review_advisory_committee, expedited_review_flag, third_party_flag,
-            device_class, medical_specialty_description, registration_numbers,
-            fei_numbers, device_name, product_code, regulation_number, raw_510k_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            mapped_by, mapped_at, k_number
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual', ?, CURRENT_TIMESTAMP, ?)";
         
         $stmt = $db->prepare($sql);
         $stmt->execute([
@@ -421,36 +465,7 @@ function mapDevice() {
             $deviceInfo['udi'] ?? '',
             $deviceInfo['confidence_score'] ?? 0.0,
             $user['user_id'],
-            $kNumber,
-            // 510k specific fields
-            $k510kData['decision_code'] ?? '',
-            $k510kData['decision_date'] ?? null,
-            $k510kData['decision_description'] ?? '',
-            $k510kData['clearance_type'] ?? '',
-            $k510kData['date_received'] ?? null,
-            $k510kData['statement_or_summary'] ?? '',
-            $k510kData['applicant'] ?? '',
-            $k510kData['contact'] ?? '',
-            $k510kData['address_1'] ?? '',
-            $k510kData['address_2'] ?? '',
-            $k510kData['city'] ?? '',
-            $k510kData['state'] ?? '',
-            $k510kData['zip_code'] ?? '',
-            $k510kData['postal_code'] ?? '',
-            $k510kData['country_code'] ?? '',
-            $k510kData['advisory_committee'] ?? '',
-            $k510kData['advisory_committee_description'] ?? '',
-            $k510kData['review_advisory_committee'] ?? '',
-            $k510kData['expedited_review_flag'] ?? '',
-            $k510kData['third_party_flag'] ?? '',
-            $k510kData['device_class'] ?? '',
-            $k510kData['medical_specialty_description'] ?? '',
-            $k510kData['registration_numbers'] ?? '',
-            $k510kData['fei_numbers'] ?? '',
-            $k510kData['device_name'] ?? '',
-            $k510kData['product_code'] ?? '',
-            $k510kData['regulation_number'] ?? '',
-            $k510kData ? json_encode($k510kData) : null
+            $kNumber
         ]);
         
         $db->commit();
@@ -458,7 +473,18 @@ function mapDevice() {
         // Log action
         $auth->logUserAction($user['user_id'], 'MAP_DEVICE', 'medical_devices', $assetId);
         
-        echo json_encode(['success' => true, 'message' => 'Device mapped successfully']);
+        // Return success with optional 510k job info
+        $response = [
+            'success' => true, 
+            'message' => 'Device mapped successfully'
+        ];
+        
+        if ($k510kJob !== null) {
+            $response['k510k_job'] = $k510kJob;
+            $response['message'] .= ' - 510k details are being fetched in the background';
+        }
+        
+        echo json_encode($response);
         
     } catch (Exception $e) {
         $db->rollback();
@@ -477,150 +503,46 @@ function autoMapDevices() {
     }
     
     try {
-        // Get unmapped assets with manufacturer information
-        $sql = "SELECT asset_id, manufacturer, model, mac_address 
-                FROM assets 
-                WHERE asset_id NOT IN (SELECT asset_id FROM medical_devices) 
-                AND status = 'Active' 
-                AND manufacturer IS NOT NULL 
-                AND manufacturer != ''";
+        // Start auto-mapping as a background job
+        $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'automap_' . uniqid() . '.json';
+        $command = "cd " . _ROOT . " && php scripts/auto-map-devices.php {$user['user_id']} $logFile";
         
-        $stmt = $db->query($sql);
-        $assets = $stmt->fetchAll();
+        $result = ShellCommandUtilities::executeShellCommand($command, [
+            'blocking' => false,
+            'log_file' => $logFile
+        ]);
         
-        $mapped = 0;
-        $errors = [];
-        
-        foreach ($assets as $asset) {
-            try {
-                // Search FDA database with higher limit for better matching
-                $command = "cd /var/www/html && python3 python/services/fda_integration.py search_devices '{$asset['manufacturer']}' '{$asset['model']}' 50";
-                $output = shell_exec($command . ' 2>&1');
-                
-                $devices = json_decode($output, true);
-                if ($devices && count($devices) > 0) {
-                    // Use the device with highest confidence
-                    $bestDevice = $devices[0];
-                    foreach ($devices as $device) {
-                        if ($device['confidence_score'] > $bestDevice['confidence_score']) {
-                            $bestDevice = $device;
-                        }
-                    }
-                    
-                    // Only auto-map if confidence is high enough
-                    if ($bestDevice['confidence_score'] >= 0.7) {
-                        // Extract 510k information from premarket submissions
-                        $kNumber = '';
-                        $k510kData = null;
-                        
-                        if (isset($bestDevice['premarket_submissions']) && is_array($bestDevice['premarket_submissions'])) {
-                            // Get the first K number from premarket submissions
-                            foreach ($bestDevice['premarket_submissions'] as $submission) {
-                                if (isset($submission['submission_number']) && strpos($submission['submission_number'], 'K') === 0) {
-                                    $kNumber = $submission['submission_number'];
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        // If we have a K number, fetch the full 510k details
-                        if ($kNumber) {
-                            try {
-                                $command = "cd /var/www/html && python3 python/services/fda_integration.py search_510k '$kNumber'";
-                                $output = shell_exec($command . ' 2>&1');
-                                $k510kResults = json_decode($output, true);
-                                
-                                if ($k510kResults && is_array($k510kResults) && count($k510kResults) > 0) {
-                                    $k510kData = $k510kResults[0]; // Get the first result
-                                }
-                            } catch (Exception $e) {
-                                // Continue without 510k details if fetch fails
-                                error_log("Failed to fetch 510k details for $kNumber: " . $e->getMessage());
-                            }
-                        }
-                        
-                        $insertSql = "INSERT INTO medical_devices (
-                            asset_id, device_identifier, brand_name, model_number, 
-                            manufacturer_name, device_description, gmdn_term, 
-                            is_implantable, fda_class, udi, mapping_confidence, mapping_method, 
-                            mapped_by, mapped_at, k_number, decision_code, decision_date, 
-                            decision_description, clearance_type, date_received, statement_or_summary,
-                            applicant, contact, address_1, address_2, city, state, zip_code,
-                            postal_code, country_code, advisory_committee, advisory_committee_description,
-                            review_advisory_committee, expedited_review_flag, third_party_flag,
-                            device_class, medical_specialty_description, registration_numbers,
-                            fei_numbers, device_name, product_code, regulation_number, raw_510k_data
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'automatic', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                        
-                        $insertStmt = $db->prepare($insertSql);
-                        $insertStmt->execute([
-                            $asset['asset_id'],
-                            $bestDevice['device_identifier'] ?? '',
-                            $bestDevice['brand_name'] ?? '',
-                            $bestDevice['model_number'] ?? '',
-                            $bestDevice['manufacturer_name'] ?? '',
-                            $bestDevice['device_description'] ?? '',
-                            $bestDevice['gmdn_term'] ?? '',
-                            $bestDevice['is_implantable'] ?? false,
-                            $bestDevice['fda_class'] ?? '',
-                            $bestDevice['udi'] ?? '',
-                            $bestDevice['confidence_score'] ?? 0.0,
-                            $user['user_id'],
-                            $kNumber,
-                            // 510k specific fields
-                            $k510kData['decision_code'] ?? '',
-                            $k510kData['decision_date'] ?? null,
-                            $k510kData['decision_description'] ?? '',
-                            $k510kData['clearance_type'] ?? '',
-                            $k510kData['date_received'] ?? null,
-                            $k510kData['statement_or_summary'] ?? '',
-                            $k510kData['applicant'] ?? '',
-                            $k510kData['contact'] ?? '',
-                            $k510kData['address_1'] ?? '',
-                            $k510kData['address_2'] ?? '',
-                            $k510kData['city'] ?? '',
-                            $k510kData['state'] ?? '',
-                            $k510kData['zip_code'] ?? '',
-                            $k510kData['postal_code'] ?? '',
-                            $k510kData['country_code'] ?? '',
-                            $k510kData['advisory_committee'] ?? '',
-                            $k510kData['advisory_committee_description'] ?? '',
-                            $k510kData['review_advisory_committee'] ?? '',
-                            $k510kData['expedited_review_flag'] ?? '',
-                            $k510kData['third_party_flag'] ?? '',
-                            $k510kData['device_class'] ?? '',
-                            $k510kData['medical_specialty_description'] ?? '',
-                            $k510kData['registration_numbers'] ?? '',
-                            $k510kData['fei_numbers'] ?? '',
-                            $k510kData['device_name'] ?? '',
-                            $k510kData['product_code'] ?? '',
-                            $k510kData['regulation_number'] ?? '',
-                            $k510kData ? json_encode($k510kData) : null
-                        ]);
-                        
-                        $mapped++;
-                    }
-                }
-            } catch (Exception $e) {
-                $errors[] = "Error mapping asset {$asset['asset_id']}: " . $e->getMessage();
-            }
+        if (!$result['success']) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to start auto-mapping: ' . ($result['error'] ?? 'Unknown error')
+            ]);
+            return;
         }
         
         // Log action
-        $auth->logUserAction($user['user_id'], 'AUTO_MAP_DEVICES', 'medical_devices', null, [
-            'mapped_count' => $mapped,
-            'errors' => $errors
+        $auth->logUserAction($user['user_id'], 'AUTO_MAP_DEVICES_STARTED', 'medical_devices', null, [
+            'pid' => $result['pid'],
+            'log_file' => $logFile
         ]);
         
+        // Return job info for polling
         echo json_encode([
             'success' => true,
-            'mapped' => $mapped,
-            'errors' => $errors
+            'message' => 'Auto-mapping started in background',
+            'job' => [
+                'job_id' => uniqid('automap_'),
+                'pid' => $result['pid'],
+                'log_file' => $logFile,
+                'status' => 'running',
+                'type' => 'automap'
+            ]
         ]);
         
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Auto-mapping failed: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'error' => 'Auto-mapping failed: ' . $e->getMessage()]);
     }
 }
 
@@ -741,3 +663,249 @@ function unmapDevice() {
         echo json_encode(['error' => 'Failed to unmap device: ' . $e->getMessage()]);
     }
 }
+
+/**
+ * Check status of FDA background jobs
+ */
+function checkFDAJobs() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input || !isset($input['jobs'])) {
+        echo json_encode(['success' => false, 'error' => 'No jobs provided']);
+        return;
+    }
+    
+    $results = [];
+    
+    foreach ($input['jobs'] as $job) {
+        if (!isset($job['pid']) || !isset($job['log_file'])) {
+            $results[] = [
+                'job_id' => $job['job_id'] ?? null,
+                'status' => 'error',
+                'error' => 'Invalid job data'
+            ];
+            continue;
+        }
+        
+        // Check if process is still running
+        $isRunning = ShellCommandUtilities::isProcessRunning($job['pid']);
+        
+        if ($isRunning) {
+            $results[] = [
+                'job_id' => $job['job_id'],
+                'type' => $job['type'] ?? 'unknown',
+                'pid' => $job['pid'],
+                'status' => 'running'
+            ];
+        } else {
+            // Process completed, get results from log file
+            $output = ShellCommandUtilities::getCommandOutput($job['log_file']);
+            
+            if ($output) {
+                // Parse the output based on job type
+                $jobType = $job['type'] ?? 'unknown';
+                
+                switch ($jobType) {
+                    case 'search':
+                        $devices = json_decode($output, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'search',
+                                'status' => 'completed',
+                                'data' => [
+                                    'devices' => $devices,
+                                    'count' => count($devices),
+                                    'manufacturer' => $job['manufacturer'] ?? '',
+                                    'model' => $job['model'] ?? ''
+                                ]
+                            ];
+                        } else {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'search',
+                                'status' => 'failed',
+                                'error' => 'Failed to parse search results: ' . $output
+                            ];
+                        }
+                        break;
+                        
+                    case 'suggestions':
+                        $suggestions = json_decode($output, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'suggestions',
+                                'status' => 'completed',
+                                'data' => [
+                                    'suggestions' => $suggestions
+                                ]
+                            ];
+                        } else {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'suggestions',
+                                'status' => 'failed',
+                                'error' => 'Failed to parse suggestions'
+                            ];
+                        }
+                        break;
+                        
+                    case '510k':
+                        $k510kResults = json_decode($output, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => '510k',
+                                'status' => 'completed',
+                                'data' => [
+                                    'k510k_data' => $k510kResults,
+                                    'k_number' => $job['k_number'] ?? ''
+                                ]
+                            ];
+                        } else {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => '510k',
+                                'status' => 'failed',
+                                'error' => 'Failed to parse 510k data'
+                            ];
+                        }
+                        break;
+                        
+                    case 'automap':
+                        $automapResults = json_decode($output, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($automapResults)) {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'automap',
+                                'status' => 'completed',
+                                'data' => [
+                                    'mapped' => $automapResults['mapped'] ?? 0,
+                                    'skipped' => $automapResults['skipped'] ?? 0,
+                                    'errors' => $automapResults['errors'] ?? [],
+                                    'timestamp' => $automapResults['timestamp'] ?? date('c')
+                                ]
+                            ];
+                        } else {
+                            $results[] = [
+                                'job_id' => $job['job_id'],
+                                'type' => 'automap',
+                                'status' => 'failed',
+                                'error' => 'Failed to parse auto-map results: ' . $output
+                            ];
+                        }
+                        break;
+                        
+                    default:
+                        $results[] = [
+                            'job_id' => $job['job_id'],
+                            'type' => $jobType,
+                            'status' => 'completed',
+                            'data' => $output
+                        ];
+                }
+            } else {
+                $results[] = [
+                    'job_id' => $job['job_id'],
+                    'type' => $job['type'] ?? 'unknown',
+                    'status' => 'failed',
+                    'error' => 'No output from command'
+                ];
+            }
+        }
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'results' => $results
+    ]);
+}
+
+/*
+ * FRONTEND POLLING EXAMPLE
+ * 
+ * Example JavaScript code for polling FDA device search/mapping jobs:
+ * 
+ * // 1. Start an FDA search (non-blocking)
+ * fetch('/api/v1/devices/map.php?path=search&manufacturer=Siemens&model=Example')
+ *     .then(response => response.json())
+ *     .then(data => {
+ *         if (data.success && data.job) {
+ *             pollFDAJobs([data.job], handleSearchComplete);
+ *         }
+ *     });
+ * 
+ * // 2. Poll for job completion
+ * function pollFDAJobs(jobs, onComplete) {
+ *     const pollInterval = setInterval(() => {
+ *         fetch('/api/v1/devices/map.php?path=check_jobs', {
+ *             method: 'POST',
+ *             headers: { 'Content-Type': 'application/json' },
+ *             body: JSON.stringify({ jobs: jobs })
+ *         })
+ *         .then(response => response.json())
+ *         .then(data => {
+ *             if (data.success && data.results) {
+ *                 // Update jobs with current status
+ *                 data.results.forEach(result => {
+ *                     const jobIndex = jobs.findIndex(j => j.job_id === result.job_id);
+ *                     if (jobIndex !== -1) {
+ *                         jobs[jobIndex] = result;
+ *                     }
+ *                 });
+ *                 
+ *                 // Check if all completed
+ *                 const runningCount = jobs.filter(j => j.status === 'running').length;
+ *                 if (runningCount === 0) {
+ *                     clearInterval(pollInterval);
+ *                     onComplete(jobs);
+ *                 }
+ *             }
+ *         })
+ *         .catch(error => {
+ *             console.error('Polling error:', error);
+ *             clearInterval(pollInterval);
+ *         });
+ *     }, 2000); // Poll every 2 seconds
+ * }
+ * 
+ * // 3. Handle completed jobs
+ * function handleSearchComplete(jobs) {
+ *     jobs.forEach(job => {
+ *         if (job.status === 'completed' && job.type === 'search') {
+ *             console.log('Found devices:', job.data.devices);
+ *             displayDevices(job.data.devices);
+ *         } else if (job.status === 'failed') {
+ *             console.error('Search failed:', job.error);
+ *         }
+ *     });
+ * }
+ * 
+ * // 4. Example: Map a device with 510k background fetch
+ * function mapDeviceWithPolling(assetId, deviceData) {
+ *     fetch('/api/v1/devices/map.php?path=map', {
+ *         method: 'POST',
+ *         headers: { 'Content-Type': 'application/json' },
+ *         body: JSON.stringify({
+ *             asset_id: assetId,
+ *             device_data: JSON.stringify(deviceData)
+ *         })
+ *     })
+ *     .then(response => response.json())
+ *     .then(data => {
+ *         if (data.success) {
+ *             showNotification(data.message, 'success');
+ *             
+ *             // If there's a 510k job, poll for it
+ *             if (data.k510k_job) {
+ *                 pollFDAJobs([data.k510k_job], (completedJobs) => {
+ *                     showNotification('510k details loaded', 'success');
+ *                     // Refresh device display to show 510k data
+ *                     refreshDeviceDetails(assetId);
+ *                 });
+ *             }
+ *         }
+ *     });
+ * }
+ */

@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../../config/config.php';
 require_once __DIR__ . '/../../../includes/unified-auth.php';
+require_once __DIR__ . '/../../../services/shell_command_utilities.php';
 
 // Set JSON content type
 header('Content-Type: application/json');
@@ -250,7 +251,8 @@ function createBackup() {
     }
     
     // Build command based on backup type
-    $script_path = '/var/www/html/scripts/backup.sh';
+    // Do not hardcode path. Get it from app folder
+    $script_path = _ROOT . '/scripts/backup.sh';
     $command_options = '';
     
     switch ($backup_type) {
@@ -276,20 +278,26 @@ function createBackup() {
     
     // Execute backup script with proper error handling
     $log_file = '/tmp/dave_backup_' . date('Ymd_His') . '.log';
-    $command = "nohup $script_path $command_options > $log_file 2>&1 & echo \$!";
+    $command = "$script_path $command_options";
     
     // Run in background and capture PID
-    $pid = trim(shell_exec($command));
+    $result = ShellCommandUtilities::executeShellCommand($command, [
+        'blocking' => false,
+        'log_file' => $log_file,
+        'return_pid' => true
+    ]);
     
-    if (empty($pid) || !is_numeric($pid)) {
+    if (!$result['success'] || !$result['pid']) {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'error' => 'Failed to start backup process. Check script permissions and logs.',
+            'error' => $result['error'] ?? 'Failed to start backup process. Check script permissions and logs.',
             'timestamp' => date('c')
         ]);
         return;
     }
+    
+    $pid = $result['pid'];
     
     echo json_encode([
         'success' => true,
@@ -340,7 +348,7 @@ function restoreBackup() {
     }
     
     // Ensure script is executable
-    $script_path = '/var/www/html/scripts/restore.sh';
+    $script_path = _ROOT . '/scripts/restore.sh';
     if (!is_executable($script_path)) {
         @chmod($script_path, 0755);
     }
@@ -365,20 +373,26 @@ function restoreBackup() {
     
     // Execute restore script with proper error handling
     $log_file = '/tmp/dave_restore_' . date('Ymd_His') . '.log';
-    $command = "nohup $script_path --file " . escapeshellarg($backup_file) . " $restore_option > $log_file 2>&1 & echo \$!";
+    $command = "$script_path --file " . escapeshellarg($backup_file) . " $restore_option";
     
     // Run in background and capture PID
-    $pid = trim(shell_exec($command));
+    $result = ShellCommandUtilities::executeShellCommand($command, [
+        'blocking' => false,
+        'log_file' => $log_file,
+        'return_pid' => true
+    ]);
     
-    if (empty($pid) || !is_numeric($pid)) {
+    if (!$result['success'] || !$result['pid']) {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'error' => 'Failed to start restore process. Check script permissions and logs.',
+            'error' => $result['error'] ?? 'Failed to start restore process. Check script permissions and logs.',
             'timestamp' => date('c')
         ]);
         return;
     }
+    
+    $pid = $result['pid'];
     
     echo json_encode([
         'success' => true,

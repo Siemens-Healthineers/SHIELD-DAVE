@@ -58,34 +58,16 @@ $db = DatabaseConfig::getInstance();
 
 // Handle different operations
 $method = $_SERVER['REQUEST_METHOD'];
-$pathInfo = $_SERVER['PATH_INFO'] ?? '';
+
+// When included by the router, we don't use PATH_INFO
+// The router already parsed the request and this file is directly included
+// So we just handle the base endpoint (list packages)
 
 try {
     switch ($method) {
         case 'GET':
-            if (empty($pathInfo) || $pathInfo === '/') {
-                handleListPackages($db, $user);
-            } else {
-                $parts = explode('/', trim($pathInfo, '/'));
-                $packageId = $parts[0];
-                
-                if (count($parts) === 1) {
-                    handleGetPackageDetails($db, $packageId);
-                } elseif ($parts[1] === 'affected-assets') {
-                    handleGetAffectedAssets($db, $packageId);
-                } elseif ($parts[1] === 'vulnerabilities') {
-                    handleGetPackageVulnerabilities($db, $packageId);
-                } else {
-                    ob_clean();
-                    http_response_code(404);
-                    echo json_encode([
-                        'success' => false,
-                        'error' => 'Endpoint not found',
-                        'timestamp' => date('c')
-                    ]);
-                    exit;
-                }
-            }
+            // Always handle list packages when this file is accessed
+            handleListPackages($db, $user);
             break;
             
         default:

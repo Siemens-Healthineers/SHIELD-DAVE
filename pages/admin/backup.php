@@ -9,6 +9,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../services/shell_command_utilities.php';
 
 // Require admin authentication
 $auth->requireAuth();
@@ -19,6 +20,77 @@ if (!$auth->hasPermission('admin.access')) {
 
 // Get current user
 $user = $auth->getCurrentUser();
+
+// Handle AJAX requests
+if (isset($_GET['ajax'])) {
+    header('Content-Type: application/json');
+    
+    if ($_GET['ajax'] === 'check_jobs') {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$input || !isset($input['jobs'])) {
+            echo json_encode(['success' => false, 'error' => 'No jobs provided']);
+            exit;
+        }
+        
+        $results = [];
+        
+        foreach ($input['jobs'] as $job) {
+            if (!isset($job['pid']) || !isset($job['log_file'])) {
+                $results[] = [
+                    'job_id' => $job['job_id'] ?? null,
+                    'status' => 'error',
+                    'error' => 'Invalid job data'
+                ];
+                continue;
+            }
+            
+            // Check if process is still running
+            $isRunning = ShellCommandUtilities::isProcessRunning($job['pid']);
+            
+            if ($isRunning) {
+                $results[] = [
+                    'job_id' => $job['job_id'],
+                    'type' => $job['type'] ?? 'unknown',
+                    'pid' => $job['pid'],
+                    'status' => 'running'
+                ];
+            } else {
+                // Process completed, get results from log file
+                $output = ShellCommandUtilities::getCommandOutput($job['log_file']);
+                
+                if ($output) {
+                    $success = (strpos($output, 'completed successfully') !== false ||
+                               strpos($output, 'Backup completed') !== false ||
+                               strpos($output, 'Restore completed') !== false);
+                    
+                    $results[] = [
+                        'job_id' => $job['job_id'],
+                        'type' => $job['type'] ?? 'unknown',
+                        'status' => $success ? 'completed' : 'failed',
+                        'data' => [
+                            'output' => $output
+                        ],
+                        'error' => $success ? null : 'Operation completed with errors'
+                    ];
+                } else {
+                    $results[] = [
+                        'job_id' => $job['job_id'],
+                        'type' => $job['type'] ?? 'unknown',
+                        'status' => 'failed',
+                        'error' => 'No output from command'
+                    ];
+                }
+            }
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'results' => $results
+        ]);
+        exit;
+    }
+}
 
 // Handle backup actions
 $action = $_GET['action'] ?? 'list';
@@ -33,44 +105,46 @@ if (isset($_GET['message']) && isset($_GET['msg'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
     
     switch ($action) {
         case 'create_backup':
             $backup_type = $_POST['backup_type'] ?? 'full';
             $description = $_POST['description'] ?? '';
             
-            // Execute backup script
-            $script_path = '/var/www/html/scripts/backup.sh';
-            $output = shell_exec("$script_path --type $backup_type 2>&1");
+            // Execute backup script (non-blocking)
+            $script_path = _ROOT . '/scripts/backup.sh';
+            $logFile = _ROOT . '/logs/backup_' . date('Ymd_His') . '.log';
+            $result = ShellCommandUtilities::executeShellCommand(
+                "$script_path --type $backup_type",
+                [
+                    'blocking' => false,
+                    'log_file' => $logFile
+                ]
+            );
             
-            if (strpos($output, 'completed successfully') !== false) {
-                // Store description in metadata file if provided
-                if (!empty($description)) {
-                    $backup_dir = '/var/backups/dave';
-                    $date = date('Ymd_His');
-                    $metadata_file = $backup_dir . '/backup_metadata_' . $date . '.json';
-                    
-                    // Find the most recent backup file to associate with this description
-                    $files = glob($backup_dir . '/dave_*_' . $date . '*');
-                    if (!empty($files)) {
-                        $backup_file = basename($files[0]);
-                        $metadata = [
-                            'backup_file' => $backup_file,
-                            'description' => $description,
-                            'created_at' => time()
-                        ];
-                        file_put_contents($metadata_file, json_encode($metadata));
-                    }
-                }
-                
-                // Redirect to prevent form resubmission on refresh
-                header('Location: /pages/admin/backup.php?message=success&msg=' . urlencode('Backup created successfully!'));
-                exit;
-            } else {
-                // Redirect with error message
-                header('Location: /pages/admin/backup.php?message=error&msg=' . urlencode('Backup failed: ' . dave_htmlspecialchars($output)));
+            if (!$result['success']) {
+                header('Location: /pages/admin/backup.php?message=error&msg=' . urlencode('Failed to start backup: ' . ($result['error'] ?? 'Unknown error')));
                 exit;
             }
+            
+            // Store job info and description in temp file for later retrieval
+            $jobData = [
+                'job_id' => uniqid('backup_'),
+                'pid' => $result['pid'],
+                'log_file' => $result['log_file'],
+                'status' => 'running',
+                'type' => 'backup',
+                'backup_type' => $backup_type,
+                'description' => $description,
+                'started_at' => time()
+            ];
+            $jobFile = '/tmp/backup_job_' . $jobData['job_id'] . '.json';
+            file_put_contents($jobFile, json_encode($jobData));
+            
+            // Redirect to a polling page or return JSON if AJAX
+            header('Location: /pages/admin/backup.php?message=info&msg=' . urlencode('Backup started in background. Job ID: ' . $jobData['job_id']));
+            exit;
             break;
             
         case 'restore_backup':
@@ -79,19 +153,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: /pages/admin/backup.php?message=error&msg=' . urlencode('Please select a backup file to restore.'));
                 exit;
             } else {
-                // Execute restore script
-                $script_path = '/var/www/html/scripts/restore.sh';
-                $output = shell_exec("$script_path --file '$backup_file' --full 2>&1");
+                // Execute restore script (non-blocking)
+                $script_path = _ROOT . '/scripts/restore.sh';
+                $logFile = _ROOT . '/logs/restore_' . date('Ymd_His') . '.log';
                 
-                if (strpos($output, 'completed successfully') !== false) {
-                    // Redirect to prevent form resubmission on refresh
-                    header('Location: /pages/admin/backup.php?message=success&msg=' . urlencode('System restored successfully!'));
-                    exit;
-                } else {
-                    // Redirect with error message
-                    header('Location: /pages/admin/backup.php?message=error&msg=' . urlencode('Restore failed: ' . dave_htmlspecialchars($output)));
+                // Determine restore type based on backup file name
+                $restoreType = '--full'; // Default to full restore
+                if (strpos($backup_file, 'dave_db_') !== false) {
+                    $restoreType = '--database';
+                } elseif (strpos($backup_file, 'dave_config_') !== false) {
+                    $restoreType = '--config';
+                } elseif (strpos($backup_file, 'dave_uploads_') !== false) {
+                    $restoreType = '--uploads';
+                }
+                
+                $result = ShellCommandUtilities::executeShellCommand(
+                    "$script_path --file '$backup_file' $restoreType",
+                    [
+                        'blocking' => false,
+                        'log_file' => $logFile
+                    ]
+                );
+                
+                if (!$result['success']) {
+                    header('Location: /pages/admin/backup.php?message=error&msg=' . urlencode('Failed to start restore: ' . ($result['error'] ?? 'Unknown error')));
                     exit;
                 }
+                
+                // Store job info
+                $jobData = [
+                    'job_id' => uniqid('restore_'),
+                    'pid' => $result['pid'],
+                    'log_file' => $result['log_file'],
+                    'status' => 'running',
+                    'type' => 'restore',
+                    'backup_file' => $backup_file,
+                    'started_at' => time()
+                ];
+                $jobFile = '/tmp/restore_job_' . $jobData['job_id'] . '.json';
+                file_put_contents($jobFile, json_encode($jobData));
+                
+                header('Location: /pages/admin/backup.php?message=info&msg=' . urlencode('Restore started in background. Job ID: ' . $jobData['job_id']));
+                exit;
             }
             break;
             
@@ -1007,7 +1110,7 @@ function formatBytes($bytes) {
                 `Are you sure you want to restore "${backupName}"? This will replace all current data and cannot be undone.`,
                 'Restore',
                 () => {
-                    document.querySelector('form[action=""]').submit();
+                    document.querySelector('#restoreModal form').submit();
                 }
             );
         }

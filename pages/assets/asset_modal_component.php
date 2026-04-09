@@ -2684,6 +2684,8 @@ function populateVulnerabilities(vulnerabilities) {
     const container = document.getElementById('vulnerabilitiesList');
     const count = document.getElementById('vulnCount');
     
+    console.log('populateVulnerabilities called with:', vulnerabilities);
+    
     count.textContent = vulnerabilities.length;
     
     if (vulnerabilities.length === 0) {
@@ -2691,33 +2693,34 @@ function populateVulnerabilities(vulnerabilities) {
         return;
     }
     
-    // Separate KEVs and regular vulnerabilities
-    const kevs = vulnerabilities.filter(v => v.is_kev);
-    const regular = vulnerabilities.filter(v => !v.is_kev);
-    
-    let html = '';
-    
-    // Show KEVs first if any exist
-    if (kevs.length > 0) {
-        html += `
-            <div class="vuln-section">
-                <h5 class="section-title kev-title">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    Known Exploited Vulnerabilities (KEV) 
-                    <span class="count-badge">${kevs.length}</span>
-                </h5>
-                <div class="vulnerabilities-grid">
-                    ${kevs.map(vuln => renderVulnerability(vuln, true)).join('')}
+    try {
+        // Separate KEVs and regular vulnerabilities
+        const kevs = vulnerabilities.filter(v => v.is_kev);
+        const regular = vulnerabilities.filter(v => !v.is_kev);
+        
+        let html = '';
+        
+        // Show KEVs first if any exist
+        if (kevs.length > 0) {
+            html += `
+                <div class="vuln-section">
+                    <h5 class="section-title kev-title">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Known Exploited Vulnerabilities (KEV) 
+                        <span class="count-badge">${kevs.length}</span>
+                    </h5>
+                    <div class="vulnerabilities-grid">
+                        ${kevs.map(vuln => renderVulnerability(vuln, true)).join('')}
+                    </div>
                 </div>
-            </div>
-        `;
-    }
-    
-    // Show regular vulnerabilities
-    if (regular.length > 0) {
-        html += `
-            <div class="vuln-section">
-                <h5 class="section-title">
+            `;
+        }
+        
+        // Show regular vulnerabilities
+        if (regular.length > 0) {
+            html += `
+                <div class="vuln-section">
+                    <h5 class="section-title">
                     <i class="fas fa-bug"></i> 
                     Other Vulnerabilities 
                     <span class="count-badge">${regular.length}</span>
@@ -2727,15 +2730,22 @@ function populateVulnerabilities(vulnerabilities) {
                 </div>
             </div>
         `;
+        }
+        
+        container.innerHTML = html;
+        console.log('Vulnerabilities rendered successfully');
+    } catch (error) {
+        console.error('Error rendering vulnerabilities:', error);
+        container.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i><p>Error displaying vulnerabilities: ${error.message}</p></div>`;
     }
-    
-    container.innerHTML = html;
 }
 
 function renderVulnerability(vuln, isKEV) {
     const daysOverdue = vuln.kev_due_date && isKEV ? calculateDaysOverdue(vuln.kev_due_date) : null;
     const isOverdue = daysOverdue !== null && daysOverdue > 0;
-    const vulnId = `vuln-${vuln.cve_id.replace(/[^a-zA-Z0-9]/g, '-')}`;
+    // Use vulnerability_id as fallback if cve_id is not available
+    const vulnIdentifier = vuln.cve_id || vuln.vulnerability_id || 'unknown';
+    const vulnId = `vuln-${vulnIdentifier.toString().replace(/[^a-zA-Z0-9]/g, '-')}`;
     
     // Truncate description for compact view
     const shortDescription = vuln.description ? 
@@ -2747,7 +2757,7 @@ function renderVulnerability(vuln, isKEV) {
             <div class="vuln-compact-header">
                 <div class="vuln-compact-left">
                     <div class="vuln-compact-title">
-                        <span class="vulnerability-cve">${vuln.cve_id}</span>
+                        <span class="vulnerability-cve">${vuln.cve_id || 'No CVE'}</span>
                         ${isKEV ? '<span class="kev-badge"><i class="fas fa-shield-alt"></i> KEV</span>' : ''}
                         ${vuln.kev_ransomware === 'Known' ? '<span class="ransomware-badge" title="Known Ransomware"><i class="fas fa-lock"></i></span>' : ''}
                         ${isOverdue ? `<span class="overdue-badge" title="${daysOverdue} days overdue"><i class="fas fa-clock"></i> ${daysOverdue}d</span>` : ''}

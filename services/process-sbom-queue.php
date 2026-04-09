@@ -10,6 +10,7 @@ if (!defined('DAVE_ACCESS')) {
 }
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../services/shell_command_utilities.php';
 
 class SBOMQueueProcessor {
     private $db;
@@ -144,8 +145,13 @@ class SBOMQueueProcessor {
     private function retrySBOMProcessing($sbom) {
         try {
             // Start async SBOM processing
-            $command = "cd /var/www/html && /usr/bin/php /var/www/html/services/async_sbom_processor.php --sbom-id={$sbom['sbom_id']} --device-id={$sbom['device_id']} --user-id={$sbom['uploaded_by']} > /dev/null 2>&1 &";
-            exec($command);
+            $command = "cd  " . _ROOT . " && /usr/bin/php " . _ROOT . "/services/async_sbom_processor.php --sbom-id={$sbom['sbom_id']} --device-id={$sbom['device_id']} --user-id={$sbom['uploaded_by']}";
+            $result = ShellCommandUtilities::executeShellCommand($command, ['blocking' => false]);
+            
+            if (!$result['success']) {
+                error_log("Failed to start SBOM retry processing: " . ($result['error'] ?? 'Unknown error'));
+                return false;
+            }
             
             // Update status to processing
             $updateSql = "UPDATE sboms SET evaluation_status = 'Queued' WHERE sbom_id = ?";

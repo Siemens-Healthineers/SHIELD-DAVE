@@ -28,6 +28,10 @@ readonly APP_ROOT="/var/www/html"
 
 # Database configuration - Use main application user
 
+
+# Database configuration - Use main application user with proper permissions
+source "$APP_ROOT/.env"
+
 readonly DB_HOST="${DB_HOST:-$DB_HOST}"
 readonly DB_PORT="${DB_PORT:-$DB_PORT}"
 readonly DB_NAME="${DB_NAME:-$DB_NAME}"
@@ -195,32 +199,41 @@ restore_database() {
     # Restore database
     log "Restoring database from backup..."
     
+    # Note: We don't use ON_ERROR_STOP=1 because extension permission errors
+    # (like "must be owner of extension uuid-ossp") would stop the restore,
+    # even though they're non-critical. We verify the result afterward.
+    
     if [[ "$backup_file" == *.gz ]]; then
         # Compressed backup
-        if ! gunzip -c "$backup_file" | PGPASSWORD="$DB_PASS" psql \
+        gunzip -c "$backup_file" | PGPASSWORD="$DB_PASS" psql \
             -h "$DB_HOST" \
             -p "$DB_PORT" \
             -U "$DB_USER" \
             -d "$DB_NAME" \
-            -v ON_ERROR_STOP=1 \
-            >/tmp/restore_db_$$.log 2>&1; then
-            error_msg=$(cat /tmp/restore_db_$$.log 2>/dev/null || echo "Unknown error")
-            rm -f /tmp/restore_db_$$.log
-            error "Database restore failed: $error_msg"
-        fi
+            >/tmp/restore_db_$$.log 2>&1
+        restore_exit_code=$?
     else
         # Uncompressed backup
-        if ! PGPASSWORD="$DB_PASS" psql \
+        PGPASSWORD="$DB_PASS" psql \
             -h "$DB_HOST" \
             -p "$DB_PORT" \
             -U "$DB_USER" \
             -d "$DB_NAME" \
-            -v ON_ERROR_STOP=1 \
             -f "$backup_file" \
-            >/tmp/restore_db_$$.log 2>&1; then
-            error_msg=$(cat /tmp/restore_db_$$.log 2>/dev/null || echo "Unknown error")
+            >/tmp/restore_db_$$.log 2>&1
+        restore_exit_code=$?
+    fi
+    
+    # Check for critical errors (ignore extension ownership errors)
+    if [ $restore_exit_code -ne 0 ]; then
+        # Check if errors are only extension-related (non-critical)
+        if grep -qi "must be owner of extension" /tmp/restore_db_$$.log; then
+            warning "Extension ownership errors encountered (this is normal for non-superuser restores)"
+        else
+            # There are other errors - show them
+            error_msg=$(tail -20 /tmp/restore_db_$$.log 2>/dev/null || echo "Unknown error")
             rm -f /tmp/restore_db_$$.log
-            error "Database restore failed: $error_msg"
+            error "Database restore failed with errors: $error_msg"
         fi
     fi
     

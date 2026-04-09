@@ -12,9 +12,9 @@
 --
 -- ====================================================================================
 
--- Generated: 2026-02-11 14:28:51
+-- Generated: 2026-03-10 10:09:30
 
-\restrict 7n2HHSFEePEEgKGTLQhc4IHni2VDzecQhQdxCmL05Ur3RFw0HINscoKu1eiGZwn
+\restrict vd1AWKDjEQgsSgIdDOpzyd4tP76lWKmGgyw0chGvfXZFRYCceaYiQVcPFhy2L5z
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -2846,7 +2846,7 @@ CREATE TABLE public.patches (
     is_active boolean DEFAULT true,
     estimated_downtime integer DEFAULT 0,
     applied_devices jsonb DEFAULT '[]'::jsonb,
-    CONSTRAINT patches_patch_type_check CHECK (((patch_type)::text = ANY (ARRAY[('Software Update'::character varying)::text, ('Firmware'::character varying)::text, ('Configuration'::character varying)::text, ('Security Patch'::character varying)::text, ('Hotfix'::character varying)::text])))
+    CONSTRAINT patches_patch_type_check CHECK (((patch_type)::text = ANY (ARRAY[('Source'::character varying)::text, ('Binary'::character varying)::text, ('Firmware'::character varying)::text, ('Emulator'::character varying)::text, ('Documentation'::character varying)::text, ('Configuration'::character varying)::text, ('Security Patch'::character varying)::text])))
 );
 COMMENT ON TABLE public.patches IS 'Reusable patch definitions that can be applied to multiple assets';
 COMMENT ON COLUMN public.patches.estimated_downtime IS 'Estimated downtime in minutes for patch installation';
@@ -2882,6 +2882,48 @@ CREATE VIEW public.recall_summary AS
      JOIN public.medical_devices md ON ((drl.device_id = md.device_id)))
      JOIN public.assets a ON ((md.asset_id = a.asset_id)))
      JOIN public.recalls r ON ((drl.recall_id = r.recall_id)));
+CREATE TABLE public.remediation_assets_link (
+    link_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    remediation_id uuid NOT NULL,
+    asset_id uuid NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE public.remediation_assets_link IS 'Junction table linking remediations to affected assets';
+COMMENT ON COLUMN public.remediation_assets_link.link_id IS 'Unique identifier for this link';
+COMMENT ON COLUMN public.remediation_assets_link.remediation_id IS 'Foreign key reference to the remediation';
+COMMENT ON COLUMN public.remediation_assets_link.asset_id IS 'Foreign key reference to the affected asset';
+CREATE TABLE public.remediation_patches_link (
+    link_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    remediation_id uuid NOT NULL,
+    patch_id uuid NOT NULL,
+    is_latest boolean DEFAULT false,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE public.remediation_patches_link IS 'Junction table linking remediations to patches with version tracking';
+COMMENT ON COLUMN public.remediation_patches_link.link_id IS 'Unique identifier for this link';
+COMMENT ON COLUMN public.remediation_patches_link.remediation_id IS 'Foreign key reference to the remediation';
+COMMENT ON COLUMN public.remediation_patches_link.patch_id IS 'Foreign key reference to the patch';
+COMMENT ON COLUMN public.remediation_patches_link.is_latest IS 'Flag indicating if this is the latest version of the patch';
+CREATE TABLE public.remediations (
+    remediation_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    upstream_api character varying(255),
+    description text,
+    narrative text,
+    vulnerability_id uuid,
+    user_id uuid,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE public.remediations IS 'Tracks remediation efforts for vulnerabilities affecting assets';
+COMMENT ON COLUMN public.remediations.remediation_id IS 'Unique identifier for the remediation (UUID)';
+COMMENT ON COLUMN public.remediations.upstream_api IS 'Source API or system that provided the remediation information';
+COMMENT ON COLUMN public.remediations.description IS 'Brief description of the remediation';
+COMMENT ON COLUMN public.remediations.narrative IS 'Detailed narrative or explanation of the remediation process';
+COMMENT ON COLUMN public.remediations.vulnerability_id IS 'Foreign key reference to the vulnerability being remediated';
+COMMENT ON COLUMN public.remediations.user_id IS 'Foreign key reference to the user responsible for the remediation';
+COMMENT ON COLUMN public.remediations.created_at IS 'Timestamp when the remediation record was created';
+COMMENT ON COLUMN public.remediations.updated_at IS 'Timestamp when the remediation record was last updated';
 CREATE TABLE public.risk_matrix_config (
     config_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     config_name character varying(100) NOT NULL,
@@ -3706,6 +3748,16 @@ ALTER TABLE ONLY public.recalls
     ADD CONSTRAINT recalls_pkey PRIMARY KEY (recall_id);
 ALTER TABLE ONLY public.remediation_actions
     ADD CONSTRAINT remediation_actions_pkey PRIMARY KEY (action_id);
+ALTER TABLE ONLY public.remediation_assets_link
+    ADD CONSTRAINT remediation_assets_link_pkey PRIMARY KEY (link_id);
+ALTER TABLE ONLY public.remediation_assets_link
+    ADD CONSTRAINT remediation_assets_link_unique UNIQUE (remediation_id, asset_id);
+ALTER TABLE ONLY public.remediation_patches_link
+    ADD CONSTRAINT remediation_patches_link_pkey PRIMARY KEY (link_id);
+ALTER TABLE ONLY public.remediation_patches_link
+    ADD CONSTRAINT remediation_patches_link_unique UNIQUE (remediation_id, patch_id);
+ALTER TABLE ONLY public.remediations
+    ADD CONSTRAINT remediations_pkey PRIMARY KEY (remediation_id);
 ALTER TABLE ONLY public.risk_matrix_config
     ADD CONSTRAINT risk_matrix_config_pkey PRIMARY KEY (config_id);
 ALTER TABLE ONLY public.risks
@@ -3909,6 +3961,14 @@ CREATE INDEX idx_remediation_actions_cve_id ON public.remediation_actions USING 
 CREATE INDEX idx_remediation_actions_due_date ON public.remediation_actions USING btree (due_date);
 CREATE INDEX idx_remediation_actions_status ON public.remediation_actions USING btree (status);
 CREATE INDEX idx_remediation_actions_type ON public.remediation_actions USING btree (action_type);
+CREATE INDEX idx_remediation_assets_asset_id ON public.remediation_assets_link USING btree (asset_id);
+CREATE INDEX idx_remediation_assets_remediation_id ON public.remediation_assets_link USING btree (remediation_id);
+CREATE INDEX idx_remediation_patches_is_latest ON public.remediation_patches_link USING btree (is_latest);
+CREATE INDEX idx_remediation_patches_patch_id ON public.remediation_patches_link USING btree (patch_id);
+CREATE INDEX idx_remediation_patches_remediation_id ON public.remediation_patches_link USING btree (remediation_id);
+CREATE INDEX idx_remediations_created_at ON public.remediations USING btree (created_at);
+CREATE INDEX idx_remediations_user_id ON public.remediations USING btree (user_id);
+CREATE INDEX idx_remediations_vulnerability_id ON public.remediations USING btree (vulnerability_id);
 CREATE INDEX idx_risk_priority_view_epss ON public.risk_priority_view USING btree (epss_score DESC) WHERE (epss_score IS NOT NULL);
 CREATE INDEX idx_risk_priority_view_kev ON public.risk_priority_view USING btree (is_kev) WHERE (is_kev = true);
 CREATE UNIQUE INDEX idx_risk_priority_view_link_id ON public.risk_priority_view USING btree (link_id);
@@ -4057,6 +4117,18 @@ ALTER TABLE ONLY public.device_vulnerabilities_link
     ADD CONSTRAINT device_vulnerabilities_link_device_id_fkey FOREIGN KEY (device_id) REFERENCES public.medical_devices(device_id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.device_vulnerabilities_link
     ADD CONSTRAINT device_vulnerabilities_link_vulnerability_id_fkey FOREIGN KEY (vulnerability_id) REFERENCES public.vulnerabilities(vulnerability_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.remediation_assets_link
+    ADD CONSTRAINT fk_remediation_assets_asset FOREIGN KEY (asset_id) REFERENCES public.assets(asset_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.remediation_assets_link
+    ADD CONSTRAINT fk_remediation_assets_remediation FOREIGN KEY (remediation_id) REFERENCES public.remediations(remediation_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.remediation_patches_link
+    ADD CONSTRAINT fk_remediation_patches_patch FOREIGN KEY (patch_id) REFERENCES public.patches(patch_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.remediation_patches_link
+    ADD CONSTRAINT fk_remediation_patches_remediation FOREIGN KEY (remediation_id) REFERENCES public.remediations(remediation_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.remediations
+    ADD CONSTRAINT fk_remediations_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.remediations
+    ADD CONSTRAINT fk_remediations_vulnerability FOREIGN KEY (vulnerability_id) REFERENCES public.vulnerabilities(vulnerability_id) ON DELETE SET NULL;
 ALTER TABLE ONLY public.location_ip_ranges
     ADD CONSTRAINT location_ip_ranges_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(location_id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.locations
@@ -4177,7 +4249,7 @@ ALTER TABLE ONLY public.vulnerability_scans
     ADD CONSTRAINT vulnerability_scans_device_id_fkey FOREIGN KEY (device_id) REFERENCES public.medical_devices(device_id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.vulnerability_scans
     ADD CONSTRAINT vulnerability_scans_requested_by_fkey FOREIGN KEY (requested_by) REFERENCES public.users(user_id);
-\unrestrict 7n2HHSFEePEEgKGTLQhc4IHni2VDzecQhQdxCmL05Ur3RFw0HINscoKu1eiGZwn
+\unrestrict vd1AWKDjEQgsSgIdDOpzyd4tP76lWKmGgyw0chGvfXZFRYCceaYiQVcPFhy2L5z
 
 -- ====================================================================================
 -- Migration Tracking Table
@@ -4194,3 +4266,4 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 -- This prevents the migration script from trying to re-apply them
 
 -- Insert migration tracking records for all included migrations:
+INSERT INTO schema_migrations (version) VALUES ('007_create_remediations_table.sql') ON CONFLICT (version) DO NOTHING;

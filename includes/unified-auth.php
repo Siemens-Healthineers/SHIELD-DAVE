@@ -193,6 +193,7 @@ class UnifiedAuth {
                 'system' => ['read' => true, 'write' => true],
                 'analytics' => ['read' => true, 'write' => true],
                 'patches' => ['read' => true, 'write' => true],
+                'remediations' => ['read' => true, 'write' => true, 'delete' => true],
                 'locations' => ['read' => true, 'write' => true, 'delete' => true],
                 'api_keys' => ['read' => true, 'write' => true, 'delete' => true]
             ],
@@ -205,6 +206,7 @@ class UnifiedAuth {
                 'system' => ['read' => false, 'write' => false],
                 'analytics' => ['read' => true, 'write' => false],
                 'patches' => ['read' => true, 'write' => false],
+                'remediations' => ['read' => true, 'write' => true, 'delete' => false],
                 'locations' => ['read' => true, 'write' => false, 'delete' => false],
                 'api_keys' => ['read' => false, 'write' => false, 'delete' => false]
             ]
@@ -231,18 +233,22 @@ class UnifiedAuth {
                 'system:read', 'system:write',
                 'analytics:read', 'analytics:write',
                 'patches:read', 'patches:write',
+                'remediations:read', 'remediations:write', 'remediations:delete',
                 'locations:read', 'locations:write', 'locations:delete',
                 'api_keys:read', 'api_keys:write', 'api_keys:delete'
             ],
             'User' => [
-                'assets:read',
-                'vulnerabilities:read',
-                'components:read',
-                'recalls:read',
-                'reports:read',
-                'analytics:read',
-                'patches:read',
-                'locations:read'
+                'assets:read', 'assets:write',
+                'vulnerabilities:read', 'vulnerabilities:write',
+                'risks:read', 'risks:write',
+                'components:read', 'components:write',
+                'recalls:read', 'recalls:write',
+                'reports:read', 'reports:write',
+                'analytics:read', 'analytics:write',
+                'patches:read', 'patches:write',                
+                'remediations:read', 'remediations:write',
+                'locations:read', 'locations:write',
+                'api_keys:read', 'api_keys:write'
             ]
         ];
         

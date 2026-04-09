@@ -25,29 +25,29 @@ pip3 install psycopg2-binary requests || {
     exit 1
 }
 
+readonly APP_ROOT="/var/www/html"
 # Create logs directory
 echo "[2/6] Creating logs directory..."
-mkdir -p /var/www/html/logs
-chown www-data:www-data /var/www/html/logs
-chmod 755 /var/www/html/logs
+mkdir -p "$APP_ROOT/logs"
+chown www-data:www-data "$APP_ROOT/logs"
+chmod 755 "$APP_ROOT/logs"
 
 # Make service script executable
 echo "[3/6] Setting permissions on service script..."
-chmod +x /var/www/html/services/sbom_evaluation_service.py
-chown www-data:www-data /var/www/html/services/sbom_evaluation_service.py
+chmod +x "$APP_ROOT/services/sbom_evaluation_service.py"
+chown www-data:www-data "$APP_ROOT/services/sbom_evaluation_service.py"
 
 # Apply database migrations
 echo "[4/6] Applying database migrations..."
-readonly APP_ROOT="/var/www/html"
 source "$APP_ROOT/.env"
 DB_NAME=${3:-$DB_NAME}
-su - postgres -c "psql -d $DB_NAME -f /var/www/html/database/migrations/008_create_sbom_evaluation_queue.sql" || {
+su - postgres -c "psql -d $DB_NAME -f $APP_ROOT/database/migrations/008_create_sbom_evaluation_queue.sql" || {
     echo "WARNING: Database migration may have failed. Check if tables already exist."
 }
 
 # Copy systemd service file
 echo "[5/6] Installing systemd service..."
-cp /var/www/html/services/dave-sbom-evaluation.service /etc/systemd/system/
+cp "$APP_ROOT/services/dave-sbom-evaluation.service" /etc/systemd/system/
 chmod 644 /etc/systemd/system/dave-sbom-evaluation.service
 
 # Reload systemd and enable service
@@ -71,6 +71,6 @@ echo "  View logs:     sudo journalctl -u dave-sbom-evaluation -f"
 echo "  Restart:       sudo systemctl restart dave-sbom-evaluation"
 echo "  Stop:          sudo systemctl stop dave-sbom-evaluation"
 echo ""
-echo "Log files are located at: /var/www/html/logs/sbom_evaluation.log"
+echo "Log files are located at: $APP_ROOT/logs/sbom_evaluation.log"
 echo ""
 

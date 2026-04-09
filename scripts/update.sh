@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 # Configuration
 APP_ROOT="/var/www/html"
 BACKUP_DIR="/var/backups/dave"
-LOG_FILE="/var/www/html/logs/update.log"
+LOG_FILE="$APP_ROOT/logs/update.log"
 
 # Logging function
 log() {

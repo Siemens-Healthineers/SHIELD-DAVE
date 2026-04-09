@@ -242,6 +242,13 @@ class Auth {
             'Read-Only' => [
                 'assets.view', 'devices.view', 'recalls.view', 
                 'vulnerabilities.view', 'reports.view'
+            ],
+            'User' => [
+                'assets.read', 'assets.write', 'assets.create',
+                'devices.read', 'devices.write',
+                'vulnerabilities.read',
+                'recalls.read',
+                'reports.read', 'reports.write'
             ]
         ];
         
