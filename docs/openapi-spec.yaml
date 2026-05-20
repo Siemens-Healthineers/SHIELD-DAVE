@@ -96,6 +96,11 @@ tags:
   description: Software component management - SBOM and dependency tracking
 - name: Patches
   description: Patch management operations - patch tracking and deployment
+- name: Export
+  description: >-
+    Cross-entity export and query builder. Accepts structured filter objects for
+    vulnerabilities, assets, patches, and remediations. Returns paginated JSON
+    previews or streamed file downloads (CSV / JSON / Excel).
 security:
 - DAVE_API_KEY: []
 paths:
@@ -2349,6 +2354,238 @@ paths:
                     format: date-time
         '404':
           $ref: '#/components/responses/NotFoundError'
+  /export/query:
+    post:
+      tags:
+      - Export
+      summary: Query or download cross-entity export
+      description: |
+        Execute a cross-entity query using structured filter conditions on
+        vulnerabilities, assets, patches, and/or remediation actions.
+
+        ## Action modes
+        | `action`     | Description |
+        |---|---|
+        | `query`      | Returns a paginated JSON preview (default). |
+        | `download`   | Streams a file attachment (CSV, JSON, or Excel). |
+
+        ## Primary mode
+        | `primary_mode`      | Primary entity driving the query |
+        |---|---|
+        | `vulnerability`     | Vulnerability-centric (default) |
+        | `patch`             | Patch-centric |
+
+        ## Filters
+        The `filters` object contains up to four optional arrays — one per entity
+        type. Each array item is an entity-specific filter condition object\n        (`VulnerabilityFilterCondition`, `AssetFilterCondition`,\n        `PatchFilterCondition`, `RemediationFilterCondition`) with `fieldname`,
+        `operator`, and (optionally) `value`. All conditions within an entity
+        array are **AND**-ed together.
+
+        Field names are validated server-side against per-entity whitelists.
+        An unrecognised field or operator returns HTTP 400 with a descriptive
+        error message listing allowed values.
+      operationId: exportQuery
+      parameters:
+      - name: X-API-Key
+        in: header
+        description: API Key for authentication
+        required: false
+        schema:
+          type: string
+          default: '{{DAVE_API_KEY}}'
+        example: '{{DAVE_API_KEY}}'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportQueryRequest'
+            examples:
+              preview_high_severity_kev:
+                summary: Preview — high-severity KEV vulnerabilities on active assets
+                value:
+                  action: query
+                  primary_mode: vulnerability
+                  limit: 25
+                  offset: 0
+                  filters:
+                    vulnerabilities:
+                      - fieldname: cvss_v3_score
+                        operator: '>='
+                        value: '7.0'
+                      - fieldname: is_kev
+                        operator: '='
+                        value: 'true'
+                    assets:
+                      - fieldname: status
+                        operator: '='
+                        value: active
+              preview_critical_siemens:
+                summary: Preview — critical vulns on Siemens-manufactured assets
+                value:
+                  action: query
+                  primary_mode: vulnerability
+                  limit: 50
+                  filters:
+                    vulnerabilities:
+                      - fieldname: severity
+                        operator: '='
+                        value: Critical
+                    assets:
+                      - fieldname: manufacturer
+                        operator: STARTS
+                        value: Siemens
+              preview_open_remediations:
+                summary: Preview — vulnerabilities with open remediations
+                value:
+                  action: query
+                  primary_mode: vulnerability
+                  filters:
+                    remediations:
+                      - fieldname: status
+                        operator: '='
+                        value: open
+              preview_patches_reboot:
+                summary: Preview — active patches requiring reboot
+                value:
+                  action: query
+                  primary_mode: patch
+                  filters:
+                    patches:
+                      - fieldname: is_active
+                        operator: '='
+                        value: 'true'
+                      - fieldname: requires_reboot
+                        operator: '='
+                        value: 'true'
+              preview_patches_2026:
+                summary: Preview — patches released in 2026 on Ultrasound devices
+                value:
+                  action: query
+                  primary_mode: patch
+                  filters:
+                    patches:
+                      - fieldname: release_date
+                        operator: '>='
+                        value: '2026-01-01'
+                    assets:
+                      - fieldname: asset_type
+                        operator: '='
+                        value: Ultrasound
+              download_csv_critical:
+                summary: Download CSV — CVSS ≥ 9.0 vulnerabilities
+                value:
+                  action: download
+                  primary_mode: vulnerability
+                  export_format: csv
+                  filters:
+                    vulnerabilities:
+                      - fieldname: cvss_v3_score
+                        operator: '>='
+                        value: '9.0'
+              download_json_patches:
+                summary: Download JSON — all active patches
+                value:
+                  action: download
+                  primary_mode: patch
+                  export_format: json
+                  filters:
+                    patches:
+                      - fieldname: is_active
+                        operator: '='
+                        value: 'true'
+              download_excel_kev:
+                summary: Download Excel — KEV vulnerabilities with missing EPSS
+                value:
+                  action: download
+                  primary_mode: vulnerability
+                  export_format: excel
+                  filters:
+                    vulnerabilities:
+                      - fieldname: is_kev
+                        operator: '='
+                        value: 'true'
+                      - fieldname: epss_score
+                        operator: IS NULL
+      responses:
+        '200':
+          description: |
+            For `action=query`: JSON preview result.
+            For `action=download`: file attachment (Content-Disposition: attachment).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportQueryResponse'
+              examples:
+                preview_success:
+                  summary: Successful preview response
+                  value:
+                    success: true
+                    mode: vulnerability
+                    columns:
+                      - vulnerability_id
+                      - cve_id
+                      - severity
+                      - cvss_v3_score
+                      - is_kev
+                      - hostname
+                      - asset_type
+                    rows:
+                      - vulnerability_id: vuln-001
+                        cve_id: CVE-2024-21338
+                        severity: Critical
+                        cvss_v3_score: '9.8'
+                        is_kev: 'true'
+                        hostname: CT-SCANNER-01
+                        asset_type: Imaging Workstation
+                    total: 42
+                    returned: 1
+                    limit: 25
+                    offset: 0
+                    sql_preview: 'SELECT ... FROM vulnerabilities v JOIN ...'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+              example: "vulnerability_id,cve_id,severity,cvss_v3_score\r\nvuln-001,CVE-2024-21338,Critical,9.8\r\n"
+            application/vnd.ms-excel:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid request — bad primary_mode, unknown field name, or invalid operator
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+              examples:
+                invalid_mode:
+                  summary: Invalid primary_mode
+                  value:
+                    success: false
+                    error: 'Invalid primary_mode "network_device". Must be ''vulnerability'' or ''patch''.'
+                invalid_field:
+                  summary: Field name not in whitelist
+                  value:
+                    success: false
+                    error: "filters.vulnerabilities[0]: 'nonexistent_col' is not a valid field for 'vulnerability'. Allowed fields: vulnerability_id, cve_id, ..."
+                invalid_operator:
+                  summary: Operator not in allowed enum
+                  value:
+                    success: false
+                    error: "filters.vulnerabilities[0]: 'BETWEEN' is not a valid operator. Allowed operators: =, !=, <, >, <=, >=, LIKE, NOT LIKE, STARTS, ENDS, IS NULL, NOT NULL"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '405':
+          description: Method not allowed (only GET and POST are accepted)
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     DAVE_API_KEY:
@@ -2357,6 +2594,372 @@ components:
       name: X-API-Key
       description: API Key for authentication via X-API-Key header
   schemas:
+    FilterOperator:
+      type: string
+      description: Comparison operator applied to the field value.
+      enum:
+        - '='
+        - '!='
+        - '<'
+        - '>'
+        - '<='
+        - '>='
+        - LIKE
+        - NOT LIKE
+        - STARTS
+        - ENDS
+        - IS NULL
+        - NOT NULL
+      example: '>='
+    VulnerabilityFilterCondition:
+      type: object
+      description: >
+        A single filter condition on a vulnerability field.
+        All conditions in the array are AND-ed together.
+      required:
+        - fieldname
+        - operator
+      properties:
+        fieldname:
+          type: string
+          description: Vulnerability column to filter on.
+          enum:
+            - vulnerability_id
+            - cve_id
+            - description
+            - cvss_v3_score
+            - cvss_v3_vector
+            - cvss_v2_score
+            - cvss_v2_vector
+            - cvss_v4_score
+            - cvss_v4_vector
+            - severity
+            - published_date
+            - last_modified_date
+            - is_kev
+            - kev_date_added
+            - kev_due_date
+            - kev_required_action
+            - priority
+            - epss_score
+            - epss_percentile
+            - epss_date
+            - epss_last_updated
+            - created_at
+            - updated_at
+          example: cvss_v3_score
+        operator:
+          $ref: '#/components/schemas/FilterOperator'
+        value:
+          type: string
+          description: >
+            The value to compare against. Omit or leave empty for
+            `IS NULL` and `NOT NULL` operators.
+          example: '7.0'
+    AssetFilterCondition:
+      type: object
+      description: >
+        A single filter condition on an asset field.
+        All conditions in the array are AND-ed together.
+      required:
+        - fieldname
+        - operator
+      properties:
+        fieldname:
+          type: string
+          description: Asset column to filter on.
+          enum:
+            - asset_id
+            - hostname
+            - ip_address
+            - mac_address
+            - source
+            - asset_tag
+            - asset_type
+            - asset_subtype
+            - manufacturer
+            - model
+            - serial_number
+            - location
+            - firmware_version
+            - cpu
+            - memory_ram
+            - storage
+            - power_requirements
+            - primary_communication_protocol
+            - assigned_admin_user
+            - business_unit
+            - department
+            - cost_center
+            - warranty_expiration_date
+            - scheduled_replacement_date
+            - disposal_date
+            - disposal_method
+            - criticality
+            - regulatory_classification
+            - phi_status
+            - data_encryption_transit
+            - data_encryption_rest
+            - authentication_method
+            - patch_level_last_update
+            - last_audit_date
+            - status
+            - first_seen
+            - last_seen
+            - created_at
+            - updated_at
+            - metadata
+          example: status
+        operator:
+          $ref: '#/components/schemas/FilterOperator'
+        value:
+          type: string
+          description: >
+            The value to compare against. Omit or leave empty for
+            `IS NULL` and `NOT NULL` operators.
+          example: active
+    PatchFilterCondition:
+      type: object
+      description: >
+        A single filter condition on a patch field.
+        All conditions in the array are AND-ed together.
+      required:
+        - fieldname
+        - operator
+      properties:
+        fieldname:
+          type: string
+          description: Patch column to filter on.
+          enum:
+            - patch_id
+            - patch_name
+            - patch_type
+            - target_device_type
+            - target_version
+            - description
+            - release_date
+            - vendor
+            - kb_article
+            - requires_reboot
+            - is_active
+            - estimated_install_time
+            - estimated_downtime
+            - created_at
+            - updated_at
+          example: vendor
+        operator:
+          $ref: '#/components/schemas/FilterOperator'
+        value:
+          type: string
+          description: >
+            The value to compare against. Omit or leave empty for
+            `IS NULL` and `NOT NULL` operators.
+          example: Siemens
+    RemediationFilterCondition:
+      type: object
+      description: >
+        A single filter condition on a remediation action field.
+        All conditions in the array are AND-ed together.
+      required:
+        - fieldname
+        - operator
+      properties:
+        fieldname:
+          type: string
+          description: Remediation action column to filter on.
+          enum:
+            - action_id
+            - cve_id
+            - action_type
+            - action_description
+            - target_version
+            - patch_reference
+            - vendor
+            - status
+            - due_date
+            - completed_at
+            - notes
+            - created_at
+            - updated_at
+          example: status
+        operator:
+          $ref: '#/components/schemas/FilterOperator'
+        value:
+          type: string
+          description: >
+            The value to compare against. Omit or leave empty for
+            `IS NULL` and `NOT NULL` operators.
+          example: open
+    ExportFilters:
+      type: object
+      description: >
+        Structured filter object. Each key maps to an entity; the value is an
+        array of entity-specific filter condition objects. All four keys are
+        optional — omit an entity to apply no filter for that entity.
+        All conditions within an entity array are AND-ed together.
+      properties:
+        vulnerabilities:
+          type: array
+          description: Conditions applied to the vulnerabilities entity.
+          items:
+            $ref: '#/components/schemas/VulnerabilityFilterCondition'
+          example:
+            - fieldname: severity
+              operator: '='
+              value: Critical
+            - fieldname: cvss_v3_score
+              operator: '>='
+              value: '7.0'
+        assets:
+          type: array
+          description: Conditions applied to the assets entity.
+          items:
+            $ref: '#/components/schemas/AssetFilterCondition'
+          example:
+            - fieldname: status
+              operator: '='
+              value: active
+            - fieldname: criticality
+              operator: '='
+              value: High
+        patches:
+          type: array
+          description: Conditions applied to the patches entity.
+          items:
+            $ref: '#/components/schemas/PatchFilterCondition'
+          example:
+            - fieldname: vendor
+              operator: LIKE
+              value: Siemens
+            - fieldname: is_active
+              operator: '='
+              value: 'true'
+        remediations:
+          type: array
+          description: Conditions applied to the remediations (remediation_actions) entity.
+          items:
+            $ref: '#/components/schemas/RemediationFilterCondition'
+          example:
+            - fieldname: status
+              operator: '='
+              value: open
+            - fieldname: due_date
+              operator: '<='
+              value: '2026-12-31'
+    ExportQueryRequest:
+      type: object
+      description: Request body for the export query / download endpoint.
+      properties:
+        action:
+          type: string
+          description: >
+            `query` returns a paginated JSON preview.
+            `download` streams a file attachment.
+          enum:
+            - query
+            - download
+          default: query
+          example: query
+        primary_mode:
+          type: string
+          description: >
+            The primary entity driving the query.
+            Use `vulnerability` to enumerate CVEs (with optional asset/patch/remediation
+            sub-filters), or `patch` to enumerate patches.
+          enum:
+            - vulnerability
+            - patch
+          default: vulnerability
+          example: vulnerability
+        export_format:
+          type: string
+          description: >
+            File format for `action=download`. Ignored for `action=query`.
+          enum:
+            - csv
+            - json
+            - excel
+          default: csv
+          example: csv
+        limit:
+          type: integer
+          description: >
+            Maximum rows to return. Capped at 500 for `action=query`.
+            Ignored for `action=download` (all matching rows are returned,
+            up to 100 000).
+          default: 200
+          minimum: 1
+          maximum: 500
+          example: 25
+        offset:
+          type: integer
+          description: Number of rows to skip (for `action=query` pagination).
+          default: 0
+          minimum: 0
+          example: 0
+        filters:
+          $ref: '#/components/schemas/ExportFilters'
+    ExportQueryResponse:
+      type: object
+      description: Response body for `action=query`.
+      properties:
+        success:
+          type: boolean
+          example: true
+        mode:
+          type: string
+          description: The primary_mode that was used.
+          enum:
+            - vulnerability
+            - patch
+          example: vulnerability
+        columns:
+          type: array
+          description: Ordered list of column names present in each row.
+          items:
+            type: string
+          example:
+            - vulnerability_id
+            - cve_id
+            - severity
+            - cvss_v3_score
+            - is_kev
+            - hostname
+            - asset_type
+        rows:
+          type: array
+          description: Result rows. Each row contains one value per column.
+          items:
+            type: object
+            additionalProperties:
+              type: string
+              nullable: true
+          example:
+            - vulnerability_id: vuln-001
+              cve_id: CVE-2024-21338
+              severity: Critical
+              cvss_v3_score: '9.8'
+              is_kev: 'true'
+              hostname: CT-SCANNER-01
+              asset_type: Imaging Workstation
+        total:
+          type: integer
+          description: Total number of rows matching the filters (ignoring limit/offset).
+          example: 42
+        returned:
+          type: integer
+          description: Number of rows included in this response.
+          example: 25
+        limit:
+          type: integer
+          example: 25
+        offset:
+          type: integer
+          example: 0
+        sql_preview:
+          type: string
+          description: Human-readable rendering of the generated SQL (for debugging).
+          example: 'SELECT v.vulnerability_id, v.cve_id ... FROM vulnerabilities v JOIN asset_vulnerabilities av ON ...'
     Pagination:
       type: object
       properties:

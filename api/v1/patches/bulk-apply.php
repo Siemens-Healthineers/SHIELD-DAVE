@@ -52,13 +52,20 @@ try {
         exit;
     }
     
+    // Validate verification_method against DB check constraint allowed values
+    $validVerificationMethods = ['Manual', 'SBOM Upload', 'Automatic', 'Version Check'];
+    $verificationMethod = $input['verification_method'] ?? 'Manual';
+    if (!in_array($verificationMethod, $validVerificationMethods)) {
+        $verificationMethod = 'Manual';
+    }
+
     // Apply patch to all assets
     $result = applyPatch(
         $input['patch_id'],
         $input['asset_ids'],
         $user['user_id'],
         $input['verification_status'] ?? 'Pending',
-        $input['verification_method'] ?? 'Manual',
+        $verificationMethod,
         $input['notes'] ?? ''
     );
     
@@ -79,6 +86,11 @@ try {
             $_SERVER['REMOTE_ADDR'] ?? 'unknown',
             $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
         ]);
+    } else {
+        // Normalise: applyPatch() returns 'message' on failure; expose it as 'error' for the JS client
+        if (!isset($result['error']) && isset($result['message'])) {
+            $result['error'] = $result['message'];
+        }
     }
     
     echo json_encode($result);

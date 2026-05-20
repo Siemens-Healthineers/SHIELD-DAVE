@@ -38,7 +38,7 @@ try {
     }
     
     // Validate required fields
-    $required_fields = ['task_type', 'device_id', 'assigned_to', 'scheduled_date', 'estimated_downtime'];
+    $required_fields = ['task_type', 'assigned_to', 'scheduled_date', 'estimated_downtime'];
     foreach ($required_fields as $field) {
         if (!isset($input[$field]) || empty($input[$field])) {
             throw new Exception("Missing required field: $field");
@@ -47,14 +47,52 @@ try {
     
     // Prepare task data
     $task_type = $input['task_type'];
-    $device_id = $input['device_id'];
+    // Normalize device_id: treat the string "null" or missing value as actual null.
+    // device_id is optional — scheduled_tasks.device_id allows NULL (FK ON DELETE SET NULL).
+    $raw_device_id = $input['device_id'] ?? null;
+    $device_id = (!empty($raw_device_id) && $raw_device_id !== 'null') ? $raw_device_id : null;
+
+    // Extract client-supplied device snapshot (used when device_id is not a medical_devices UUID)
+    $client_device_name     = !empty($input['device_name'])       ? $input['device_name']       : null;
+    $client_device_location = !empty($input['device_location'])   ? $input['device_location']   : null;
+    $client_device_type     = !empty($input['device_type'])       ? $input['device_type']        : null;
+    $client_device_dept     = !empty($input['device_department']) ? $input['device_department']  : null;
+
+    // Verify device_id refers to a medical_devices row (FK constraint on scheduled_tasks.device_id).
+    // If it resolves to an assets UUID (non-medical-device asset), use NULL so the FK is not violated
+    // but first extract asset info to store in original_* fields.
+    $task_device_id = null;
+    if ($device_id) {
+        $med_check = $db->getConnection()->prepare("SELECT 1 FROM medical_devices WHERE device_id = ?");
+        $med_check->execute([$device_id]);
+        if ($med_check->fetch()) {
+            $task_device_id = $device_id;
+        } else {
+            // Not a medical device UUID — try treating it as an assets UUID to get display info
+            $asset_check = $db->getConnection()->prepare(
+                "SELECT hostname, asset_tag, asset_type, location, department FROM assets WHERE asset_id = ?"
+            );
+            $asset_check->execute([$device_id]);
+            $asset_row = $asset_check->fetch(PDO::FETCH_ASSOC);
+            if ($asset_row) {
+                // Fill client snapshot from the DB if the caller didn't already provide it
+                if (empty($client_device_name)) {
+                    $client_device_name = $asset_row['hostname'] ?: $asset_row['asset_tag'] ?: $asset_row['asset_type'] ?: 'Asset';
+                }
+                if (empty($client_device_location)) $client_device_location = $asset_row['location'];
+                if (empty($client_device_type))     $client_device_type     = $asset_row['asset_type'];
+                if (empty($client_device_dept))     $client_device_dept     = $asset_row['department'];
+            }
+        }
+    }
+
     $assigned_to = $input['assigned_to'];
     $scheduled_date = $input['scheduled_date'];
     $implementation_date = $input['implementation_date'] ?? null;
     $estimated_downtime = (int)$input['estimated_downtime'];
     $task_description = $input['task_description'] ?? null;
     $notes = $input['notes'] ?? null;
-    
+
     // Get specific IDs based on task_type
     $package_id = ($task_type === 'package_remediation' && isset($input['package_id'])) ? $input['package_id'] : null;
     $cve_id = ($task_type === 'cve_remediation' && isset($input['cve_id'])) ? $input['cve_id'] : null;
@@ -70,7 +108,7 @@ try {
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->execute([
             $cve_id,
-            $device_id,
+            $task_device_id,
             $assigned_to,
             $assigned_to, // Using assigned_to as assigned_by for now
             $scheduled_date,
@@ -87,7 +125,7 @@ try {
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->execute([
             $patch_id,
-            $device_id,
+            $task_device_id,
             $assigned_to,
             $assigned_to, // Using assigned_to as assigned_by for now
             $scheduled_date,
@@ -123,7 +161,7 @@ try {
             $cve_id,
             $action_id,
             $patch_id,
-            $device_id,
+            $task_device_id,
             $assigned_to,
             $scheduled_date,
             $implementation_date,
@@ -136,6 +174,26 @@ try {
         $task_id = $result['task_id'];
     }
     
+    // If device_id was not a medical device (task_device_id = null), persist the client-supplied
+    // device snapshot into the original_* fields so the schedule view can display the asset name.
+    if (!$task_device_id && $task_id && $client_device_name) {
+        $upd = $db->getConnection()->prepare(
+            "UPDATE scheduled_tasks
+             SET original_device_name = COALESCE(NULLIF(original_device_name, 'Unknown Device'), ?),
+                 original_hostname    = COALESCE(original_hostname, ?),
+                 original_location    = COALESCE(NULLIF(original_location, ''), ?),
+                 original_department  = COALESCE(NULLIF(original_department, ''), ?)
+             WHERE task_id = ?"
+        );
+        $upd->execute([
+            $client_device_name,
+            $client_device_name,
+            $client_device_location,
+            $client_device_dept,
+            $task_id
+        ]);
+    }
+
     $result = ['task_id' => $task_id];
     
     // Note: scheduled_tasks_view is a regular view, not a materialized view

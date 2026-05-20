@@ -22,6 +22,32 @@ import psycopg2.extras
 from datetime import datetime
 from typing import Dict, Optional
 
+# Add the project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
+# Load .env file manually from project root
+env_file_path = os.path.join(project_root, '.env')
+if os.path.exists(env_file_path):
+    with open(env_file_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines and comments
+            if line and not line.startswith('#'):
+                # Handle KEY=VALUE format
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip()
+                    # Remove quotes if present
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                    elif value.startswith("'") and value.endswith("'"):
+                        value = value[1:-1]
+                    # Only set if not already in environment
+                    if key and not os.getenv(key):
+                        os.environ[key] = value
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

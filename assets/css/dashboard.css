@@ -439,7 +439,7 @@ body {
 .dashboard-main {
     flex: 1;
     padding: 1.5rem;
-    max-width: 1400px;
+    max-width: 1800px;
     margin: 0 auto;
     width: 100%;
 }

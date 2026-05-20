@@ -45,22 +45,34 @@ if ($action === 'schedule' && $patchId) {
             $cveList = json_decode($patch['cve_list'], true);
             
             if ($cveList && count($cveList) > 0) {
-                // Get devices affected by the CVEs in this patch
+                // Get all assets (both FDA-mapped and unmapped) affected by the CVEs in this patch.
+                // device_vulnerabilities_link links vulnerabilities to assets via two asset paths:
+                //   1. device_id → medical_devices → assets  (FDA-mapped medical devices)
+                //   2. asset_id → assets directly            (any unmapped asset)
+                // And two CVE-matching paths (both must be checked):
+                //   a. dvl.cve_id          — legacy string match (older records)
+                //   b. dvl.vulnerability_id → vulnerabilities.vulnerability_id → vulnerabilities.cve_id
+                //      (preferred UUID-based match used by newer records and non-medical-device assets)
                 $placeholders = str_repeat('?,', count($cveList) - 1) . '?';
                 $sql = "SELECT 
                             dvl.*,
                             dvl.device_id,
+                            COALESCE(a_direct.asset_id, a_via_md.asset_id) as resolved_asset_id,
+                            COALESCE(dvl.cve_id, v.cve_id) as cve_id,
                             CASE 
-                                WHEN a.hostname IS NOT NULL AND a.hostname != '' THEN a.hostname
-                                WHEN a.asset_tag IS NOT NULL AND a.asset_tag != '' THEN a.asset_tag
+                                WHEN a_via_md.hostname IS NOT NULL AND a_via_md.hostname != '' THEN a_via_md.hostname
+                                WHEN a_via_md.asset_tag IS NOT NULL AND a_via_md.asset_tag != '' THEN a_via_md.asset_tag
                                 WHEN md.brand_name IS NOT NULL THEN md.brand_name || ' ' || COALESCE(md.model_number, '') || ' (' || COALESCE(md.manufacturer_name, '') || ')'
-                                WHEN a.asset_type IS NOT NULL THEN a.asset_type || ' ' || COALESCE(a.manufacturer, '') || ' ' || COALESCE(a.model, '')
-                                ELSE 'Siemens Medical Device'
+                                WHEN a_via_md.asset_type IS NOT NULL THEN a_via_md.asset_type || ' ' || COALESCE(a_via_md.manufacturer, '') || ' ' || COALESCE(a_via_md.model, '')
+                                WHEN a_direct.hostname IS NOT NULL AND a_direct.hostname != '' THEN a_direct.hostname
+                                WHEN a_direct.asset_tag IS NOT NULL AND a_direct.asset_tag != '' THEN a_direct.asset_tag
+                                WHEN a_direct.asset_type IS NOT NULL THEN a_direct.asset_type || ' ' || COALESCE(a_direct.manufacturer, '') || ' ' || COALESCE(a_direct.model, '')
+                                ELSE 'Unknown Asset'
                             END as device_name,
-                            a.asset_type as device_type,
+                            COALESCE(a_direct.asset_type, a_via_md.asset_type) as device_type,
                             COALESCE(l.location_name, 'Main Hospital Building') as location_name,
-                            a.location,
-                            a.department,
+                            COALESCE(a_direct.location, a_via_md.location) as location,
+                            COALESCE(a_direct.department, a_via_md.department) as department,
                             CASE 
                                 WHEN dvl.risk_score >= 1000 THEN 'Clinical-High'
                                 WHEN dvl.risk_score >= 500 THEN 'Business-Medium'
@@ -68,26 +80,31 @@ if ($action === 'schedule' && $patchId) {
                             END as device_criticality,
                             COALESCE(l.criticality::text, 'High') as location_criticality,
                             p.patch_name,
-                            p.target_version as patch_version,
-                            dvl.cve_id
+                            p.target_version as patch_version
                         FROM device_vulnerabilities_link dvl
+                        LEFT JOIN vulnerabilities v ON dvl.vulnerability_id = v.vulnerability_id
                         LEFT JOIN medical_devices md ON dvl.device_id = md.device_id
-                        LEFT JOIN assets a ON md.asset_id = a.asset_id
-                        LEFT JOIN locations l ON a.location_id = l.location_id
+                        LEFT JOIN assets a_via_md ON md.asset_id = a_via_md.asset_id
+                        LEFT JOIN assets a_direct ON dvl.asset_id = a_direct.asset_id
+                        LEFT JOIN locations l ON COALESCE(a_direct.location_id, a_via_md.location_id) = l.location_id
                         LEFT JOIN patches p ON p.patch_id = ?
-                        WHERE dvl.cve_id IN ($placeholders)
+                        WHERE (dvl.cve_id IN ($placeholders) OR v.cve_id IN ($placeholders))
+                          AND (dvl.device_id IS NOT NULL OR dvl.asset_id IS NOT NULL)
                         ORDER BY dvl.risk_score DESC";
                 
+                // Parameters: patchId first, then cve_list twice (for dvl.cve_id and v.cve_id matches)
                 $stmt = $db->getConnection()->prepare($sql);
-                $stmt->execute(array_merge([$patchId], $cveList));
+                $stmt->execute(array_merge([$patchId], $cveList, $cveList));
                 $rawDevices = $stmt->fetchAll();
                 
-                // Deduplicate devices by device_id, keeping the one with highest risk score
+                // Deduplicate by resolved asset identity, keeping the row with the highest risk score.
+                // Use resolved_asset_id when available (covers unmapped assets linked via dvl.asset_id),
+                // fall back to device_id for medical-device-only rows, then link_id as a last resort.
                 $deviceMap = [];
                 foreach ($rawDevices as $device) {
-                    $deviceId = $device['device_id'];
-                    if (!isset($deviceMap[$deviceId]) || $device['risk_score'] > $deviceMap[$deviceId]['risk_score']) {
-                        $deviceMap[$deviceId] = $device;
+                    $uniqueKey = $device['resolved_asset_id'] ?? $device['device_id'] ?? $device['link_id'];
+                    if (!isset($deviceMap[$uniqueKey]) || $device['risk_score'] > $deviceMap[$uniqueKey]['risk_score']) {
+                        $deviceMap[$uniqueKey] = $device;
                     }
                 }
                 $affectedDevices = array_values($deviceMap);
@@ -106,6 +123,7 @@ if ($action === 'schedule' && $patchId) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patch Management - <?php echo _NAME; ?></title>
     <link rel="stylesheet" href="/assets/css/dashboard.css">
+    <link rel="stylesheet" href="/assets/css/dashboard-common.css">
     <link rel="stylesheet" href="/assets/css/admin.css">
     <link rel="stylesheet" href="/assets/css/assets.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -767,10 +785,10 @@ if ($action === 'schedule' && $patchId) {
                     <div class="form-group">
                         <label class="form-label">Verification Method</label>
                         <select id="verification-method" class="form-select">
-                            <option value="Pending">Pending Verification</option>
-                            <option value="Manual">Manual Verification</option>
+                            <option value="Manual" selected>Manual Verification</option>
                             <option value="SBOM Upload">SBOM Upload</option>
                             <option value="Automatic">Automatic</option>
+                            <option value="Version Check">Version Check</option>
                         </select>
                     </div>
                     
@@ -846,7 +864,7 @@ if ($action === 'schedule' && $patchId) {
                             <i class="fas fa-arrow-left"></i> Back to Patches
                         </a>
                     </div>
-                    
+
                     <?php if (empty($patchId)): ?>
                         <div style="text-align: center; padding: 2rem;">
                             <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #f59e0b; margin-bottom: 1rem;"></i>
@@ -1686,15 +1704,16 @@ if ($action === 'schedule' && $patchId) {
                 
                 // Load assets filtered by CVEs
                 const cveFilter = cveList.join(',');
-                const response = await fetch(`/api/v1/assets/index.php?cve_filter=${encodeURIComponent(cveFilter)}&limit=1000`);
+                const response = await fetch(`/api/v1/assets?cve_filter=${encodeURIComponent(cveFilter)}&limit=1000`);
                 const result = await response.json();
                 
                 if (result.success) {
                     renderAssetSelector(result.data, cveList);
                 } else {
+                    const errMsg = result.error?.message || result.error || 'Unknown error';
                     document.getElementById('asset-selector').innerHTML = `
                         <div style="background: #ef4444; color: white; padding: 1rem; border-radius: 0.5rem; text-align: center;">
-                            <i class="fas fa-exclamation-circle"></i> Error loading assets: ${escapeHtml(result.error || 'Unknown error')}
+                            <i class="fas fa-exclamation-circle"></i> Error loading assets: ${escapeHtml(String(errMsg))}
                         </div>
                     `;
                 }
@@ -1875,9 +1894,16 @@ if ($action === 'schedule' && $patchId) {
                 const result = await response.json();
                 
                 if (result.success) {
-                    showApplicationResults(result.data);
+                    const appCount = result.applications_created ?? 0;
+                    const vulnCount = result.vulnerabilities_closed ?? 0;
+                    showNotification(
+                        `Patch applied to ${appCount} asset(s). ${vulnCount} vulnerabilit${vulnCount === 1 ? 'y' : 'ies'} closed.`,
+                        'success'
+                    );
+                    setTimeout(() => window.location.href = '?action=list', 2500);
                 } else {
-                    showNotification('Error applying patch: ' + (result.error || 'Unknown error'), 'error');
+                    const errMsg = result.error || result.message || 'Unknown error';
+                    showNotification('Error applying patch: ' + errMsg, 'error');
                 }
             } catch (error) {
                 showNotification('Error applying patch: ' + error.message, 'error');
@@ -2321,13 +2347,13 @@ if ($action === 'schedule' && $patchId) {
                             <input type="text" id="cve-search" placeholder="Search CVE ID..." style="width: 100%; padding: 0.5rem; background: var(--bg-secondary, #0f0f0f); color: var(--text-primary, #ffffff); border: 1px solid var(--border-primary, #333333); border-radius: 0.25rem;">
                         </div>
                         <div id="available-cves" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-primary, #333333); border-radius: 0.5rem;">
-                            ${renderAvailableCVEs(allCVEs || [], selectedCVEs || [])}
+                            ${renderAvailableCVEsHtml(allCVEs || [], selectedCVEs || [])}
                         </div>
                     </div>
                     <div>
                         <h4 style="color: var(--text-primary, #ffffff); margin-bottom: 1rem;">Selected CVEs</h4>
                         <div id="selected-cves" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-primary, #333333); border-radius: 0.5rem; background: var(--bg-secondary, #0f0f0f);">
-                            ${renderSelectedCVEs(selectedCVEs)}
+                            ${renderSelectedCVEsHtml(selectedCVEs)}
                         </div>
                     </div>
                 </div>
@@ -2348,7 +2374,7 @@ if ($action === 'schedule' && $patchId) {
             });
         }
         
-        function renderAvailableCVEs(allCVEs, selectedCVEs) {
+        function renderAvailableCVEsHtml(allCVEs, selectedCVEs) {
             // Ensure allCVEs is an array
             if (!allCVEs || !Array.isArray(allCVEs)) {
                 console.error('Error loading CVEs for selection: allCVEs is undefined or not an array', allCVEs);
@@ -2362,7 +2388,7 @@ if ($action === 'schedule' && $patchId) {
             return allCVEs.map(cve => {
                 const isSelected = selectedCVEs.includes(cve.cve_id);
                 return `
-                    <div class="cve-item" data-cve-id="${escapeHtml(cve.cve_id)}" onclick="toggleCVESelection('${escapeHtml(cve.cve_id)}')" style="padding: 0.75rem; border-bottom: 1px solid var(--border-primary, #333333); cursor: pointer; ${isSelected ? 'background: var(--siemens-petrol, #009999);' : ''}">
+                    <div class="cve-item" data-cve-id="${escapeHtml(cve.cve_id)}" onclick="toggleCVESelectionModal('${escapeHtml(cve.cve_id)}')" style="padding: 0.75rem; border-bottom: 1px solid var(--border-primary, #333333); cursor: pointer; ${isSelected ? 'background: var(--siemens-petrol, #009999);' : ''}">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <div style="color: var(--text-primary, #ffffff); font-weight: 600;">${escapeHtml(cve.cve_id)}</div>
@@ -2375,7 +2401,7 @@ if ($action === 'schedule' && $patchId) {
             }).join('');
         }
         
-        function renderSelectedCVEs(selectedCVEs) {
+        function renderSelectedCVEsHtml(selectedCVEs) {
             if (selectedCVEs.length === 0) {
                 return '<div style="text-align: center; color: var(--text-muted, #94a3b8); padding: 2rem;">No CVEs selected</div>';
             }
@@ -2403,7 +2429,7 @@ if ($action === 'schedule' && $patchId) {
             }
         }
         
-        function toggleCVESelection(cveId) {
+        function toggleCVESelectionModal(cveId) {
             const index = selectedCVEs.indexOf(cveId);
             if (index > -1) {
                 // Remove from selection
@@ -2447,7 +2473,7 @@ if ($action === 'schedule' && $patchId) {
             // Update selected CVEs display
             const selectedCves = document.getElementById('selected-cves');
             if (selectedCves) {
-                selectedCves.innerHTML = renderSelectedCVEs(selectedCVEs);
+                selectedCves.innerHTML = renderSelectedCVEsHtml(selectedCVEs);
             }
         }
         
@@ -2687,6 +2713,8 @@ if ($action === 'schedule' && $patchId) {
                 // Enhance device data with patch information
                 const enhancedDevices = devices.map(device => ({
                     ...device,
+                    // Prefer medical device ID; fallback to resolved asset ID so the value is never null
+                    device_id: device.device_id || device.resolved_asset_id,
                     package_name: patchInfo.patch_version ? 
                         `${patchInfo.patch_name} v${patchInfo.patch_version}` : 
                         patchInfo.patch_name,

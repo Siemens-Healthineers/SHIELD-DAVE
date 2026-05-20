@@ -32,6 +32,62 @@ $detectedBaseUrl = $protocol . '://' . $host;
 $message = '';
 $messageType = '';
 
+// Handle integration-settings update when system is already configured
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isConfigured) {
+    try {
+        $envFile = __DIR__ . '/.env';
+        $updates = [
+            'CYNERIO_CLIENT_ID'     => $_POST['cynerio_client_id']     ?? '',
+            'CYNERIO_CLIENT_SECRET' => $_POST['cynerio_client_secret'] ?? '',
+            'CYNERIO_ENDPOINT'      => $_POST['cynerio_endpoint']      ?? '',
+            'CYNERIO_AUTH_ENDPOINT' => $_POST['cynerio_auth_endpoint'] ?? '',
+            'BLUEFLOW_API_URL'      => $_POST['blueflow_endpoint']     ?? '',
+            'NETDISCO_API_URL'      => $_POST['netdisco_endpoint']     ?? '',
+        ];
+
+        if (!file_exists($envFile)) {
+            throw new Exception('.env file not found.');
+        }
+
+        $lines   = file($envFile, FILE_IGNORE_NEW_LINES);
+        $handled = array_fill_keys(array_keys($updates), false);
+        $out     = [];
+        foreach ($lines as $line) {
+            $matched = false;
+            foreach ($updates as $key => $val) {
+                if (strncmp($line, $key . '=', strlen($key) + 1) === 0) {
+                    $out[]          = $key . '=' . $val;
+                    $handled[$key]  = true;
+                    $matched        = true;
+                    break;
+                }
+            }
+            if (!$matched) {
+                $out[] = $line;
+            }
+        }
+        // Append keys that were not already in the file
+        foreach ($handled as $key => $found) {
+            if (!$found) {
+                $out[] = $key . '=' . $updates[$key];
+            }
+        }
+        file_put_contents($envFile, implode("\n", $out) . "\n");
+
+        // Reload env so the form reflects the new values immediately
+        foreach ($updates as $key => $val) {
+            putenv($key . '=' . $val);
+            $_ENV[$key] = $val;
+        }
+
+        $message     = 'Integration settings updated successfully.';
+        $messageType = 'success';
+    } catch (Exception $e) {
+        $message     = 'Update failed: ' . $e->getMessage();
+        $messageType = 'error';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
     try {
         // Validate required fields
@@ -420,24 +476,237 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
         h3 {
             color: #f8fafc;
         }
+
+        .form-group input:disabled,
+        .form-group select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #0d0d0d;
+            border-color: #222222;
+            color: #94a3b8;
+        }
+
+        .locked-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            color: #64748b;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 2px 7px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 400;
+        }
+
+        .info-banner {
+            background: rgba(0, 153, 153, 0.08);
+            border: 1px solid #009999;
+            color: #00cccc;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <div class="setup-container">
+        <?php
+        // When configured, read all current values from env for pre-populating the form
+        $env_base_url         = getenv('DAVE_BASE_URL')              ?: '';
+        $env_debug            = (getenv('DAVE_DEBUG') === 'true');
+        $env_db_host          = getenv('DB_HOST')                     ?: '';
+        $env_db_port          = getenv('DB_PORT')                     ?: '5432';
+        $env_db_name          = getenv('DB_NAME')                     ?: '';
+        $env_db_user          = getenv('DB_USER')                     ?: '';
+        $env_smtp_host        = getenv('DAVE_SMTP_HOST')              ?: 'localhost';
+        $env_smtp_port        = getenv('DAVE_SMTP_PORT')              ?: '587';
+        $env_smtp_user        = getenv('DAVE_SMTP_USERNAME')          ?: '';
+        $env_smtp_enc         = getenv('DAVE_SMTP_ENCRYPTION')        ?: 'tls';
+        $env_from_email       = getenv('DAVE_FROM_EMAIL')             ?: '';
+        $env_from_name        = getenv('DAVE_FROM_NAME')              ?: '';
+        $env_cynerio_id       = getenv('CYNERIO_CLIENT_ID')           ?: '';
+        $env_cynerio_secret   = getenv('CYNERIO_CLIENT_SECRET')       ?: '';
+        $env_cynerio_ep       = getenv('CYNERIO_ENDPOINT')            ?: '';
+        $env_cynerio_auth     = getenv('CYNERIO_AUTH_ENDPOINT')       ?: '';
+        $env_blueflow         = getenv('BLUEFLOW_API_URL')            ?: '';
+        $env_netdisco         = getenv('NETDISCO_API_URL')            ?: '';
+        ?>
         <?php if ($isConfigured): ?>
-            <div class="success-message">
-                <div class="icon">
-                    <i class="fas fa-check-circle"></i>
+            <div class="setup-header">
+                <div class="logo">
+                    <img src="/assets/images/siemens-healthineers-logo.png" alt="Siemens Healthineers" class="logo-image">
                 </div>
-                <h2>Setup Complete!</h2>
-                <p>Your DAVE installation has been configured successfully. You can now access the application using the configured base URL.</p>
-                <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 20px;">
-                    Redirecting to: <strong style="color: #10b981;"><?php echo dave_htmlspecialchars($baseUrl); ?></strong>
-                </p>
-                <a href="<?php echo dave_htmlspecialchars($baseUrl); ?>" class="btn btn-success">
-                    <i class="fas fa-arrow-right"></i> Access Application
+                <h1>DAVE Settings</h1>
+                <p>Device Assessment and Vulnerability Exposure</p>
+            </div>
+
+            <div class="info-banner">
+                <i class="fas fa-lock"></i>
+                System is configured. Only Cynerio, Blueflow and Netdisco settings can be updated here.
+                <a href="<?php echo dave_htmlspecialchars($baseUrl); ?>" style="margin-left:auto; color:#009999; white-space:nowrap;">
+                    <i class="fas fa-arrow-right"></i> Go to App
                 </a>
             </div>
+
+            <?php if ($message): ?>
+                <div class="alert alert-<?php echo $messageType; ?>">
+                    <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
+                    <?php echo dave_htmlspecialchars($message); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <h3 style="margin-bottom: 20px;">
+                    Application Configuration
+                    <span class="locked-badge"><i class="fas fa-lock"></i> read-only</span>
+                </h3>
+
+                <div class="form-group">
+                    <label for="base_url_ro">Base URL</label>
+                    <input type="url" id="base_url_ro" name="base_url_ro"
+                           value="<?php echo dave_htmlspecialchars($env_base_url); ?>" disabled>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="debug_ro" name="debug_ro"
+                               <?php echo $env_debug ? 'checked' : ''; ?> disabled>
+                        <label for="debug_ro">Debug Mode</label>
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 20px 0;">
+                    Database Configuration
+                    <span class="locked-badge"><i class="fas fa-lock"></i> read-only</span>
+                </h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Database Host</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_db_host); ?>" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Database Port</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_db_port); ?>" disabled>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Database Name</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_db_name); ?>" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Database User</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_db_user); ?>" disabled>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Database Password</label>
+                    <input type="password" value="••••••••" disabled>
+                </div>
+
+                <h3 style="margin: 30px 0 20px 0;">
+                    Email Configuration
+                    <span class="locked-badge"><i class="fas fa-lock"></i> read-only</span>
+                </h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SMTP Host</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_smtp_host); ?>" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>SMTP Port</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_smtp_port); ?>" disabled>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SMTP Username</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_smtp_user); ?>" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>SMTP Password</label>
+                        <input type="password" value="••••••••" disabled>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SMTP Encryption</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_smtp_enc); ?>" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>From Email</label>
+                        <input type="text" value="<?php echo dave_htmlspecialchars($env_from_email); ?>" disabled>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>From Name</label>
+                    <input type="text" value="<?php echo dave_htmlspecialchars($env_from_name); ?>" disabled>
+                </div>
+
+                <!-- ── Editable integration sections ── -->
+
+                <h3 style="margin: 30px 0 20px 0;">Cynerio Configuration</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cynerio_client_id">Client ID</label>
+                        <input type="text" id="cynerio_client_id" name="cynerio_client_id"
+                               value="<?php echo dave_htmlspecialchars($_POST['cynerio_client_id'] ?? $env_cynerio_id); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="cynerio_client_secret">Client Secret</label>
+                        <input type="text" id="cynerio_client_secret" name="cynerio_client_secret"
+                               value="<?php echo dave_htmlspecialchars($_POST['cynerio_client_secret'] ?? $env_cynerio_secret); ?>">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cynerio_endpoint">Endpoint</label>
+                        <input type="text" id="cynerio_endpoint" name="cynerio_endpoint"
+                               value="<?php echo dave_htmlspecialchars($_POST['cynerio_endpoint'] ?? $env_cynerio_ep); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="cynerio_auth_endpoint">Auth Endpoint</label>
+                        <input type="text" id="cynerio_auth_endpoint" name="cynerio_auth_endpoint"
+                               value="<?php echo dave_htmlspecialchars($_POST['cynerio_auth_endpoint'] ?? $env_cynerio_auth); ?>">
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 20px 0;">Blueflow Configuration</h3>
+
+                <div class="form-group">
+                    <label for="blueflow_endpoint">Endpoint</label>
+                    <input type="text" id="blueflow_endpoint" name="blueflow_endpoint"
+                           value="<?php echo dave_htmlspecialchars($_POST['blueflow_endpoint'] ?? $env_blueflow); ?>">
+                </div>
+
+                <h3 style="margin: 30px 0 20px 0;">Netdisco Configuration</h3>
+
+                <div class="form-group">
+                    <label for="netdisco_endpoint">Endpoint</label>
+                    <input type="text" id="netdisco_endpoint" name="netdisco_endpoint"
+                           value="<?php echo dave_htmlspecialchars($_POST['netdisco_endpoint'] ?? $env_netdisco); ?>">
+                </div>
+
+                <button type="submit" class="btn">
+                    <i class="fas fa-save"></i> Update Integration Settings
+                </button>
+            </form>
         <?php else: ?>
             <div class="setup-header">
                 <div class="logo">

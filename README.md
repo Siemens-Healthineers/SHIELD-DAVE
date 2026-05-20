@@ -157,7 +157,7 @@ After running the installation script, access the setup wizard at:
 ```bash
 # Clone repository
 git clone https://github.com/your-org/SHIELD-DAVE
-cd dave
+cd SHIELD-DAVE
 
 # Set up development environment
 sudo bash scripts/setup-permissions.sh

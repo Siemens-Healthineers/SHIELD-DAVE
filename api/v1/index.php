@@ -56,7 +56,7 @@ if (empty($segments[0])) {
             'system' => '/api/v1/system/',
             'analytics' => '/api/v1/analytics/',
             'devices' => '/api/v1/devices/',
-            'reports' => '/api/v1/reports/',
+            'export' => '/api/v1/export/',
             'epss' => '/api/v1/epss/',
             'remediation-actions' => '/api/v1/remediation-actions/',
             'remediations' => '/api/v1/remediations/'
@@ -141,7 +141,14 @@ switch ($endpoint) {
         break;
 
     case 'patches':
-        if (file_exists(__DIR__ . '/patches/index.php')) {
+        // Route sub-paths to dedicated files before falling back to patches/index.php.
+        // $sub_path is the portion after "patches/" (e.g. "bulk-apply.php", "bulk-apply").
+        $patchesSubFile = rtrim($sub_path, '/');
+        // Strip .php extension for comparison
+        $patchesSubBase = preg_replace('/\.php$/i', '', $patchesSubFile);
+        if ($patchesSubBase === 'bulk-apply' && file_exists(__DIR__ . '/patches/bulk-apply.php')) {
+            include __DIR__ . '/patches/bulk-apply.php';
+        } elseif (file_exists(__DIR__ . '/patches/index.php')) {
             $_GET['path'] = $sub_path;
             include __DIR__ . '/patches/index.php';
         } else {
@@ -241,6 +248,24 @@ switch ($endpoint) {
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Admin endpoint not found: ' . $sub_path]);
+        }
+        break;
+
+    case 'scheduled-tasks':
+        if (file_exists(__DIR__ . '/scheduled-tasks/' . $sub_path)) {
+            include __DIR__ . '/scheduled-tasks/' . $sub_path;
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Scheduled tasks endpoint not found: ' . $sub_path]);
+        }
+        break;
+        
+    case 'export':
+        if (file_exists(__DIR__ . '/export/' . $sub_path . '.php')) {
+            include __DIR__ . '/export/' . $sub_path . '.php';
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Export endpoint not found']);
         }
         break;
 

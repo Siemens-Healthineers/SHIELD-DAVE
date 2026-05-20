@@ -1752,6 +1752,18 @@
     font-weight: 600;
 }
 
+.device-info .device-service {
+    font-size: 0.72rem;
+    color: var(--text-muted, #94a3b8);
+    font-style: italic;
+}
+
+.device-info .device-type {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #cbd5e1);
+    text-transform: capitalize;
+}
+
 /* Responsive adjustments for consolidated columns */
 @media (max-width: 1200px) {
     .schedule-downtime-info .downtime-info {

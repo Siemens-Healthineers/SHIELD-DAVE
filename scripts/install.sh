@@ -107,6 +107,7 @@ sudo apt install -y \
     apache2 \
     postgresql \
     postgresql-contrib \
+    postgresql-16-pgvector \
     php8.3 \
     php8.3-pgsql \
     php8.3-curl \
@@ -317,6 +318,17 @@ sudo touch "$PROJECT_ROOT/temp/.gitkeep"
 
 # Set up cron jobs for background tasks
 log "Setting up cron jobs for background tasks..."
+
+# Ensure www-data is allowed to use cron.
+# On some systems /etc/cron.deny exists and blocks www-data, or /etc/cron.allow
+# exists but doesn't include it. Fix both cases before calling crontab.
+if [ -f /etc/cron.deny ]; then
+    sudo sed -i '/^www-data$/d' /etc/cron.deny
+fi
+if [ -f /etc/cron.allow ]; then
+    grep -qx 'www-data' /etc/cron.allow || echo 'www-data' | sudo tee -a /etc/cron.allow > /dev/null
+fi
+
 sudo crontab -u www-data -l 2>/dev/null | grep -v "dave" | sudo crontab -u www-data - 2>/dev/null || true
 
 # Add cron jobs (using PROJECT_ROOT variable)

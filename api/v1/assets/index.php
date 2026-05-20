@@ -16,7 +16,7 @@ header('Content-Type: application/json');
 // Handle CORS
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -149,23 +149,42 @@ function listAssets() {
         $cve_list = array_filter($cve_list); // Remove empty values
         
         if (!empty($cve_list)) {
-            // Create placeholders for CVE IDs
-            $cve_placeholders = [];
+            // Create four sets of named placeholders — PDO named params cannot be reused in the
+            // same query, so we need distinct param names for each IN() clause occurrence.
+            // Suffix _da / _db = direct-asset-path (dvl.cve_id / v.cve_id)
+            // Suffix _mc / _md = medical-device-path (dvl.cve_id / v.cve_id)
+            $ph_da = []; $ph_db = []; $ph_mc = []; $ph_md = [];
             foreach ($cve_list as $index => $cve_id) {
-                $placeholder = ":cve_$index";
-                $cve_placeholders[] = $placeholder;
-                $params[$placeholder] = $cve_id;
+                $ph_da[] = ":cve_da{$index}"; $params[":cve_da{$index}"] = $cve_id;
+                $ph_db[] = ":cve_db{$index}"; $params[":cve_db{$index}"] = $cve_id;
+                $ph_mc[] = ":cve_mc{$index}"; $params[":cve_mc{$index}"] = $cve_id;
+                $ph_md[] = ":cve_md{$index}"; $params[":cve_md{$index}"] = $cve_id;
             }
-            
-            $cve_placeholder_string = implode(',', $cve_placeholders);
-            
-            // Add CVE filtering to WHERE clause
+            $ps_da = implode(',', $ph_da);
+            $ps_db = implode(',', $ph_db);
+            $ps_mc = implode(',', $ph_mc);
+            $ps_md = implode(',', $ph_md);
+
+            // Add CVE filtering to WHERE clause.
+            // Two asset-linkage paths exist in device_vulnerabilities_link:
+            //   1. dvl.asset_id  → assets.asset_id  (direct link; covers all non-medical-device assets)
+            //   2. dvl.device_id → medical_devices.device_id → assets.asset_id  (FDA-mapped medical devices)
+            // Two CVE-matching paths exist:
+            //   a. dvl.cve_id                — legacy string match (older records)
+            //   b. dvl.vulnerability_id → vulnerabilities.cve_id  (UUID-based; newer records)
             $where_conditions[] = "a.asset_id IN (
-                SELECT DISTINCT a2.asset_id 
+                SELECT DISTINCT dvl_d.asset_id
+                FROM device_vulnerabilities_link dvl_d
+                LEFT JOIN vulnerabilities v_d ON dvl_d.vulnerability_id = v_d.vulnerability_id
+                WHERE (dvl_d.cve_id IN ($ps_da) OR v_d.cve_id IN ($ps_db))
+                  AND dvl_d.asset_id IS NOT NULL
+                UNION
+                SELECT DISTINCT a2.asset_id
                 FROM assets a2
-                LEFT JOIN medical_devices md2 ON a2.asset_id = md2.asset_id
-                LEFT JOIN device_vulnerabilities_link dvl ON md2.device_id = dvl.device_id
-                WHERE dvl.cve_id IN ($cve_placeholder_string)
+                INNER JOIN medical_devices md2 ON a2.asset_id = md2.asset_id
+                INNER JOIN device_vulnerabilities_link dvl_m ON md2.device_id = dvl_m.device_id
+                LEFT JOIN vulnerabilities v_m ON dvl_m.vulnerability_id = v_m.vulnerability_id
+                WHERE (dvl_m.cve_id IN ($ps_mc) OR v_m.cve_id IN ($ps_md))
             )";
         }
     }

@@ -40,6 +40,7 @@ if (isset($_SERVER['PATH_INFO'])) {
 } elseif (isset($_GET['path'])) {
     $pathInfo = $_GET['path'];
 } elseif (isset($_SERVER['REQUEST_URI'])) {
+
     // Parse REQUEST_URI to extract path after /patches/
     $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     // Remove query parameters if any
@@ -59,6 +60,13 @@ if (isset($_SERVER['PATH_INFO'])) {
             $pathInfo = $afterPatches;
         }
     }
+}
+
+// Normalize: strip a leading 'patches/' prefix that some servers include in PATH_INFO
+// (e.g. PATH_INFO = '/patches/{uuid}/apply' → '{uuid}/apply')
+$pathInfo = ltrim($pathInfo, '/');
+if (stripos($pathInfo, 'patches/') === 0) {
+    $pathInfo = substr($pathInfo, strlen('patches/'));
 }
 
 // Initialize unified authentication

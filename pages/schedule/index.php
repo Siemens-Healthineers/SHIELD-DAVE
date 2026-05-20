@@ -474,7 +474,7 @@ try {
                         <thead>
                             <tr>
                                 <th>Task Type</th>
-                                <th>Device & Location</th>
+                                <th>Device / Asset</th>
                                 <th>Package/CVE</th>
                                 <th>Assigned To</th>
                                 <th>Schedule & Downtime</th>
@@ -908,18 +908,29 @@ try {
                     </td>
                     <td>
                         <div class="device-info">
-                            <div class="device-name">${(() => {
-                                const name = (task.device_name && task.device_name !== 'Unknown Device') ? task.device_name
-                                    : (task.original_device_name || task.original_hostname || task.hostname || ((task.original_brand_name ? (task.original_brand_name + (task.original_model_number ? (' ' + task.original_model_number) : '')) : '')));
-                                return escapeHtml(name || 'Unidentified Device');
-                            })()}</div>
-                            <div class="device-details">
-                                <span class="device-location">${escapeHtml(task.location || 'Unknown')}</span>
-                                <span class="device-department">${escapeHtml(task.department || 'Unknown')}</span>
-                                <span class="device-criticality criticality-${(task.device_criticality || '').toLowerCase().replace('-', '_')}">
-                                    ${escapeHtml(task.device_criticality || 'Unknown')}
-                                </span>
-                            </div>
+                            ${(() => {
+                                // Asset line — always primary
+                                const assetName = task.asset_display_name || task.asset_hostname || task.asset_tag || task.original_hostname || null;
+                                const assetType = task.asset_type || null;
+                                // Medical-device / service line — only when a service is linked
+                                const hasService = task.device_id || (task.device_name && task.device_name !== 'Unknown Device' && task.device_name !== 'Unknown');
+                                const serviceName = hasService
+                                    ? ((task.device_name && task.device_name !== 'Unknown Device') ? task.device_name
+                                        : (task.original_device_name || task.original_brand_name
+                                            ? ((task.original_brand_name || '') + (task.original_model_number ? ' ' + task.original_model_number : '')).trim()
+                                            : null))
+                                    : null;
+                                const primary = assetName || serviceName || 'Unidentified';
+                                return `
+                                    <div class="device-name">${escapeHtml(primary)}</div>
+                                    <div class="device-details">
+                                        ${assetType ? `<span class="device-type">${escapeHtml(assetType)}</span>` : ''}
+                                        ${serviceName && serviceName !== primary ? `<span class="device-service" title="Linked medical device">${escapeHtml(serviceName)}</span>` : ''}
+                                        ${task.location ? `<span class="device-location">${escapeHtml(task.location)}</span>` : ''}
+                                        ${task.device_criticality ? `<span class="device-criticality criticality-${task.device_criticality.toLowerCase().replace('-', '_')}">${escapeHtml(task.device_criticality)}</span>` : ''}
+                                    </div>
+                                `;
+                            })()}
                         </div>
                     </td>
                     <td>

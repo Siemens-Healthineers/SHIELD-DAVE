@@ -381,6 +381,26 @@ if (is_writable($uploads_dir) && is_writable($logs_dir)) {
                             <p>Manage BlueFlow integration settings</p>
                         </div>
                     </a>
+
+                    <a href="/pages/export/index.php" class="admin-card">
+                        <div class="admin-card-icon">
+                            <i class="fas fa-screwdriver-wrench"></i>
+                        </div>
+                        <div class="admin-card-content">
+                            <h3>Query Builder</h3>
+                            <p>Experimental feature for building complex queries</p>
+                        </div>
+                    </a>
+
+                    <a href="/pages/ai-playground.php" class="admin-card">
+                        <div class="admin-card-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="admin-card-content">
+                            <h3>AI Security Analytics</h3>
+                            <p>Experimental feature for AI-driven security insights</p>
+                        </div>
+                    </a>
                 </div>
             </section>
 

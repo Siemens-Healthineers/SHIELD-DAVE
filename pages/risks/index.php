@@ -208,6 +208,7 @@ try {
     <title>Risk Management - CSMS</title>
     <link rel="stylesheet" href="/assets/css/brand-variables.css">
     <link rel="stylesheet" href="/assets/css/brand-components.css">
+    <link rel="stylesheet" href="/assets/css/dashboard.css">
     <link rel="stylesheet" href="/assets/css/dashboard-common.css">
     <link rel="stylesheet" href="/assets/css/vulnerabilities.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -693,7 +694,7 @@ try {
                     <td class="text-center">
                         ${risk.tags_exploited_in_the_wild ? 
                             '<span class="exploited-badge" title="Exploited in the Wild"><i class="fas fa-exclamation-triangle"></i></span>' : 
-                            '<span class="text-muted">—</span>'
+                            '<span class="text-muted">ï¿½</span>'
                         }
                     </td>
                 </tr>

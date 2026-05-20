@@ -49,6 +49,13 @@ $db = DatabaseConfig::getInstance();
 $method = $_SERVER['REQUEST_METHOD'];
 $path = $_GET['path'] ?? '';
 
+// Normalize: strip 'index.php' injected by the central router so that
+// /api/v1/vulnerabilities/index.php and /api/v1/vulnerabilities both list vulnerabilities, and
+// /api/v1/vulnerabilities/index.php/{uuid} and /api/v1/vulnerabilities/{uuid} both fetch one vulnerability.
+if (preg_match('#^index\.php(/(.*))?$#', $path, $m)) {
+    $path = $m[2] ?? '';
+}
+
 // Route requests
 switch ($method) {
     case 'GET':

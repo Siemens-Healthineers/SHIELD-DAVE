@@ -775,12 +775,19 @@ class AssignOwnerModal {
 
         // Create tasks for each selected device
         const tasks = Array.from(this.selectedDevices).map(deviceId => {
+            // Look up device details so the API can store them even when device_id
+            // is not backed by a medical_devices row (direct asset links).
+            const deviceObj = this.devices.find(d => d.device_id === deviceId) || {};
             const task = {
                 task_type: this.taskContext.taskType,
                 package_id: this.taskContext.packageId,
                 cve_id: this.taskContext.cveId,
                 action_id: this.taskContext.actionId,
                 device_id: deviceId,
+                device_name: deviceObj.device_name || deviceObj.hostname || null,
+                device_location: deviceObj.location || deviceObj.location_name || null,
+                device_type: deviceObj.device_type || deviceObj.asset_type || null,
+                device_department: deviceObj.department || null,
                 assigned_to: formObject.assigned_to,
                 scheduled_date: formObject.scheduled_date,
                 implementation_date: formObject.implementation_date,
@@ -918,8 +925,8 @@ class AssignOwnerModal {
             notification.style.opacity = '1';
         }, 100);
         
-        // Remove notification after 5 seconds
-        setTimeout(() => {
+        // Dismiss function
+        const dismiss = () => {
             notification.style.transform = 'translateX(100%)';
             notification.style.opacity = '0';
             setTimeout(() => {
@@ -927,7 +934,22 @@ class AssignOwnerModal {
                     notification.parentNode.removeChild(notification);
                 }
             }, 300);
-        }, 5000);
+        };
+
+        // Errors are click-to-dismiss (no auto-hide) so the user can read the full message
+        if (type === 'error') {
+            notification.style.cursor = 'pointer';
+            notification.title = 'Click to dismiss';
+            notification.addEventListener('click', dismiss);
+            // Add a small "×" hint
+            const closeHint = document.createElement('div');
+            closeHint.style.cssText = 'font-size:0.75rem;opacity:0.7;margin-top:0.4rem;';
+            closeHint.textContent = 'Click to dismiss';
+            notification.appendChild(closeHint);
+        } else {
+            // Auto-remove success/info after 5 seconds
+            setTimeout(dismiss, 5000);
+        }
     }
 }
 
