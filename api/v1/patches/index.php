@@ -96,7 +96,7 @@ try {
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             // Remove 'patches/index.php/' or 'index.php/' prefix if present
-            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = preg_replace('#^(patches/)?index\.php/?#i', '', $pathInfo);
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             // Additional check: if pathInfo is literally "patches", treat as empty
@@ -140,7 +140,7 @@ try {
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             // Remove 'patches/index.php/' or 'index.php/' prefix if present
-            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = preg_replace('#^(patches/)?index\.php/?#i', '', $pathInfo);
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             // Additional check: if pathInfo is literally "patches", treat as empty
@@ -181,7 +181,7 @@ try {
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             // Remove 'patches/index.php/' or 'index.php/' prefix if present
-            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = preg_replace('#^(patches/)?index\.php/?#i', '', $pathInfo);
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             if (!empty($pathInfo)) {
@@ -212,7 +212,7 @@ try {
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             // Remove 'patches/index.php/' or 'index.php/' prefix if present
-            $pathInfo = preg_replace('#^(patches/)?index\.php/#i', '', $pathInfo);
+            $pathInfo = preg_replace('#^(patches/)?index\.php/?#i', '', $pathInfo);
             $pathInfo = trim($pathInfo, "/ \t\n\r\0\x0B");
             
             if (!empty($pathInfo)) {
