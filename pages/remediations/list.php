@@ -68,6 +68,7 @@ if (isset($_GET['ajax'])) {
                 $sql = "SELECT 
                             r.remediation_id,
                             r.vulnerability_id,
+                            r.status,
                             r.description,
                             r.narrative,
                             r.upstream_api,
@@ -539,12 +540,11 @@ if (isset($_GET['ajax'])) {
             text-transform: uppercase;
         }
         
-        .status-badge.planning { background: #3b82f6; color: white; }
-        .status-badge.in-progress { background: #f59e0b; color: white; }
-        .status-badge.testing { background: #8b5cf6; color: white; }
-        .status-badge.completed { background: #10b981; color: white; }
-        .status-badge.on-hold { background: #6b7280; color: white; }
-        .status-badge.cancelled { background: #ef4444; color: white; }
+        .status-badge.created { background: #3b82f6; color: white; }
+        .status-badge.inprogress { background: #f59e0b; color: white; }
+        .status-badge.complete { background: #10b981; color: white; }
+        .status-badge.failed { background: #ef4444; color: white; }
+        .status-badge.rejected { background: #6b7280; color: white; }
         
         .priority-badge.critical { background: #dc2626; color: white; }
         .priority-badge.high { background: #f97316; color: white; }
@@ -957,6 +957,7 @@ if (isset($_GET['ajax'])) {
                         <thead>
                             <tr>
                                 <th>Description</th>
+                                <th>Status</th>
                                 <th>Vulnerability</th>
                                 <th>Assets</th>
                                 <th>Patches</th>
@@ -966,7 +967,7 @@ if (isset($_GET['ajax'])) {
                         </thead>
                         <tbody id="remediationsTableBody">
                             <tr>
-                                <td colspan="6" class="empty-state">
+                                <td colspan="7" class="empty-state">
                                     <i class="fas fa-circle-notch fa-spin"></i>
                                     <p>Loading remediations...</p>
                                 </td>
@@ -1006,6 +1007,17 @@ if (isset($_GET['ajax'])) {
                     <div class="form-group">
                         <label>Upstream API</label>
                         <input type="text" id="upstreamApi" placeholder="Source API or system (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="remediationStatus">
+                            <option value="CREATED">CREATED</option>
+                            <option value="INPROGRESS">INPROGRESS</option>
+                            <option value="COMPLETE">COMPLETE</option>
+                            <option value="FAILED">FAILED</option>
+                            <option value="REJECTED">REJECTED</option>
+                        </select>
                     </div>
                     
                     <div class="form-group">
@@ -1171,7 +1183,7 @@ if (isset($_GET['ajax'])) {
             if (remediations.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
                             <i class="fas fa-inbox"></i>
                             <p>No remediations found</p>
                         </td>
@@ -1185,6 +1197,9 @@ if (isset($_GET['ajax'])) {
                     <td>
                         <div style="font-weight: 600;">${escapeHtml(r.description ? r.description.substring(0, 60) : 'No description')}</div>
                         <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(r.narrative ? r.narrative.substring(0, 80) : '')}${r.narrative && r.narrative.length > 80 ? '...' : ''}</div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${String(r.status || 'CREATED').toLowerCase()}">${escapeHtml(formatStatusLabel(r.status || 'CREATED'))}</span>
                     </td>
                     <td>
                         ${r.cve_id ? `
@@ -1248,11 +1263,23 @@ if (isset($_GET['ajax'])) {
             currentPage = 1;
             loadRemediations();
         }
+
+        function formatStatusLabel(status) {
+            const map = {
+                CREATED: 'Created',
+                INPROGRESS: 'In Progress',
+                COMPLETE: 'Complete',
+                FAILED: 'Failed',
+                REJECTED: 'Rejected'
+            };
+            return map[status] || status;
+        }
         
         function openCreateModal() {
             document.getElementById('modalTitle').textContent = 'Create Remediation';
             document.getElementById('remediationForm').reset();
             document.getElementById('remediationId').value = '';
+            document.getElementById('remediationStatus').value = 'CREATED';
             selectedAssets = [];
             selectedPatches = [];
             selectedVulnerability = null;
@@ -1290,6 +1317,7 @@ if (isset($_GET['ajax'])) {
                 description: document.getElementById('description').value,
                 narrative: document.getElementById('narrative').value,
                 upstream_api: document.getElementById('upstreamApi').value || null,
+                status: document.getElementById('remediationStatus').value || 'CREATED',
                 vulnerability_id: selectedVulnerability.vulnerability_id,
                 asset_ids: selectedAssets.map(a => a.asset_id),
                 patch_ids: selectedPatches.map(p => p.patch_id)
@@ -1335,6 +1363,7 @@ if (isset($_GET['ajax'])) {
                     document.getElementById('description').value = r.description;
                     document.getElementById('narrative').value = r.narrative;
                     document.getElementById('upstreamApi').value = r.upstream_api || '';
+                    document.getElementById('remediationStatus').value = r.status || 'CREATED';
                     
                     if (r.vulnerability_id) {
                         selectedVulnerability = {

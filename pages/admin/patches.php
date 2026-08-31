@@ -604,6 +604,7 @@ if ($action === 'schedule' && $patchId) {
                                 <label class="form-label">Patch Type <span style="color: #ef4444;">*</span></label>
                                 <select name="patch_type" class="form-select" required>
                                     <option value="">Select Type...</option>
+                                    <option value="Software Update">Software Update</option>
                                     <option value="Source">Source</option>
                                     <option value="Binary">Binary</option>
                                     <option value="Firmware">Firmware</option>
@@ -611,6 +612,7 @@ if ($action === 'schedule' && $patchId) {
                                     <option value="Documentation">Documentation</option>
                                     <option value="Configuration">Configuration</option>
                                     <option value="Security Patch">Security Patch</option>
+                                    <option value="Security">Security</option>
                                 </select>
                             </div>
                             
@@ -641,6 +643,72 @@ if ($action === 'schedule' && $patchId) {
                             <div class="form-group">
                                 <label class="form-label">Vendor</label>
                                 <input type="text" name="vendor" class="form-input" placeholder="e.g., Siemens Healthineers">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Vendor Patch ID (Optional)</label>
+                                    <input type="text" name="vendor_patch_id" class="form-input" placeholder="e.g., BD-ALARIS-2025-001">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Patch Version (Optional)</label>
+                                    <input type="text" name="patch_version" class="form-input" placeholder="e.g., 12.1.6">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Patch Method (Optional)</label>
+                                    <select name="patch_method" class="form-select">
+                                        <option value="">Not specified</option>
+                                        <option value="Manual">Manual</option>
+                                        <option value="Automated">Automated</option>
+                                        <option value="Semi-Automated">Semi-Automated</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Testing Status (Optional)</label>
+                                    <select name="testing_status" class="form-select">
+                                        <option value="">Not specified</option>
+                                        <option value="not_tested">Not Tested</option>
+                                        <option value="lab_tested">Lab Tested</option>
+                                        <option value="pilot_tested">Pilot Tested</option>
+                                        <option value="vendor_verified">Vendor Verified</option>
+                                        <option value="production_validated">Production Validated</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Stability (Optional)</label>
+                                    <select name="stability" class="form-select">
+                                        <option value="">Not specified</option>
+                                        <option value="stable">Stable</option>
+                                        <option value="beta">Beta</option>
+                                        <option value="experimental">Experimental</option>
+                                        <option value="deprecated">Deprecated</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Complexity (Optional)</label>
+                                    <select name="complexity" class="form-select">
+                                        <option value="">Not specified</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Stability Notes (Optional)</label>
+                                <textarea name="stability_notes" class="form-textarea" placeholder="Validation notes, field evidence, etc..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Complexity Notes (Optional)</label>
+                                <textarea name="complexity_notes" class="form-textarea" placeholder="Operational impact, rollout complexity, prerequisites..." ></textarea>
                             </div>
                             
                             <div class="form-group">
@@ -674,6 +742,68 @@ if ($action === 'schedule' && $patchId) {
                                         <input type="checkbox" name="requires_reboot"> Requires Reboot
                                     </label>
                                 </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Restart Type (Optional)</label>
+                                    <select name="restart_type" class="form-select">
+                                        <option value="">Not specified</option>
+                                        <option value="none">None</option>
+                                        <option value="service_restart">Service Restart</option>
+                                        <option value="partial_reboot">Partial Reboot</option>
+                                        <option value="full_reboot">Full Reboot</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Estimated Downtime (minutes, Optional)</label>
+                                    <input type="number" name="estimated_downtime_minutes" class="form-input" placeholder="30" min="0">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Estimated Effort (hours, Optional)</label>
+                                    <input type="number" name="estimated_effort_hours" class="form-input" placeholder="8" min="0" step="0.25">
+                                </div>
+                                <div class="form-group" style="display: flex; flex-direction: column; justify-content: center; gap: 0.5rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary, #ffffff);">
+                                        <input type="checkbox" name="rollback_available"> Rollback Available
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary, #ffffff);">
+                                        <input type="checkbox" name="staging_tested"> Staging Tested
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Rollback Procedure (Optional)</label>
+                                <textarea name="rollback_procedure" class="form-textarea" placeholder="Document rollback steps..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Mitigation Available (Optional)</label>
+                                <textarea name="mitigation_available" class="form-textarea" placeholder="Compensating controls if patch cannot be applied immediately..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Approval Required From (Optional)</label>
+                                <input type="text" name="approval_required_from" class="form-input" placeholder="e.g., Biomedical Engineering and Change Advisory Board">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Dependencies (Optional, one per line)</label>
+                                <textarea name="dependencies_text" class="form-textarea" placeholder="BD Alaris Systems Manager 12.2+&#10;Updated Drug Library v2025.01"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Pre-patch Actions (Optional, one per line)</label>
+                                <textarea name="pre_patch_actions_text" class="form-textarea" placeholder="Coordinate maintenance window&#10;Export current configuration"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Post-patch Actions (Optional, one per line)</label>
+                                <textarea name="post_patch_actions_text" class="form-textarea" placeholder="Verify firmware version&#10;Validate connectivity and configuration"></textarea>
                             </div>
                             
                             <input type="hidden" name="package_id" value="<?php echo dave_htmlspecialchars($packageId); ?>">
@@ -1036,6 +1166,42 @@ if ($action === 'schedule' && $patchId) {
                     </div>
                 </div>
             `;
+        }
+
+        function isCheckedValue(value) {
+            if (value === true || value === 1 || value === '1') return true;
+            if (typeof value === 'string') {
+                const normalized = value.trim().toLowerCase();
+                return ['true', 't', 'yes', 'y', 'on'].includes(normalized);
+            }
+            return false;
+        }
+
+        function parseJsonArrayField(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) return value;
+            if (typeof value === 'string') {
+                try {
+                    const parsed = JSON.parse(value);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function parseMultilineList(value) {
+            if (!value || typeof value !== 'string') return [];
+            return value
+                .split('\n')
+                .map(line => line.trim())
+                .filter(Boolean);
+        }
+
+        function listToTextarea(value) {
+            const items = parseJsonArrayField(value);
+            return items.join('\n');
         }
 
         // Load all patches
@@ -1534,6 +1700,30 @@ if ($action === 'schedule' && $patchId) {
                         <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.vendor.value)}</p>
                     </div>
                     ` : ''}
+                    ${form.vendor_patch_id.value ? `
+                    <div>
+                        <strong style="color: var(--text-primary, #ffffff);">Vendor Patch ID:</strong>
+                        <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.vendor_patch_id.value)}</p>
+                    </div>
+                    ` : ''}
+                    ${form.patch_version.value ? `
+                    <div>
+                        <strong style="color: var(--text-primary, #ffffff);">Patch Version:</strong>
+                        <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.patch_version.value)}</p>
+                    </div>
+                    ` : ''}
+                    ${form.patch_method.value ? `
+                    <div>
+                        <strong style="color: var(--text-primary, #ffffff);">Patch Method:</strong>
+                        <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.patch_method.value)}</p>
+                    </div>
+                    ` : ''}
+                    ${form.testing_status.value ? `
+                    <div>
+                        <strong style="color: var(--text-primary, #ffffff);">Testing Status:</strong>
+                        <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.testing_status.value)}</p>
+                    </div>
+                    ` : ''}
                     ${form.kb_article.value ? `
                     <div>
                         <strong style="color: var(--text-primary, #ffffff);">KB Article:</strong>
@@ -1558,6 +1748,18 @@ if ($action === 'schedule' && $patchId) {
                         <p style="color: var(--text-secondary, #cbd5e1);">Yes</p>
                     </div>
                     ` : ''}
+                    ${form.restart_type.value ? `
+                    <div>
+                        <strong style="color: var(--text-primary, #ffffff);">Restart Type:</strong>
+                        <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.restart_type.value)}</p>
+                    </div>
+                    ` : ''}
+                    ${form.estimated_downtime_minutes.value ? `
+                    <div>
+                        <strong style="color: var(--text-primary, #ffffff);">Estimated Downtime:</strong>
+                        <p style="color: var(--text-secondary, #cbd5e1);">${escapeHtml(form.estimated_downtime_minutes.value)} minutes</p>
+                    </div>
+                    ` : ''}
                     <div>
                         <strong style="color: var(--text-primary, #ffffff);">CVEs to Resolve:</strong>
                         <p style="color: var(--text-secondary, #cbd5e1);">${selectedCVEs.length} CVE${selectedCVEs.length !== 1 ? 's' : ''}</p>
@@ -1573,6 +1775,10 @@ if ($action === 'schedule' && $patchId) {
             const form = e.target;
             const formData = new FormData(form);
             
+            const dependencies = parseMultilineList(formData.get('dependencies_text'));
+            const prePatchActions = parseMultilineList(formData.get('pre_patch_actions_text'));
+            const postPatchActions = parseMultilineList(formData.get('post_patch_actions_text'));
+
             const patchData = {
                 patch_name: formData.get('patch_name'),
                 patch_type: formData.get('patch_type'),
@@ -1581,12 +1787,31 @@ if ($action === 'schedule' && $patchId) {
                 target_device_type: formData.get('target_device_type'),
                 release_date: formData.get('release_date'),
                 vendor: formData.get('vendor'),
+                vendor_patch_id: formData.get('vendor_patch_id') || null,
+                patch_version: formData.get('patch_version') || null,
+                patch_method: formData.get('patch_method') || null,
+                stability: formData.get('stability') || null,
+                stability_notes: formData.get('stability_notes') || null,
+                complexity: formData.get('complexity') || null,
+                complexity_notes: formData.get('complexity_notes') || null,
                 kb_article: formData.get('kb_article'),
                 download_url: formData.get('download_url'),
                 install_instructions: formData.get('install_instructions'),
                 prerequisites: formData.get('prerequisites'),
                 estimated_install_time: formData.get('estimated_install_time') && !isNaN(parseInt(formData.get('estimated_install_time'))) ? parseInt(formData.get('estimated_install_time')) : null,
                 requires_reboot: formData.get('requires_reboot') === 'on',
+                restart_type: formData.get('restart_type') || null,
+                estimated_downtime_minutes: formData.get('estimated_downtime_minutes') && !isNaN(parseInt(formData.get('estimated_downtime_minutes'))) ? parseInt(formData.get('estimated_downtime_minutes')) : null,
+                estimated_effort_hours: formData.get('estimated_effort_hours') && !isNaN(parseFloat(formData.get('estimated_effort_hours'))) ? parseFloat(formData.get('estimated_effort_hours')) : null,
+                rollback_available: formData.get('rollback_available') === 'on',
+                rollback_procedure: formData.get('rollback_procedure') || null,
+                staging_tested: formData.get('staging_tested') === 'on',
+                mitigation_available: formData.get('mitigation_available') || null,
+                approval_required_from: formData.get('approval_required_from') || null,
+                dependencies: dependencies.length > 0 ? dependencies : null,
+                testing_status: formData.get('testing_status') || null,
+                pre_patch_actions: prePatchActions.length > 0 ? prePatchActions : null,
+                post_patch_actions: postPatchActions.length > 0 ? postPatchActions : null,
                 package_id: formData.get('package_id'),
                 cve_list: selectedCVEs
             };
@@ -2094,6 +2319,7 @@ if ($action === 'schedule' && $patchId) {
                     <div class="form-group">
                         <label class="form-label">Patch Type <span style="color: #ef4444;">*</span></label>
                         <select name="patch_type" class="form-select" required>
+                            <option value="Software Update" ${patch.patch_type === 'Software Update' ? 'selected' : ''}>Software Update</option>
                             <option value="Source" ${patch.patch_type === 'Source' ? 'selected' : ''}>Source</option>
                             <option value="Binary" ${patch.patch_type === 'Binary' ? 'selected' : ''}>Binary</option>
                             <option value="Firmware" ${patch.patch_type === 'Firmware' ? 'selected' : ''}>Firmware</option>
@@ -2101,6 +2327,7 @@ if ($action === 'schedule' && $patchId) {
                             <option value="Documentation" ${patch.patch_type === 'Documentation' ? 'selected' : ''}>Documentation</option>
                             <option value="Configuration" ${patch.patch_type === 'Configuration' ? 'selected' : ''}>Configuration</option>
                             <option value="Security Patch" ${patch.patch_type === 'Security Patch' ? 'selected' : ''}>Security Patch</option>
+                            <option value="Security" ${patch.patch_type === 'Security' ? 'selected' : ''}>Security</option>
                         </select>
                     </div>
                     
@@ -2146,6 +2373,72 @@ if ($action === 'schedule' && $patchId) {
                         <label class="form-label">Vendor</label>
                         <input type="text" name="vendor" class="form-input" value="${escapeHtml(patch.vendor || '')}">
                     </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Vendor Patch ID (Optional)</label>
+                            <input type="text" name="vendor_patch_id" class="form-input" value="${escapeHtml(patch.vendor_patch_id || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Patch Version (Optional)</label>
+                            <input type="text" name="patch_version" class="form-input" value="${escapeHtml(patch.patch_version || '')}">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Patch Method (Optional)</label>
+                            <select name="patch_method" class="form-select">
+                                <option value="" ${!patch.patch_method ? 'selected' : ''}>Not specified</option>
+                                <option value="Manual" ${patch.patch_method === 'Manual' ? 'selected' : ''}>Manual</option>
+                                <option value="Automated" ${patch.patch_method === 'Automated' ? 'selected' : ''}>Automated</option>
+                                <option value="Semi-Automated" ${patch.patch_method === 'Semi-Automated' ? 'selected' : ''}>Semi-Automated</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Testing Status (Optional)</label>
+                            <select name="testing_status" class="form-select">
+                                <option value="" ${!patch.testing_status ? 'selected' : ''}>Not specified</option>
+                                <option value="not_tested" ${patch.testing_status === 'not_tested' ? 'selected' : ''}>Not Tested</option>
+                                <option value="lab_tested" ${patch.testing_status === 'lab_tested' ? 'selected' : ''}>Lab Tested</option>
+                                <option value="pilot_tested" ${patch.testing_status === 'pilot_tested' ? 'selected' : ''}>Pilot Tested</option>
+                                <option value="vendor_verified" ${patch.testing_status === 'vendor_verified' ? 'selected' : ''}>Vendor Verified</option>
+                                <option value="production_validated" ${patch.testing_status === 'production_validated' ? 'selected' : ''}>Production Validated</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Stability (Optional)</label>
+                            <select name="stability" class="form-select">
+                                <option value="" ${!patch.stability ? 'selected' : ''}>Not specified</option>
+                                <option value="stable" ${patch.stability === 'stable' ? 'selected' : ''}>Stable</option>
+                                <option value="beta" ${patch.stability === 'beta' ? 'selected' : ''}>Beta</option>
+                                <option value="experimental" ${patch.stability === 'experimental' ? 'selected' : ''}>Experimental</option>
+                                <option value="deprecated" ${patch.stability === 'deprecated' ? 'selected' : ''}>Deprecated</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Complexity (Optional)</label>
+                            <select name="complexity" class="form-select">
+                                <option value="" ${!patch.complexity ? 'selected' : ''}>Not specified</option>
+                                <option value="low" ${patch.complexity === 'low' ? 'selected' : ''}>Low</option>
+                                <option value="medium" ${patch.complexity === 'medium' ? 'selected' : ''}>Medium</option>
+                                <option value="high" ${patch.complexity === 'high' ? 'selected' : ''}>High</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Stability Notes (Optional)</label>
+                        <textarea name="stability_notes" class="form-textarea">${escapeHtml(patch.stability_notes || '')}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Complexity Notes (Optional)</label>
+                        <textarea name="complexity_notes" class="form-textarea">${escapeHtml(patch.complexity_notes || '')}</textarea>
+                    </div>
                     
                     <div class="form-group">
                         <label class="form-label">KB Article</label>
@@ -2175,14 +2468,76 @@ if ($action === 'schedule' && $patchId) {
                         
                         <div class="form-group">
                             <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary, #ffffff);">
-                                <input type="checkbox" name="requires_reboot" ${patch.requires_reboot ? 'checked' : ''}> Requires Reboot
+                                <input type="checkbox" name="requires_reboot" ${isCheckedValue(patch.requires_reboot) ? 'checked' : ''}> Requires Reboot
                             </label>
                         </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Restart Type (Optional)</label>
+                            <select name="restart_type" class="form-select">
+                                <option value="" ${!patch.restart_type ? 'selected' : ''}>Not specified</option>
+                                <option value="none" ${patch.restart_type === 'none' ? 'selected' : ''}>None</option>
+                                <option value="service_restart" ${patch.restart_type === 'service_restart' ? 'selected' : ''}>Service Restart</option>
+                                <option value="partial_reboot" ${patch.restart_type === 'partial_reboot' ? 'selected' : ''}>Partial Reboot</option>
+                                <option value="full_reboot" ${patch.restart_type === 'full_reboot' ? 'selected' : ''}>Full Reboot</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Estimated Downtime (minutes, Optional)</label>
+                            <input type="number" name="estimated_downtime_minutes" class="form-input" min="0" value="${patch.estimated_downtime_minutes || ''}">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Estimated Effort (hours, Optional)</label>
+                            <input type="number" name="estimated_effort_hours" class="form-input" min="0" step="0.25" value="${patch.estimated_effort_hours || ''}">
+                        </div>
+                        <div class="form-group" style="display: flex; flex-direction: column; justify-content: center; gap: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary, #ffffff);">
+                                <input type="checkbox" name="rollback_available" ${isCheckedValue(patch.rollback_available) ? 'checked' : ''}> Rollback Available
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary, #ffffff);">
+                                <input type="checkbox" name="staging_tested" ${isCheckedValue(patch.staging_tested) ? 'checked' : ''}> Staging Tested
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Rollback Procedure (Optional)</label>
+                        <textarea name="rollback_procedure" class="form-textarea">${escapeHtml(patch.rollback_procedure || '')}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Mitigation Available (Optional)</label>
+                        <textarea name="mitigation_available" class="form-textarea">${escapeHtml(patch.mitigation_available || '')}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Approval Required From (Optional)</label>
+                        <input type="text" name="approval_required_from" class="form-input" value="${escapeHtml(patch.approval_required_from || '')}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Dependencies (Optional, one per line)</label>
+                        <textarea name="dependencies_text" class="form-textarea">${escapeHtml(listToTextarea(patch.dependencies))}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pre-patch Actions (Optional, one per line)</label>
+                        <textarea name="pre_patch_actions_text" class="form-textarea">${escapeHtml(listToTextarea(patch.pre_patch_actions))}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Post-patch Actions (Optional, one per line)</label>
+                        <textarea name="post_patch_actions_text" class="form-textarea">${escapeHtml(listToTextarea(patch.post_patch_actions))}</textarea>
                     </div>
                     
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary, #ffffff);">
-                            <input type="checkbox" name="is_active" ${patch.is_active ? 'checked' : ''}> Active Patch
+                            <input type="checkbox" name="is_active" ${isCheckedValue(patch.is_active) ? 'checked' : ''}> Active Patch
                         </label>
                     </div>
                     
@@ -2208,6 +2563,10 @@ if ($action === 'schedule' && $patchId) {
             const form = e.target;
             const formData = new FormData(form);
             
+            const dependencies = parseMultilineList(formData.get('dependencies_text'));
+            const prePatchActions = parseMultilineList(formData.get('pre_patch_actions_text'));
+            const postPatchActions = parseMultilineList(formData.get('post_patch_actions_text'));
+
             const patchData = {
                 patch_name: formData.get('patch_name'),
                 patch_type: formData.get('patch_type'),
@@ -2215,12 +2574,31 @@ if ($action === 'schedule' && $patchId) {
                 target_version: formData.get('target_version'),
                 target_device_type: formData.get('target_device_type'),
                 vendor: formData.get('vendor'),
+                vendor_patch_id: formData.get('vendor_patch_id') || null,
+                patch_version: formData.get('patch_version') || null,
+                patch_method: formData.get('patch_method') || null,
+                stability: formData.get('stability') || null,
+                stability_notes: formData.get('stability_notes') || null,
+                complexity: formData.get('complexity') || null,
+                complexity_notes: formData.get('complexity_notes') || null,
                 kb_article: formData.get('kb_article'),
                 download_url: formData.get('download_url'),
                 install_instructions: formData.get('install_instructions'),
                 prerequisites: formData.get('prerequisites'),
                 estimated_install_time: formData.get('estimated_install_time') && !isNaN(parseInt(formData.get('estimated_install_time'))) ? parseInt(formData.get('estimated_install_time')) : null,
                 requires_reboot: formData.get('requires_reboot') === 'on',
+                restart_type: formData.get('restart_type') || null,
+                estimated_downtime_minutes: formData.get('estimated_downtime_minutes') && !isNaN(parseInt(formData.get('estimated_downtime_minutes'))) ? parseInt(formData.get('estimated_downtime_minutes')) : null,
+                estimated_effort_hours: formData.get('estimated_effort_hours') && !isNaN(parseFloat(formData.get('estimated_effort_hours'))) ? parseFloat(formData.get('estimated_effort_hours')) : null,
+                rollback_available: formData.get('rollback_available') === 'on',
+                rollback_procedure: formData.get('rollback_procedure') || null,
+                staging_tested: formData.get('staging_tested') === 'on',
+                mitigation_available: formData.get('mitigation_available') || null,
+                approval_required_from: formData.get('approval_required_from') || null,
+                dependencies: dependencies.length > 0 ? dependencies : null,
+                testing_status: formData.get('testing_status') || null,
+                pre_patch_actions: prePatchActions.length > 0 ? prePatchActions : null,
+                post_patch_actions: postPatchActions.length > 0 ? postPatchActions : null,
                 is_active: formData.get('is_active') === 'on',
                 release_date: formData.get('release_date')
             };

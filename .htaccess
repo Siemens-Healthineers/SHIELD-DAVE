@@ -46,9 +46,9 @@ Header always set Referrer-Policy "strict-origin-when-cross-origin"
 DirectoryIndex index.php index.html
 
 # Handle API routes - MUST come before directory checks
-# Remove the !-f and !-d conditions to prevent Apache from doing directory redirects
-# Use END flag to stop all processing immediately (Apache 2.4+)
-RewriteRule ^api/v1/?(.*)$ /api/v1/index.php/$1 [QSA,END]
+# Route API subpaths via query string instead of PATH_INFO to avoid
+# Apache path-info handling differences that can cause nested route 404s.
+RewriteRule ^api/v1/?(.*)$ /api/v1/index.php?path=$1 [QSA,END]
 
 # Handle page routes - pass through if file exists
 RewriteCond %{REQUEST_FILENAME} -f [OR]

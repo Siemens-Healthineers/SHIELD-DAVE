@@ -10,6 +10,70 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/cache.php';
 require_once __DIR__ . '/../../services/shell_command_utilities.php';
 
+function getBlueflowLogPayload($logFile, $offset = 0, $maxBytes = 65536) {
+    $payload = [
+        'success' => true,
+        'content' => '',
+        'offset' => 0,
+        'reset' => false,
+        'file_exists' => false,
+        'log_file' => $logFile,
+        'message' => 'Waiting for BlueFlow to write log output...'
+    ];
+
+    if (empty($logFile)) {
+        $payload['success'] = false;
+        $payload['message'] = 'Log file is not configured.';
+        return $payload;
+    }
+
+    clearstatcache(true, $logFile);
+
+    if (!is_file($logFile) || !is_readable($logFile)) {
+        return $payload;
+    }
+
+    $fileSize = filesize($logFile);
+    if ($fileSize === false) {
+        $payload['success'] = false;
+        $payload['message'] = 'Unable to determine log file size.';
+        return $payload;
+    }
+
+    $payload['file_exists'] = true;
+    $payload['message'] = 'Streaming log output';
+
+    $offset = max(0, (int)$offset);
+    $maxBytes = max(1024, (int)$maxBytes);
+
+    if ($offset > $fileSize) {
+        $offset = max(0, $fileSize - $maxBytes);
+        $payload['reset'] = true;
+    }
+
+    if ($offset === 0 && $fileSize > $maxBytes) {
+        $offset = $fileSize - $maxBytes;
+        $payload['reset'] = true;
+    }
+
+    $length = min($maxBytes, max(0, $fileSize - $offset));
+    if ($length > 0) {
+        $content = file_get_contents($logFile, false, null, $offset, $length);
+        if ($content === false) {
+            $payload['success'] = false;
+            $payload['message'] = 'Unable to read log file.';
+            return $payload;
+        }
+
+        $payload['content'] = $content;
+        $payload['offset'] = $offset + strlen($content);
+        return $payload;
+    }
+
+    $payload['offset'] = $offset;
+    return $payload;
+}
+
 // Initialize authentication
 $auth = new Auth();
 
@@ -29,15 +93,20 @@ if ($user['role'] !== 'Admin') {
     exit;
 }
 
+$log_file = '';
+if (is_dir(_LOGS)) {
+    $log_file = _LOGS . DIRECTORY_SEPARATOR . 'blueflow_background_job.log';
+}
+
+if (isset($_GET['log_view']) && $_GET['log_view'] === '1') {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    echo json_encode(getBlueflowLogPayload($log_file, $_GET['offset'] ?? 0));
+    exit;
+}
+
   
 try {
-
-    $log_file = "";
-
-    if (is_dir(_LOGS)) {
-        $log_file = _LOGS . DIRECTORY_SEPARATOR . "blueflow_background_job.log";
-    }
-
     // Call Python service in background (non-blocking)
     $command = "cd " . _ROOT . " && python3 python/services/ingest_blueflow.py";
     $result = ShellCommandUtilities::executeShellCommand($command, [
@@ -92,6 +161,21 @@ try {
                         <p>Go back to Admin Panel</p>
                     </div>
                 </a>
+
+                <div class="blueflow-log-viewer">
+                    <div class="blueflow-log-header">
+                        <div>
+                            <h2>Live Log Output</h2>
+                            <p>New log entries will appear here as the BlueFlow job runs.</p>
+                        </div>
+                        <button type="button" id="blueflow-log-refresh" class="blueflow-log-refresh">Refresh Now</button>
+                    </div>
+                    <div class="blueflow-log-meta">
+                        <span>Source: <?php echo dave_htmlspecialchars($log_file ?: 'No log file configured'); ?></span>
+                        <span id="blueflow-log-status">Connecting...</span>
+                    </div>
+                    <pre id="blueflow-log-output" class="blueflow-log-output">Waiting for log output...</pre>
+                </div>
             </section>
         </div>
     </main>
@@ -105,14 +189,183 @@ try {
             role: '<?php echo dave_htmlspecialchars($user['role']); ?>',
             email: '<?php echo dave_htmlspecialchars($user['email'] ?? 'user@example.com'); ?>'
         };
+
+        (function() {
+            const output = document.getElementById('blueflow-log-output');
+            const status = document.getElementById('blueflow-log-status');
+            const refreshButton = document.getElementById('blueflow-log-refresh');
+            const pollIntervalMs = 1500;
+            let offset = 0;
+            let timerId = null;
+
+            function buildLogUrl() {
+                const url = new URL(window.location.href);
+                url.search = '';
+                url.searchParams.set('log_view', '1');
+                url.searchParams.set('offset', String(offset));
+                return url.toString();
+            }
+
+            function shouldStickToBottom() {
+                return output.scrollHeight - output.scrollTop - output.clientHeight < 32;
+            }
+
+            function appendContent(content, reset) {
+                const keepAtBottom = shouldStickToBottom();
+
+                if (reset) {
+                    output.textContent = content || 'Waiting for log output...';
+                } else if (content) {
+                    if (output.textContent === 'Waiting for log output...') {
+                        output.textContent = content;
+                    } else {
+                        output.textContent += content;
+                    }
+                }
+
+                if (keepAtBottom || reset) {
+                    output.scrollTop = output.scrollHeight;
+                }
+            }
+
+            async function fetchLogs() {
+                status.textContent = 'Updating...';
+
+                try {
+                    const response = await fetch(buildLogUrl(), {
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        cache: 'no-store'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Request failed with status ' + response.status);
+                    }
+
+                    const data = await response.json();
+                    appendContent(data.content || '', Boolean(data.reset));
+                    offset = Number(data.offset || 0);
+
+                    if (!data.file_exists && offset === 0) {
+                        output.textContent = data.message || 'Waiting for log output...';
+                    }
+
+                    if (data.reset) {
+                        status.textContent = 'Showing latest log output';
+                    } else {
+                        status.textContent = data.file_exists ? 'Live' : 'Waiting for log file';
+                    }
+                } catch (error) {
+                    status.textContent = 'Update failed';
+                    output.textContent += '\n[log viewer] ' + error.message;
+                    output.scrollTop = output.scrollHeight;
+                } finally {
+                    timerId = window.setTimeout(fetchLogs, pollIntervalMs);
+                }
+            }
+
+            refreshButton.addEventListener('click', function() {
+                if (timerId !== null) {
+                    window.clearTimeout(timerId);
+                }
+                fetchLogs();
+            });
+
+            fetchLogs();
+        })();
     </script>
     <style>
-        .center-content{
+        .center-content {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 50vh;
+            min-height: 50vh;
+            gap: 1rem;
         }
+
+        .blueflow-log-viewer {
+            width: min(100%, 960px);
+            margin-top: 1rem;
+            background: var(--bg-card, #1a1a1a);
+            border: 1px solid var(--border-primary, #333333);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .blueflow-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .blueflow-log-header h2 {
+            margin: 0;
+            font-size: 1.125rem;
+            color: var(--text-primary, #ffffff);
+        }
+
+        .blueflow-log-header p {
+            margin: 0.35rem 0 0;
+            color: var(--text-secondary, #cbd5e1);
+            font-size: 0.875rem;
+        }
+
+        .blueflow-log-refresh {
+            border: 1px solid var(--border-primary, #333333);
+            background: var(--bg-secondary, #0f0f0f);
+            color: var(--text-primary, #ffffff);
+            border-radius: 0.5rem;
+            padding: 0.625rem 0.9rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .blueflow-log-refresh:hover {
+            background: var(--bg-hover, #222222);
+        }
+
+        .blueflow-log-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+            color: var(--text-muted, #94a3b8);
+            font-size: 0.8rem;
+        }
+
+        .blueflow-log-output {
+            margin: 0;
+            min-height: 280px;
+            max-height: 480px;
+            overflow: auto;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-primary, #333333);
+            background: #0b1220;
+            color: #d7e3f4;
+            font-family: Consolas, Monaco, 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        @media (max-width: 640px) {
+            .blueflow-log-header {
+                flex-direction: column;
+            }
+
+            .blueflow-log-refresh {
+                width: 100%;
+            }
+        }
+    </style>
 </body>
 </html>

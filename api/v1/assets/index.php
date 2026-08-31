@@ -214,6 +214,7 @@ function listAssets() {
         a.hostname,
         a.ip_address,
         a.asset_type,
+        a.asset_subtype,
         a.manufacturer,
         a.model,
         a.serial_number,
@@ -440,21 +441,21 @@ function createAsset() {
     
     if ($hasAssetId) {
         $sql = "INSERT INTO assets (
-            asset_id, hostname, ip_address, mac_address, asset_type, manufacturer, model, 
+            asset_id, hostname, ip_address, mac_address, asset_type, asset_subtype, manufacturer, model, 
             serial_number, department, location, criticality, status, 
             firmware_version, first_seen, last_seen, created_at, updated_at, source, metadata
         ) VALUES (
-            :asset_id, :hostname, :ip_address, :mac_address, :asset_type, :manufacturer, :model,
+            :asset_id, :hostname, :ip_address, :mac_address, :asset_type, :asset_subtype, :manufacturer, :model,
             :serial_number, :department, :location, :criticality, :status,
             :firmware_version, :first_seen, :last_seen, :created_at, :updated_at, :source, :metadata
         ) RETURNING asset_id";
     } else {
         $sql = "INSERT INTO assets (
-            hostname, ip_address, mac_address, asset_type, manufacturer, model, 
+            hostname, ip_address, mac_address, asset_type, asset_subtype, manufacturer, model, 
             serial_number, department, location, criticality, status, 
             firmware_version, first_seen, last_seen, created_at, updated_at, source, metadata
         ) VALUES (
-            :hostname, :ip_address, :mac_address, :asset_type, :manufacturer, :model,
+            :hostname, :ip_address, :mac_address, :asset_type, :asset_subtype, :manufacturer, :model,
             :serial_number, :department, :location, :criticality, :status,
             :firmware_version, :first_seen, :last_seen, :created_at, :updated_at, :source, :metadata
         ) RETURNING asset_id";
@@ -472,6 +473,7 @@ function createAsset() {
     $stmt->bindValue(':ip_address', $input['ip_address']);
     $stmt->bindValue(':mac_address', $input['mac_address'] ?? null);
     $stmt->bindValue(':asset_type', $input['asset_type']);
+    $stmt->bindValue(':asset_subtype', $input['asset_subtype'] ?? null);
     $stmt->bindValue(':manufacturer', $input['manufacturer'] ?? null);
     $stmt->bindValue(':model', $input['model'] ?? null);
     $stmt->bindValue(':serial_number', $input['serial_number'] ?? null);

@@ -94,6 +94,7 @@ def fetch_blueflow_assets() -> List[Dict[str, Any]]:
                 logger.info(f"Received 404 for asset {asset_id}, stopping fetch")
                 break
             
+            
             response.raise_for_status()
             
             asset = response.json()
@@ -102,6 +103,10 @@ def fetch_blueflow_assets() -> List[Dict[str, Any]]:
             
             # Move to next asset
             asset_id += 1
+            
+            if asset_id > 5:
+                logger.info("Reached asset ID 5, stopping fetch (for testing purposes)")
+                break
             
         except requests.exceptions.RequestException as e:
             # Check if it's a 404 error
@@ -176,7 +181,9 @@ def map_blueflow_to_dave_asset(blueflow_asset: Dict[str, Any]) -> Dict[str, Any]
     if not hostname:
         hostname = blueflow_asset.get("name", "").strip()
     if not hostname:
-        hostname = f"blueflow-asset-{blueflow_id}"
+        hostname = f"asset-{blueflow_id}"
+        
+    hostname = 'blueflow-' + hostname.replace(" ", "-").lower()
     
     # Map category to valid asset_type
     category = blueflow_asset.get("category", "").lower()

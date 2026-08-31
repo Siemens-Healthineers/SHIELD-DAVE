@@ -289,6 +289,89 @@ function convertToMinutes($timeInput) {
 }
 
 /**
+ * Normalize optional boolean input.
+ * Returns null if the field is not provided.
+ */
+function optionalBoolean($input, $key) {
+    if (!array_key_exists($key, $input)) {
+        return null;
+    }
+
+    $value = $input[$key];
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    if (is_string($value)) {
+        $normalized = strtolower(trim($value));
+        if (in_array($normalized, ['true', '1', 'yes', 'y'], true)) {
+            return true;
+        }
+        if (in_array($normalized, ['false', '0', 'no', 'n'], true)) {
+            return false;
+        }
+    }
+
+    if (is_numeric($value)) {
+        return ((int)$value) === 1;
+    }
+
+    return null;
+}
+
+/**
+ * Validate optional patch metadata fields.
+ */
+function validateOptionalPatchMetadata($input) {
+    $enumChecks = [
+        'patch_method' => ['Manual', 'Automated', 'Semi-Automated'],
+        'stability' => ['stable', 'beta', 'experimental', 'deprecated'],
+        'complexity' => ['low', 'medium', 'high'],
+        'restart_type' => ['none', 'service_restart', 'partial_reboot', 'full_reboot'],
+        'testing_status' => ['not_tested', 'lab_tested', 'pilot_tested', 'vendor_verified', 'production_validated']
+    ];
+
+    foreach ($enumChecks as $field => $allowedValues) {
+        if (array_key_exists($field, $input) && $input[$field] !== null && $input[$field] !== '' && !in_array($input[$field], $allowedValues, true)) {
+            return [
+                'success' => false,
+                'error' => 'Invalid ' . $field . '. Allowed values: ' . implode(', ', $allowedValues),
+                'provided_value' => $input[$field]
+            ];
+        }
+    }
+
+    if (array_key_exists('estimated_downtime_minutes', $input) && $input['estimated_downtime_minutes'] !== null && $input['estimated_downtime_minutes'] !== '' && (int)$input['estimated_downtime_minutes'] < 0) {
+        return [
+            'success' => false,
+            'error' => 'estimated_downtime_minutes must be greater than or equal to 0',
+            'provided_value' => $input['estimated_downtime_minutes']
+        ];
+    }
+
+    if (array_key_exists('estimated_effort_hours', $input) && $input['estimated_effort_hours'] !== null && $input['estimated_effort_hours'] !== '' && (float)$input['estimated_effort_hours'] < 0) {
+        return [
+            'success' => false,
+            'error' => 'estimated_effort_hours must be greater than or equal to 0',
+            'provided_value' => $input['estimated_effort_hours']
+        ];
+    }
+
+    $arrayFields = ['dependencies', 'pre_patch_actions', 'post_patch_actions'];
+    foreach ($arrayFields as $field) {
+        if (array_key_exists($field, $input) && $input[$field] !== null && !is_array($input[$field])) {
+            return [
+                'success' => false,
+                'error' => $field . ' must be an array when provided',
+                'provided_value' => $input[$field]
+            ];
+        }
+    }
+
+    return null;
+}
+
+/**
  * List all patches
  */
 function handleListPatches($db) {
@@ -387,7 +470,7 @@ function handleCreatePatch($db, $user) {
     }
     
     // Validate patch_type
-    $validPatchTypes = ['Source', 'Binary', 'Firmware', 'Emulator', 'Documentation', 'Configuration', 'Security Patch'];
+    $validPatchTypes = ['Software Update', 'Source', 'Binary', 'Firmware', 'Emulator', 'Documentation', 'Configuration', 'Security Patch', 'Security'];
     $patchType = $input['patch_type'] ?? 'Security Patch';
     
     if (!in_array($patchType, $validPatchTypes)) {
@@ -399,13 +482,32 @@ function handleCreatePatch($db, $user) {
         ]);
         return;
     }
+
+    $metadataValidationError = validateOptionalPatchMetadata($input);
+    if ($metadataValidationError !== null) {
+        http_response_code(400);
+        echo json_encode($metadataValidationError);
+        return;
+    }
+
+    $vendorPatchId = $input['vendor_patch_id'] ?? ($input['patch_id'] ?? null);
+    $estimatedDowntimeMinutes = array_key_exists('estimated_downtime_minutes', $input)
+        ? convertToMinutes($input['estimated_downtime_minutes'])
+        : (array_key_exists('estimated_downtime', $input) ? convertToMinutes($input['estimated_downtime']) : null);
     
     $sql = "INSERT INTO patches (
                 patch_name, patch_type, target_device_type, target_package_id,
                 target_version, cve_list, description, release_date,
                 vendor, kb_article, download_url, install_instructions,
-                prerequisites, estimated_install_time, requires_reboot, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                prerequisites, estimated_install_time, requires_reboot, created_by,
+                vendor_patch_id, patch_version, patch_method, stability,
+                stability_notes, complexity, complexity_notes, restart_type,
+                estimated_downtime_minutes, estimated_effort_hours,
+                rollback_available, rollback_procedure, staging_tested,
+                mitigation_available, approval_required_from, dependencies,
+                testing_status, pre_patch_actions, post_patch_actions,
+                estimated_downtime
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING patch_id";
     
     $stmt = $db->prepare($sql);
@@ -424,8 +526,28 @@ function handleCreatePatch($db, $user) {
         $input['install_instructions'] ?? null,
         $input['prerequisites'] ?? null,
         convertToMinutes($input['estimated_install_time'] ?? null),
-        isset($input['requires_reboot']) ? ($input['requires_reboot'] ? 'true' : 'false') : 'false',
-        $user['user_id']
+        optionalBoolean($input, 'requires_reboot'),
+        $user['user_id'],
+        $vendorPatchId,
+        $input['patch_version'] ?? null,
+        $input['patch_method'] ?? null,
+        $input['stability'] ?? null,
+        $input['stability_notes'] ?? null,
+        $input['complexity'] ?? null,
+        $input['complexity_notes'] ?? null,
+        $input['restart_type'] ?? null,
+        $estimatedDowntimeMinutes,
+        array_key_exists('estimated_effort_hours', $input) ? ($input['estimated_effort_hours'] === '' ? null : (float)$input['estimated_effort_hours']) : null,
+        optionalBoolean($input, 'rollback_available'),
+        $input['rollback_procedure'] ?? null,
+        optionalBoolean($input, 'staging_tested'),
+        $input['mitigation_available'] ?? null,
+        $input['approval_required_from'] ?? null,
+        isset($input['dependencies']) ? json_encode($input['dependencies']) : null,
+        $input['testing_status'] ?? null,
+        isset($input['pre_patch_actions']) ? json_encode($input['pre_patch_actions']) : null,
+        isset($input['post_patch_actions']) ? json_encode($input['post_patch_actions']) : null,
+        $estimatedDowntimeMinutes
     ]);
     
     $result = $stmt->fetch();
@@ -458,7 +580,7 @@ function handleUpdatePatch($db, $patchId, $user) {
     
     // Validate patch_type if provided
     if (isset($input['patch_type'])) {
-        $validPatchTypes = ['Source', 'Binary', 'Firmware', 'Emulator', 'Documentation', 'Configuration', 'Security Patch'];
+        $validPatchTypes = ['Software Update', 'Source', 'Binary', 'Firmware', 'Emulator', 'Documentation', 'Configuration', 'Security Patch', 'Security'];
         
         if (!in_array($input['patch_type'], $validPatchTypes)) {
             http_response_code(400);
@@ -469,6 +591,27 @@ function handleUpdatePatch($db, $patchId, $user) {
             ]);
             return;
         }
+    }
+
+    $metadataValidationError = validateOptionalPatchMetadata($input);
+    if ($metadataValidationError !== null) {
+        http_response_code(400);
+        echo json_encode($metadataValidationError);
+        return;
+    }
+
+    $vendorPatchId = null;
+    if (array_key_exists('vendor_patch_id', $input)) {
+        $vendorPatchId = $input['vendor_patch_id'];
+    } elseif (array_key_exists('patch_id', $input)) {
+        $vendorPatchId = $input['patch_id'];
+    }
+
+    $estimatedDowntimeMinutes = null;
+    if (array_key_exists('estimated_downtime_minutes', $input)) {
+        $estimatedDowntimeMinutes = convertToMinutes($input['estimated_downtime_minutes']);
+    } elseif (array_key_exists('estimated_downtime', $input)) {
+        $estimatedDowntimeMinutes = convertToMinutes($input['estimated_downtime']);
     }
     
     $sql = "UPDATE patches SET
@@ -488,6 +631,26 @@ function handleUpdatePatch($db, $patchId, $user) {
                 estimated_install_time = COALESCE(?, estimated_install_time),
                 requires_reboot = COALESCE(?, requires_reboot),
                 is_active = COALESCE(?, is_active),
+                vendor_patch_id = COALESCE(?, vendor_patch_id),
+                patch_version = COALESCE(?, patch_version),
+                patch_method = COALESCE(?, patch_method),
+                stability = COALESCE(?, stability),
+                stability_notes = COALESCE(?, stability_notes),
+                complexity = COALESCE(?, complexity),
+                complexity_notes = COALESCE(?, complexity_notes),
+                restart_type = COALESCE(?, restart_type),
+                estimated_downtime_minutes = COALESCE(?, estimated_downtime_minutes),
+                estimated_effort_hours = COALESCE(?, estimated_effort_hours),
+                rollback_available = COALESCE(?, rollback_available),
+                rollback_procedure = COALESCE(?, rollback_procedure),
+                staging_tested = COALESCE(?, staging_tested),
+                mitigation_available = COALESCE(?, mitigation_available),
+                approval_required_from = COALESCE(?, approval_required_from),
+                dependencies = COALESCE(?, dependencies),
+                testing_status = COALESCE(?, testing_status),
+                pre_patch_actions = COALESCE(?, pre_patch_actions),
+                post_patch_actions = COALESCE(?, post_patch_actions),
+                estimated_downtime = COALESCE(?, estimated_downtime),
                 updated_at = CURRENT_TIMESTAMP
             WHERE patch_id = ?";
     
@@ -507,8 +670,28 @@ function handleUpdatePatch($db, $patchId, $user) {
         $input['install_instructions'] ?? null,
         $input['prerequisites'] ?? null,
         isset($input['estimated_install_time']) ? convertToMinutes($input['estimated_install_time']) : null,
-        isset($input['requires_reboot']) ? ($input['requires_reboot'] ? 'true' : 'false') : null,
+        optionalBoolean($input, 'requires_reboot'),
         $input['is_active'] ?? null,
+        $vendorPatchId,
+        $input['patch_version'] ?? null,
+        $input['patch_method'] ?? null,
+        $input['stability'] ?? null,
+        $input['stability_notes'] ?? null,
+        $input['complexity'] ?? null,
+        $input['complexity_notes'] ?? null,
+        $input['restart_type'] ?? null,
+        $estimatedDowntimeMinutes,
+        array_key_exists('estimated_effort_hours', $input) ? ($input['estimated_effort_hours'] === '' ? null : (float)$input['estimated_effort_hours']) : null,
+        optionalBoolean($input, 'rollback_available'),
+        $input['rollback_procedure'] ?? null,
+        optionalBoolean($input, 'staging_tested'),
+        $input['mitigation_available'] ?? null,
+        $input['approval_required_from'] ?? null,
+        isset($input['dependencies']) ? json_encode($input['dependencies']) : null,
+        $input['testing_status'] ?? null,
+        isset($input['pre_patch_actions']) ? json_encode($input['pre_patch_actions']) : null,
+        isset($input['post_patch_actions']) ? json_encode($input['post_patch_actions']) : null,
+        $estimatedDowntimeMinutes,
         $patchId
     ]);
     

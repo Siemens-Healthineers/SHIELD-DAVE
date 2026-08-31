@@ -221,6 +221,7 @@ function listRemediations() {
                 r.upstream_api,
                 r.description,
                 r.narrative,
+                r.status,
                 r.vulnerability_id,
                 r.user_id,
                 r.created_at,
@@ -328,6 +329,7 @@ function getRemediation($remediationId) {
             r.upstream_api,
             r.description,
             r.narrative,
+            r.status,
             r.vulnerability_id,
             r.user_id,
             r.created_at,
@@ -469,18 +471,38 @@ function createRemediation() {
             upstream_api,
             description,
             narrative,
+            status,
             vulnerability_id,
             user_id,
             created_at,
             updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         RETURNING remediation_id";
+
+        $status = 'CREATED';
+        if (isset($input['status']) && $input['status'] !== null && $input['status'] !== '') {
+            if (!isValidRemediationStatus($input['status'])) {
+                $db->rollBack();
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'INVALID_STATUS',
+                        'message' => 'Invalid status. Allowed values: CREATED, INPROGRESS, COMPLETE, FAILED, REJECTED'
+                    ],
+                    'timestamp' => date('c')
+                ]);
+                return;
+            }
+            $status = trim($input['status']);
+        }
         
         $params = [
             $remediationId,
             !empty($input['upstream_api']) ? trim($input['upstream_api']) : null,
             trim($input['description']),
             !empty($input['narrative']) ? trim($input['narrative']) : null,
+            $status,
             !empty($input['vulnerability_id']) ? $input['vulnerability_id'] : null,
             $userId
         ];
@@ -526,6 +548,7 @@ function createRemediation() {
                 r.upstream_api,
                 r.description,
                 r.narrative,
+                r.status,
                 r.vulnerability_id,
                 r.user_id,
                 r.created_at,
@@ -635,7 +658,7 @@ function updateRemediation($remediationId) {
         $updateFields = [];
         $params = [];
         
-        $allowedFields = ['upstream_api', 'description', 'narrative', 'vulnerability_id'];
+        $allowedFields = ['upstream_api', 'description', 'narrative', 'status', 'vulnerability_id'];
         
         foreach ($allowedFields as $field) {
             if (isset($input[$field])) {
@@ -654,6 +677,36 @@ function updateRemediation($remediationId) {
                         'timestamp' => date('c')
                     ]);
                     return;
+                }
+
+                if ($field === 'status') {
+                    if ($input[$field] === null || trim((string)$input[$field]) === '') {
+                        $db->rollBack();
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => [
+                                'code' => 'INVALID_STATUS',
+                                'message' => 'Status cannot be empty. Allowed values: CREATED, INPROGRESS, COMPLETE, FAILED, REJECTED'
+                            ],
+                            'timestamp' => date('c')
+                        ]);
+                        return;
+                    }
+
+                    if (!isValidRemediationStatus($input[$field])) {
+                        $db->rollBack();
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => [
+                                'code' => 'INVALID_STATUS',
+                                'message' => 'Invalid status. Allowed values: CREATED, INPROGRESS, COMPLETE, FAILED, REJECTED'
+                            ],
+                            'timestamp' => date('c')
+                        ]);
+                        return;
+                    }
                 }
                 
                 $updateFields[] = "{$field} = ?";
@@ -744,6 +797,7 @@ function updateRemediation($remediationId) {
                 r.upstream_api,
                 r.description,
                 r.narrative,
+                r.status,
                 r.vulnerability_id,
                 r.user_id,
                 r.created_at,
@@ -883,4 +937,14 @@ function isValidUuid($uuid) {
         return false;
     }
     return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid);
+}
+
+/**
+ * Validate remediation status enum.
+ */
+function isValidRemediationStatus($status) {
+    if ($status === null || $status === '') {
+        return false;
+    }
+    return in_array(trim($status), ['CREATED', 'INPROGRESS', 'COMPLETE', 'FAILED', 'REJECTED'], true);
 }

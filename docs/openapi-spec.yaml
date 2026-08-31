@@ -1676,6 +1676,13 @@ paths:
                     - patch_id: patch-12345
                       patch_name: Security Update KB5034441
                       patch_type: Security Patch
+                      vendor_patch_id: BD-ALARIS-2025-001
+                      patch_version: 12.1.6
+                      patch_method: Manual
+                      stability: stable
+                      stability_notes: Vendor-validated firmware release.
+                      complexity: high
+                      complexity_notes: Requires maintenance window and biomedical workflow.
                       target_device_type: Medical Device
                       target_package_id: pkg-windows-server
                       target_version: '2019'
@@ -1694,7 +1701,25 @@ paths:
                         3. Reboot system after installation'
                       prerequisites: Windows Server 2019 with at least 1GB free disk space
                       estimated_install_time: 15 minutes
+                      estimated_downtime_minutes: 30
+                      estimated_effort_hours: 8
                       requires_reboot: true
+                      restart_type: full_reboot
+                      rollback_available: true
+                      rollback_procedure: Revert to prior version via vendor recovery image.
+                      staging_tested: false
+                      mitigation_available: Isolate device VLAN and harden exposed services.
+                      approval_required_from: Biomedical Engineering and Change Advisory Board
+                      dependencies:
+                      - BD Alaris Systems Manager 12.2+
+                      - Updated Drug Library v2025.01
+                      testing_status: vendor_verified
+                      pre_patch_actions:
+                      - Coordinate outage window with clinical leadership
+                      - Export current configuration snapshot
+                      post_patch_actions:
+                      - Verify firmware version
+                      - Validate clinical configuration
                       is_active: true
                       created_at: '2024-02-13T10:00:00'
                       updated_at: '2024-02-13T10:00:00'
@@ -1723,6 +1748,11 @@ paths:
                 value:
                   patch_name: Critical Firmware Update v3.2.1
                   patch_type: Firmware
+                  vendor_patch_id: BD-ALARIS-2025-001
+                  patch_version: 12.1.6
+                  patch_method: Manual
+                  stability: stable
+                  complexity: high
                   target_device_type: CT Scanner
                   target_version: 3.x
                   cve_list:
@@ -1736,7 +1766,22 @@ paths:
                   install_instructions: Contact field service engineer for installation
                   prerequisites: Device must be running firmware 3.0 or higher
                   estimated_install_time: 2 hours
+                  estimated_downtime_minutes: 30
+                  estimated_effort_hours: 8
                   requires_reboot: true
+                  restart_type: full_reboot
+                  rollback_available: true
+                  rollback_procedure: Revert through vendor management console.
+                  staging_tested: false
+                  mitigation_available: Segment device network and reduce exposed services.
+                  approval_required_from: Biomedical Engineering and CAB
+                  dependencies:
+                  - BD Alaris Systems Manager 12.2+
+                  testing_status: vendor_verified
+                  pre_patch_actions:
+                  - Export existing configuration
+                  post_patch_actions:
+                  - Validate firmware and connectivity
       responses:
         '200':
           description: Patch created successfully
@@ -1830,6 +1875,9 @@ paths:
                 value:
                   description: Updated description with additional deployment notes
                   install_instructions: Updated installation procedure
+                  patch_version: 12.1.7
+                  testing_status: pilot_tested
+                  estimated_downtime_minutes: 25
                   is_active: true
       responses:
         '200':
@@ -2111,6 +2159,7 @@ paths:
                     data:
                     - remediation_id: rem-12345-abcde
                       upstream_api: NVD
+                      status: CREATED
                       description: Apply security patch KB5034441
                       narrative: Critical security update to address buffer overflow vulnerabilities
                       vulnerability_id: vuln-98765
@@ -2148,6 +2197,7 @@ paths:
               newRemediation:
                 summary: Create new remediation
                 value:
+                  status: CREATED
                   description: Deploy firmware update to affected CT scanners
                   narrative: This remediation involves deploying firmware v3.2.1 to all affected CT scanners during the next maintenance window. The update addresses CVE-2025-11111 and CVE-2025-22222.
                   vulnerability_id: vuln-98765
@@ -2231,6 +2281,7 @@ paths:
                     data:
                       remediation_id: rem-12345-abcde
                       upstream_api: NVD
+                      status: INPROGRESS
                       description: Apply security patch KB5034441
                       narrative: Critical security update to address buffer overflow vulnerabilities. Schedule deployment during next maintenance window.
                       vulnerability_id: vuln-98765
@@ -2291,6 +2342,7 @@ paths:
               updateRemediation:
                 summary: Update remediation details
                 value:
+                  status: COMPLETE
                   description: Updated deployment plan for security patch
                   narrative: Revised timeline - deploy during emergency maintenance window on 2026-02-15
                   asset_ids:
@@ -3911,6 +3963,7 @@ components:
         patch_type:
           type: string
           enum:
+          - Software Update
           - Source
           - Binary
           - Firmware
@@ -3918,7 +3971,45 @@ components:
           - Documentation
           - Configuration
           - Security Patch
+          - Security
           example: Security Patch
+        vendor_patch_id:
+          type: string
+          nullable: true
+          description: External/vendor patch identifier
+          example: BD-ALARIS-2025-001
+        patch_version:
+          type: string
+          nullable: true
+          example: 12.1.6
+        patch_method:
+          type: string
+          nullable: true
+          enum:
+          - Manual
+          - Automated
+          - Semi-Automated
+        stability:
+          type: string
+          nullable: true
+          enum:
+          - stable
+          - beta
+          - experimental
+          - deprecated
+        stability_notes:
+          type: string
+          nullable: true
+        complexity:
+          type: string
+          nullable: true
+          enum:
+          - low
+          - medium
+          - high
+        complexity_notes:
+          type: string
+          nullable: true
         target_device_type:
           type: string
           nullable: true
@@ -3952,8 +4043,66 @@ components:
           type: string
         estimated_install_time:
           type: string
+          nullable: true
         requires_reboot:
           type: boolean
+          nullable: true
+        restart_type:
+          type: string
+          nullable: true
+          enum:
+          - none
+          - service_restart
+          - partial_reboot
+          - full_reboot
+        estimated_downtime_minutes:
+          type: integer
+          nullable: true
+          minimum: 0
+        estimated_effort_hours:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+        rollback_available:
+          type: boolean
+          nullable: true
+        rollback_procedure:
+          type: string
+          nullable: true
+        staging_tested:
+          type: boolean
+          nullable: true
+        mitigation_available:
+          type: string
+          nullable: true
+        approval_required_from:
+          type: string
+          nullable: true
+        dependencies:
+          type: array
+          nullable: true
+          items:
+            type: string
+        testing_status:
+          type: string
+          nullable: true
+          enum:
+          - not_tested
+          - lab_tested
+          - pilot_tested
+          - vendor_verified
+          - production_validated
+        pre_patch_actions:
+          type: array
+          nullable: true
+          items:
+            type: string
+        post_patch_actions:
+          type: array
+          nullable: true
+          items:
+            type: string
         is_active:
           type: boolean
         created_at:
@@ -3989,6 +4138,7 @@ components:
         patch_type:
           type: string
           enum:
+          - Software Update
           - Source
           - Binary
           - Firmware
@@ -3996,7 +4146,36 @@ components:
           - Documentation
           - Configuration
           - Security Patch
+          - Security
           default: Security Patch
+        vendor_patch_id:
+          type: string
+          description: Optional external/vendor patch identifier
+        patch_version:
+          type: string
+        patch_method:
+          type: string
+          enum:
+          - Manual
+          - Automated
+          - Semi-Automated
+        stability:
+          type: string
+          enum:
+          - stable
+          - beta
+          - experimental
+          - deprecated
+        stability_notes:
+          type: string
+        complexity:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+        complexity_notes:
+          type: string
         target_device_type:
           type: string
         target_package_id:
@@ -4026,7 +4205,50 @@ components:
           type: string
         requires_reboot:
           type: boolean
-          default: false
+        restart_type:
+          type: string
+          enum:
+          - none
+          - service_restart
+          - partial_reboot
+          - full_reboot
+        estimated_downtime_minutes:
+          type: integer
+          minimum: 0
+        estimated_effort_hours:
+          type: number
+          format: float
+          minimum: 0
+        rollback_available:
+          type: boolean
+        rollback_procedure:
+          type: string
+        staging_tested:
+          type: boolean
+        mitigation_available:
+          type: string
+        approval_required_from:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+        testing_status:
+          type: string
+          enum:
+          - not_tested
+          - lab_tested
+          - pilot_tested
+          - vendor_verified
+          - production_validated
+        pre_patch_actions:
+          type: array
+          items:
+            type: string
+        post_patch_actions:
+          type: array
+          items:
+            type: string
     PatchUpdateRequest:
       type: object
       properties:
@@ -4035,6 +4257,7 @@ components:
         patch_type:
           type: string
           enum:
+          - Software Update
           - Source
           - Binary
           - Firmware
@@ -4042,6 +4265,34 @@ components:
           - Documentation
           - Configuration
           - Security Patch
+          - Security
+        vendor_patch_id:
+          type: string
+        patch_version:
+          type: string
+        patch_method:
+          type: string
+          enum:
+          - Manual
+          - Automated
+          - Semi-Automated
+        stability:
+          type: string
+          enum:
+          - stable
+          - beta
+          - experimental
+          - deprecated
+        stability_notes:
+          type: string
+        complexity:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+        complexity_notes:
+          type: string
         target_device_type:
           type: string
         target_package_id:
@@ -4071,6 +4322,50 @@ components:
           type: string
         requires_reboot:
           type: boolean
+        restart_type:
+          type: string
+          enum:
+          - none
+          - service_restart
+          - partial_reboot
+          - full_reboot
+        estimated_downtime_minutes:
+          type: integer
+          minimum: 0
+        estimated_effort_hours:
+          type: number
+          format: float
+          minimum: 0
+        rollback_available:
+          type: boolean
+        rollback_procedure:
+          type: string
+        staging_tested:
+          type: boolean
+        mitigation_available:
+          type: string
+        approval_required_from:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+        testing_status:
+          type: string
+          enum:
+          - not_tested
+          - lab_tested
+          - pilot_tested
+          - vendor_verified
+          - production_validated
+        pre_patch_actions:
+          type: array
+          items:
+            type: string
+        post_patch_actions:
+          type: array
+          items:
+            type: string
         is_active:
           type: boolean
     PatchApplication:
@@ -4137,6 +4432,16 @@ components:
           nullable: true
           description: Source API or system that provided the remediation information
           example: NVD
+        status:
+          type: string
+          description: Remediation workflow status
+          enum:
+          - CREATED
+          - INPROGRESS
+          - COMPLETE
+          - FAILED
+          - REJECTED
+          example: CREATED
         description:
           type: string
           description: Brief description of the remediation
@@ -4228,6 +4533,16 @@ components:
       required:
       - description
       properties:
+        status:
+          type: string
+          description: Optional remediation workflow status. Defaults to CREATED.
+          enum:
+          - CREATED
+          - INPROGRESS
+          - COMPLETE
+          - FAILED
+          - REJECTED
+          default: CREATED
         upstream_api:
           type: string
           description: Source API or system providing the remediation information
@@ -4257,6 +4572,15 @@ components:
     RemediationUpdateRequest:
       type: object
       properties:
+        status:
+          type: string
+          description: Remediation workflow status
+          enum:
+          - CREATED
+          - INPROGRESS
+          - COMPLETE
+          - FAILED
+          - REJECTED
         upstream_api:
           type: string
           description: Source API or system providing the remediation information

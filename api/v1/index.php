@@ -10,11 +10,16 @@ if (!defined('DAVE_ACCESS')) {
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/api-lockdown-middleware.php';
 
-// Get the request path first to determine endpoint
+// Get request path from rewrite parameter when available; otherwise parse URI.
+// This supports both rewrite styles: /index.php/<path> and /index.php?path=<path>.
 $request_uri = $_SERVER['REQUEST_URI'];
-$path = parse_url($request_uri, PHP_URL_PATH);
-$path = str_replace('/api/v1', '', $path);
-$path = trim($path, '/');
+$rewrite_path = isset($_GET['path']) ? trim((string)$_GET['path'], '/') : '';
+$path = $rewrite_path;
+if ($path === '') {
+    $path = parse_url($request_uri, PHP_URL_PATH);
+    $path = str_replace('/api/v1', '', $path);
+    $path = trim($path, '/');
+}
 $segments = explode('/', $path);
 $endpoint = $segments[0] ?? 'unknown';
 

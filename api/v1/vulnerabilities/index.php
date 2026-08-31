@@ -994,7 +994,7 @@ function createVulnerability() {
     }
     
     // Validate required fields
-    // Note: device_id OR asset_id is required (asset_id will be resolved to device_id)
+    // Note: device_id OR asset_id OR asset_ids[] is required
     $required_fields = [];
     $missing_fields = [];
     
@@ -1004,9 +1004,27 @@ function createVulnerability() {
         }
     }
     
-    // Require either device_id or asset_id (with component_id)
-    if (!isset($input['device_id']) && !isset($input['asset_id'])) {
-        $missing_fields[] = 'device_id or asset_id';
+    $has_device_id = isset($input['device_id']) && !empty($input['device_id']);
+    $has_asset_id = isset($input['asset_id']) && !empty($input['asset_id']);
+    $has_asset_ids = isset($input['asset_ids']) && is_array($input['asset_ids']) && !empty($input['asset_ids']);
+
+    // Validate asset_ids type if provided
+    if (isset($input['asset_ids']) && !is_array($input['asset_ids'])) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error' => [
+                'code' => 'INVALID_ASSET_IDS',
+                'message' => 'asset_ids must be an array of asset_id values'
+            ],
+            'timestamp' => date('c')
+        ]);
+        return;
+    }
+
+    // Require at least one target entity for linking
+    if (!$has_device_id && !$has_asset_id && !$has_asset_ids) {
+        $missing_fields[] = 'device_id or asset_id or asset_ids';
     }
     
     //if (!isset($input['component_id']) || empty($input['component_id'])) {
@@ -1030,6 +1048,7 @@ function createVulnerability() {
     $cve_id = null;
     $device_id = null;
     $asset_id = null;
+    $asset_ids = [];
     $component_id = null;
     
     // Validate CVE ID format
@@ -1049,6 +1068,60 @@ function createVulnerability() {
         }
     }
     
+    // Resolve and validate additional asset_ids[] targets if provided
+    if (isset($input['asset_ids']) && is_array($input['asset_ids'])) {
+        $asset_ids_seen = [];
+        foreach ($input['asset_ids'] as $idx => $candidate_asset_id) {
+            if (!is_scalar($candidate_asset_id)) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'INVALID_ASSET_ID',
+                        'message' => 'asset_ids[' . $idx . '] must be a string asset_id'
+                    ],
+                    'timestamp' => date('c')
+                ]);
+                return;
+            }
+
+            $candidate_asset_id = trim((string)$candidate_asset_id);
+            if ($candidate_asset_id === '') {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'INVALID_ASSET_ID',
+                        'message' => 'asset_ids[' . $idx . '] cannot be empty'
+                    ],
+                    'timestamp' => date('c')
+                ]);
+                return;
+            }
+
+            if (isset($asset_ids_seen[$candidate_asset_id])) {
+                continue;
+            }
+
+            $asset_exists = $db->query("SELECT asset_id FROM assets WHERE asset_id = ?", [$candidate_asset_id])->fetch();
+            if (!$asset_exists) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'ASSET_NOT_FOUND',
+                        'message' => 'Asset with ID ' . $candidate_asset_id . ' does not exist'
+                    ],
+                    'timestamp' => date('c')
+                ]);
+                return;
+            }
+
+            $asset_ids[] = $candidate_asset_id;
+            $asset_ids_seen[$candidate_asset_id] = true;
+        }
+    }
+
     // Resolve device_id from asset_id if provided
     if (isset($input['device_id']) && !empty($input['device_id'])) {
         $device_id = $input['device_id'];
@@ -1363,23 +1436,48 @@ function createVulnerability() {
             $result1 = $result;
         }
         
-        // Create device_vulnerabilities_link entry (required - ensures vulnerability always has at least one affected asset)
-        // Create link if we have at least vulnerability_id and (device_id OR asset_id)
-        if (!empty($vulnerability_id) && (!empty($device_id) || !empty($asset_id))) {
-            $link_sql = "INSERT INTO device_vulnerabilities_link (device_id, asset_id, component_id, cve_id, vulnerability_id, remediation_status, discovered_at)
-                         VALUES (?, ?, ?, ?, ?, 'Open', CURRENT_TIMESTAMP)";
-            
-            // Use appropriate conflict resolution based on whether cve_id exists
-            if (!empty($returned_cve_id)) {
-                $link_sql .= " ON CONFLICT (device_id, component_id, cve_id) WHERE cve_id IS NOT NULL DO NOTHING";
-                $link_stmt = $db->prepare($link_sql);
-                $link_stmt->execute([$device_id, $asset_id, $component_id, $returned_cve_id, $vulnerability_id]);
-            } else {
-                $link_sql .= " ON CONFLICT (device_id, component_id, vulnerability_id) WHERE vulnerability_id IS NOT NULL DO NOTHING";
-                $link_stmt = $db->prepare($link_sql);
-                $link_stmt->execute([$device_id, $asset_id, $component_id, null, $vulnerability_id]);
+            // Create device_vulnerabilities_link entries for all requested targets.
+            // Supports legacy single device_id/asset_id and new asset_ids[] multi-target input.
+            $links_created_count = 0;
+            if (!empty($vulnerability_id)) {
+                $link_targets = [];
+
+                if (!empty($asset_id) || !empty($device_id)) {
+                    $target_key = !empty($asset_id) ? $asset_id : ('device:' . $device_id);
+                    $link_targets[$target_key] = [
+                        'device_id' => $device_id,
+                        'asset_id' => $asset_id
+                    ];
+                }
+
+                foreach ($asset_ids as $multi_asset_id) {
+                    if (isset($link_targets[$multi_asset_id])) {
+                        continue;
+                    }
+                    $multi_device_result = $db->query("SELECT device_id FROM medical_devices WHERE asset_id = ?", [$multi_asset_id])->fetch();
+                    $link_targets[$multi_asset_id] = [
+                        'device_id' => $multi_device_result ? $multi_device_result['device_id'] : null,
+                        'asset_id' => $multi_asset_id
+                    ];
+                }
+
+                foreach ($link_targets as $target) {
+                    $link_sql = "INSERT INTO device_vulnerabilities_link (device_id, asset_id, component_id, cve_id, vulnerability_id, remediation_status, discovered_at)
+                                 VALUES (?, ?, ?, ?, ?, 'Open', CURRENT_TIMESTAMP)";
+
+                    if (!empty($returned_cve_id)) {
+                        $link_sql .= " ON CONFLICT (device_id, component_id, cve_id) WHERE cve_id IS NOT NULL DO NOTHING";
+                        $link_stmt = $db->prepare($link_sql);
+                        $link_stmt->execute([$target['device_id'], $target['asset_id'], $component_id, $returned_cve_id, $vulnerability_id]);
+                    } else {
+                        $link_sql .= " ON CONFLICT (device_id, component_id, vulnerability_id) WHERE vulnerability_id IS NOT NULL DO NOTHING";
+                        $link_stmt = $db->prepare($link_sql);
+                        $link_stmt->execute([$target['device_id'], $target['asset_id'], $component_id, null, $vulnerability_id]);
+                    }
+
+                    $links_created_count += $link_stmt->rowCount();
+                }
             }
-        }
 
         $db->commit();
         
@@ -1387,13 +1485,15 @@ function createVulnerability() {
         http_response_code(201);
         echo json_encode([
             'success' => true,
-            'message' => 'Vulnerability created successfully and linked to device',
+            'message' => 'Vulnerability created successfully and linked to target assets/devices',
             'data' => [
                 'vulnerability_id' => $vulnerability_id,
                 'cve_id' => $cve_id,
                 'device_id' => $device_id,
+                'asset_id' => $asset_id,
+                'asset_ids' => $asset_ids,
                 'component_id' => $component_id,
-                'link_created' => true,
+                'links_created_count' => $links_created_count,
                 'created_at' => date('c'),
                 'created_by' => $user['username'],
                 

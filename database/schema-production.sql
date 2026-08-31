@@ -12,9 +12,9 @@
 --
 -- ====================================================================================
 
--- Generated: 2026-03-10 10:09:30
+-- Generated: 2026-08-31 10:24:02
 
-\restrict vd1AWKDjEQgsSgIdDOpzyd4tP76lWKmGgyw0chGvfXZFRYCceaYiQVcPFhy2L5z
+\restrict 4MOjuslE8Q7HSllvY88v1gRsgs4l1lk2goYZBp7Eczci8DcnmcdaKd2Lomwpr1R
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -27,6 +27,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+CREATE TYPE public.remediation_status_enum AS ENUM (
+    'CREATED',
+    'INPROGRESS',
+    'COMPLETE',
+    'FAILED',
+    'REJECTED'
+);
 CREATE FUNCTION public.archive_epss_historical_scores() RETURNS integer
     LANGUAGE plpgsql
     AS $$
@@ -2846,10 +2853,55 @@ CREATE TABLE public.patches (
     is_active boolean DEFAULT true,
     estimated_downtime integer DEFAULT 0,
     applied_devices jsonb DEFAULT '[]'::jsonb,
-    CONSTRAINT patches_patch_type_check CHECK (((patch_type)::text = ANY (ARRAY[('Source'::character varying)::text, ('Binary'::character varying)::text, ('Firmware'::character varying)::text, ('Emulator'::character varying)::text, ('Documentation'::character varying)::text, ('Configuration'::character varying)::text, ('Security Patch'::character varying)::text])))
+    vendor_patch_id character varying(100),
+    patch_version character varying(100),
+    patch_method character varying(50),
+    stability character varying(20),
+    stability_notes text,
+    complexity character varying(20),
+    complexity_notes text,
+    restart_type character varying(30),
+    estimated_downtime_minutes integer,
+    estimated_effort_hours numeric(6,2),
+    rollback_available boolean,
+    rollback_procedure text,
+    staging_tested boolean,
+    mitigation_available text,
+    approval_required_from text,
+    dependencies jsonb,
+    testing_status character varying(50),
+    pre_patch_actions jsonb,
+    post_patch_actions jsonb,
+    CONSTRAINT patches_complexity_check CHECK (((complexity IS NULL) OR ((complexity)::text = ANY (ARRAY[('low'::character varying)::text, ('medium'::character varying)::text, ('high'::character varying)::text])))),
+    CONSTRAINT patches_estimated_downtime_minutes_check CHECK (((estimated_downtime_minutes IS NULL) OR (estimated_downtime_minutes >= 0))),
+    CONSTRAINT patches_estimated_effort_hours_check CHECK (((estimated_effort_hours IS NULL) OR (estimated_effort_hours >= (0)::numeric))),
+    CONSTRAINT patches_patch_method_check CHECK (((patch_method IS NULL) OR ((patch_method)::text = ANY (ARRAY[('Manual'::character varying)::text, ('Automated'::character varying)::text, ('Semi-Automated'::character varying)::text])))),
+    CONSTRAINT patches_patch_type_check CHECK (((patch_type)::text = ANY (ARRAY[('Software Update'::character varying)::text, ('Source'::character varying)::text, ('Binary'::character varying)::text, ('Firmware'::character varying)::text, ('Emulator'::character varying)::text, ('Documentation'::character varying)::text, ('Configuration'::character varying)::text, ('Security Patch'::character varying)::text, ('Security'::character varying)::text]))),
+    CONSTRAINT patches_restart_type_check CHECK (((restart_type IS NULL) OR ((restart_type)::text = ANY (ARRAY[('none'::character varying)::text, ('service_restart'::character varying)::text, ('partial_reboot'::character varying)::text, ('full_reboot'::character varying)::text])))),
+    CONSTRAINT patches_stability_check CHECK (((stability IS NULL) OR ((stability)::text = ANY (ARRAY[('stable'::character varying)::text, ('beta'::character varying)::text, ('experimental'::character varying)::text, ('deprecated'::character varying)::text])))),
+    CONSTRAINT patches_testing_status_check CHECK (((testing_status IS NULL) OR ((testing_status)::text = ANY (ARRAY[('not_tested'::character varying)::text, ('lab_tested'::character varying)::text, ('pilot_tested'::character varying)::text, ('vendor_verified'::character varying)::text, ('production_validated'::character varying)::text]))))
 );
 COMMENT ON TABLE public.patches IS 'Reusable patch definitions that can be applied to multiple assets';
 COMMENT ON COLUMN public.patches.estimated_downtime IS 'Estimated downtime in minutes for patch installation';
+COMMENT ON COLUMN public.patches.vendor_patch_id IS 'External/vendor patch identifier (maps to payload patch_id, e.g. BD-ALARIS-2025-001)';
+COMMENT ON COLUMN public.patches.patch_version IS 'Patch or firmware version provided by vendor';
+COMMENT ON COLUMN public.patches.patch_method IS 'Patch application method: Manual, Automated, or Semi-Automated';
+COMMENT ON COLUMN public.patches.stability IS 'Patch stability classification: stable, beta, experimental, deprecated';
+COMMENT ON COLUMN public.patches.stability_notes IS 'Notes supporting stability classification and validation evidence';
+COMMENT ON COLUMN public.patches.complexity IS 'Implementation complexity: low, medium, high';
+COMMENT ON COLUMN public.patches.complexity_notes IS 'Operational details and impact for implementing this patch';
+COMMENT ON COLUMN public.patches.restart_type IS 'Restart behavior required by patch: none, service_restart, partial_reboot, full_reboot';
+COMMENT ON COLUMN public.patches.estimated_downtime_minutes IS 'Estimated downtime in minutes from patch metadata payload';
+COMMENT ON COLUMN public.patches.estimated_effort_hours IS 'Estimated total implementation effort in hours';
+COMMENT ON COLUMN public.patches.rollback_available IS 'Whether rollback to previous version is available';
+COMMENT ON COLUMN public.patches.rollback_procedure IS 'Documented rollback steps for this patch';
+COMMENT ON COLUMN public.patches.staging_tested IS 'Whether the patch has been tested in staging/pre-production';
+COMMENT ON COLUMN public.patches.mitigation_available IS 'Compensating controls if patch cannot be applied immediately';
+COMMENT ON COLUMN public.patches.approval_required_from IS 'Roles or groups required to approve patch deployment';
+COMMENT ON COLUMN public.patches.dependencies IS 'JSON array of prerequisites/dependencies';
+COMMENT ON COLUMN public.patches.testing_status IS 'Current testing lifecycle status for patch validation';
+COMMENT ON COLUMN public.patches.pre_patch_actions IS 'JSON array of required actions before patching';
+COMMENT ON COLUMN public.patches.post_patch_actions IS 'JSON array of required verification/actions after patching';
 CREATE TABLE public.recalls (
     recall_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     fda_recall_number character varying(50) NOT NULL,
@@ -2913,7 +2965,8 @@ CREATE TABLE public.remediations (
     vulnerability_id uuid,
     user_id uuid,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    status public.remediation_status_enum DEFAULT 'CREATED'::public.remediation_status_enum NOT NULL
 );
 COMMENT ON TABLE public.remediations IS 'Tracks remediation efforts for vulnerabilities affecting assets';
 COMMENT ON COLUMN public.remediations.remediation_id IS 'Unique identifier for the remediation (UUID)';
@@ -2924,6 +2977,7 @@ COMMENT ON COLUMN public.remediations.vulnerability_id IS 'Foreign key reference
 COMMENT ON COLUMN public.remediations.user_id IS 'Foreign key reference to the user responsible for the remediation';
 COMMENT ON COLUMN public.remediations.created_at IS 'Timestamp when the remediation record was created';
 COMMENT ON COLUMN public.remediations.updated_at IS 'Timestamp when the remediation record was last updated';
+COMMENT ON COLUMN public.remediations.status IS 'Remediation workflow status: CREATED, INPROGRESS, COMPLETE, FAILED, REJECTED';
 CREATE TABLE public.risk_matrix_config (
     config_id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     config_name character varying(100) NOT NULL,
@@ -4249,7 +4303,7 @@ ALTER TABLE ONLY public.vulnerability_scans
     ADD CONSTRAINT vulnerability_scans_device_id_fkey FOREIGN KEY (device_id) REFERENCES public.medical_devices(device_id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.vulnerability_scans
     ADD CONSTRAINT vulnerability_scans_requested_by_fkey FOREIGN KEY (requested_by) REFERENCES public.users(user_id);
-\unrestrict vd1AWKDjEQgsSgIdDOpzyd4tP76lWKmGgyw0chGvfXZFRYCceaYiQVcPFhy2L5z
+\unrestrict 4MOjuslE8Q7HSllvY88v1gRsgs4l1lk2goYZBp7Eczci8DcnmcdaKd2Lomwpr1R
 
 -- ====================================================================================
 -- Migration Tracking Table
@@ -4266,4 +4320,5 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 -- This prevents the migration script from trying to re-apply them
 
 -- Insert migration tracking records for all included migrations:
-INSERT INTO schema_migrations (version) VALUES ('007_create_remediations_table.sql') ON CONFLICT (version) DO NOTHING;
+INSERT INTO schema_migrations (version) VALUES ('20260831_add_patch_object_metadata_fields.sql') ON CONFLICT (version) DO NOTHING;
+INSERT INTO schema_migrations (version) VALUES ('20260831_add_status_to_remediations.sql') ON CONFLICT (version) DO NOTHING;

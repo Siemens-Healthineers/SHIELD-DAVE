@@ -55,7 +55,7 @@ class SecurityAudit {
      * @param string $username Username (optional)
      * @return bool Success status
      */
-    public function logEvent($eventType, $userId = null, $description, $metadata = null, $ipAddress = null, $username = null) {
+    public function logEvent($eventType, $userId = null, $description = '', $metadata = null, $ipAddress = null, $username = null) {
         try {
             // Get IP address if not provided
             if (!$ipAddress) {

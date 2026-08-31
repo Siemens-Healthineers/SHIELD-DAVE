@@ -270,6 +270,8 @@ def map_netdisco_to_dave_asset(netdisco_device: Dict[str, Any]) -> Dict[str, Any
         model = (netdisco_device.get("model") or "device").lower().replace(" ", "-")
         ip = (netdisco_device.get("ip") or "").replace(".", "-")
         hostname = f"{vendor}-{model}-{ip}"
+        
+    hostname = 'netdisco-' + hostname.replace(" ", "-").lower()
     
     # Generate source identifier from MAC or IP for tracking
     # This will be used to find existing assets from NetDisco
