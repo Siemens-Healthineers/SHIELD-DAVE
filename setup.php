@@ -11,10 +11,35 @@ if (!defined('DAVE_ACCESS')) {
 
 // Load config for helper functions
 require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/functions.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+/**
+ * Reject characters that can break .env format and inject new keys.
+ */
+function sanitizeEnvValue($value, $fieldName) {
+    $value = is_string($value) ? trim($value) : '';
+
+    if (preg_match('/[\r\n\0]/', $value)) {
+        throw new Exception("Invalid characters provided for {$fieldName}.");
+    }
+
+    return $value;
+}
 
 // Check if already configured
 $configFile = __DIR__ . '/config/settings.json';
 $isConfigured = file_exists($configFile) && filesize($configFile) > 0;
+
+// Once configured, setup page must be admin-only.
+if ($isConfigured) {
+    require_once __DIR__ . '/includes/auth.php';
+    $auth = new Auth();
+    $auth->requireRole('Admin');
+}
 
 // Get base URL from config if already configured
 $baseUrl = '/';
@@ -23,33 +48,156 @@ if ($isConfigured) {
     $baseUrl = $configData['app']['base_url'] ?? '/';
 }
 
+$goToAppUrl = $baseUrl;
+
 // Auto-detect base URL from current request
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$detectedBaseUrl = $protocol . '://' . $host;
+$hostHeader = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+
+$requestHost = $hostHeader;
+$requestPort = null;
+
+if (preg_match('/^\[(.+)\]:(\d+)$/', $hostHeader, $matches)) {
+    // IPv6 host with explicit port: [::1]:8080
+    $requestHost = $matches[1];
+    $requestPort = (int)$matches[2];
+} elseif (substr_count($hostHeader, ':') === 1 && preg_match('/^(.+):(\d+)$/', $hostHeader, $matches)) {
+    // IPv4/hostname with explicit port: localhost:8080
+    $requestHost = $matches[1];
+    $requestPort = (int)$matches[2];
+}
+
+if (!$requestPort) {
+    $forwardedPort = $_SERVER['HTTP_X_FORWARDED_PORT'] ?? null;
+    if (is_string($forwardedPort) && ctype_digit($forwardedPort)) {
+        $requestPort = (int)$forwardedPort;
+    }
+}
+
+if (!$requestPort) {
+    $serverPort = $_SERVER['SERVER_PORT'] ?? null;
+    if (is_string($serverPort) && ctype_digit($serverPort)) {
+        $requestPort = (int)$serverPort;
+    }
+}
+
+$detectedBaseUrl = $protocol . '://' . $requestHost;
+if (($protocol === 'http' && $requestPort && $requestPort !== 80) || ($protocol === 'https' && $requestPort && $requestPort !== 443)) {
+    $detectedBaseUrl .= ':' . $requestPort;
+}
+
+if ($isConfigured) {
+    $normalizedBaseUrl = $baseUrl;
+    if (
+        is_string($baseUrl) &&
+        strpos($baseUrl, '://') === false &&
+        preg_match('/^[a-zA-Z0-9.-]+(:\d+)?(\/.*)?$/', $baseUrl)
+    ) {
+        $normalizedBaseUrl = $protocol . '://' . $baseUrl;
+    }
+
+    $parsedBaseUrl = parse_url($normalizedBaseUrl);
+    $parsedRequestUrl = parse_url($detectedBaseUrl);
+
+    $isLocalHostLike = static function ($host) {
+        if (!is_string($host) || $host === '') {
+            return false;
+        }
+
+        $host = strtolower($host);
+        return in_array($host, ['localhost', '127.0.0.1', '::1'], true) || substr($host, -10) === '.localhost';
+    };
+
+    if (
+        is_array($parsedBaseUrl) &&
+        isset($parsedBaseUrl['scheme'], $parsedBaseUrl['host']) &&
+        $isLocalHostLike($parsedBaseUrl['host'])
+    ) {
+        // For localhost-style URLs, use path-only navigation so the browser keeps current origin and port.
+        $goToAppUrl = $parsedBaseUrl['path'] ?? '/';
+
+        if ($goToAppUrl === '') {
+            $goToAppUrl = '/';
+        }
+        if (isset($parsedBaseUrl['query'])) {
+            $goToAppUrl .= '?' . $parsedBaseUrl['query'];
+        }
+        if (isset($parsedBaseUrl['fragment'])) {
+            $goToAppUrl .= '#' . $parsedBaseUrl['fragment'];
+        }
+    } elseif (
+        is_array($parsedBaseUrl) &&
+        isset($parsedBaseUrl['scheme'], $parsedBaseUrl['host']) &&
+        !isset($parsedBaseUrl['port']) &&
+        $requestPort &&
+        isset($parsedRequestUrl['host']) &&
+        (
+            strtolower($parsedBaseUrl['host']) === strtolower($parsedRequestUrl['host']) ||
+            ($isLocalHostLike($parsedBaseUrl['host']) && $isLocalHostLike($parsedRequestUrl['host']))
+        )
+    ) {
+        $goToAppUrl = $parsedBaseUrl['scheme'] . '://' . $parsedBaseUrl['host'];
+
+        if (($parsedBaseUrl['scheme'] === 'http' && $requestPort !== 80) || ($parsedBaseUrl['scheme'] === 'https' && $requestPort !== 443)) {
+            $goToAppUrl .= ':' . $requestPort;
+        }
+
+        if (isset($parsedBaseUrl['path'])) {
+            $goToAppUrl .= $parsedBaseUrl['path'];
+        }
+        if (isset($parsedBaseUrl['query'])) {
+            $goToAppUrl .= '?' . $parsedBaseUrl['query'];
+        }
+        if (isset($parsedBaseUrl['fragment'])) {
+            $goToAppUrl .= '#' . $parsedBaseUrl['fragment'];
+        }
+    }
+}
 
 // Handle form submission
 $message = '';
 $messageType = '';
+$csrfToken = generateCSRFToken();
 
 // Handle integration-settings update when system is already configured
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isConfigured) {
     try {
+        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+            throw new Exception('Invalid request token. Please refresh and try again.');
+        }
+
         $envFile = __DIR__ . '/.env';
-        $updates = [
-            'CYNERIO_CLIENT_ID'     => $_POST['cynerio_client_id']     ?? '',
-            'CYNERIO_CLIENT_SECRET' => $_POST['cynerio_client_secret'] ?? '',
-            'CYNERIO_ENDPOINT'      => $_POST['cynerio_endpoint']      ?? '',
-            'CYNERIO_AUTH_ENDPOINT' => $_POST['cynerio_auth_endpoint'] ?? '',
-            'BLUEFLOW_API_URL'      => $_POST['blueflow_endpoint']     ?? '',
-            'NETDISCO_API_URL'      => $_POST['netdisco_endpoint']     ?? '',
-        ];
 
         if (!file_exists($envFile)) {
             throw new Exception('.env file not found.');
         }
 
-        $lines   = file($envFile, FILE_IGNORE_NEW_LINES);
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES);
+
+        $existingValues = [];
+        foreach ($lines as $line) {
+            if ($line === '' || strpos($line, '=') === false || $line[0] === '#') {
+                continue;
+            }
+
+            list($k, $v) = explode('=', $line, 2);
+            $existingValues[$k] = $v;
+        }
+
+        $postedSecret = $_POST['cynerio_client_secret'] ?? '';
+        $effectiveSecret = $postedSecret === ''
+            ? ($existingValues['CYNERIO_CLIENT_SECRET'] ?? '')
+            : $postedSecret;
+
+        $updates = [
+            'CYNERIO_CLIENT_ID'     => sanitizeEnvValue($_POST['cynerio_client_id'] ?? '', 'CYNERIO_CLIENT_ID'),
+            'CYNERIO_CLIENT_SECRET' => sanitizeEnvValue($effectiveSecret, 'CYNERIO_CLIENT_SECRET'),
+            'CYNERIO_ENDPOINT'      => sanitizeEnvValue($_POST['cynerio_endpoint'] ?? '', 'CYNERIO_ENDPOINT'),
+            'CYNERIO_AUTH_ENDPOINT' => sanitizeEnvValue($_POST['cynerio_auth_endpoint'] ?? '', 'CYNERIO_AUTH_ENDPOINT'),
+            'BLUEFLOW_API_URL'      => sanitizeEnvValue($_POST['blueflow_endpoint'] ?? '', 'BLUEFLOW_API_URL'),
+            'NETDISCO_API_URL'      => sanitizeEnvValue($_POST['netdisco_endpoint'] ?? '', 'NETDISCO_API_URL'),
+        ];
+
         $handled = array_fill_keys(array_keys($updates), false);
         $out     = [];
         foreach ($lines as $line) {
@@ -90,6 +238,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isConfigured) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
     try {
+        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+            throw new Exception('Invalid request token. Please refresh and try again.');
+        }
+
         // Validate required fields
         $baseUrl = $_POST['base_url'] ?? '';
         $dbHost = $_POST['db_host'] ?? '';
@@ -228,38 +380,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
         }
         
         // Create .env file
+        $envMap = [
+            'DAVE_BASE_URL' => $config['app']['base_url'],
+            'DAVE_API_URL' => $config['app']['api_url'],
+            'DAVE_ADMIN_USER' => getenv('DAVE_ADMIN_USER') ?: '',
+            'DAVE_ADMIN_DEFAULT_PASSWORD' => getenv('DAVE_ADMIN_DEFAULT_PASSWORD') ?: '',
+            'DAVE_INTEGRATION_API_KEY' => $integration_api_key,
+            'DAVE_DEBUG' => ($config['app']['debug'] ? 'true' : 'false'),
+            'DB_HOST' => $config['database']['host'],
+            'DB_PORT' => $config['database']['port'],
+            'DB_NAME' => $config['database']['name'],
+            'DB_USER' => $config['database']['user'],
+            'DB_PASSWORD' => $config['database']['password'],
+            'DAVE_SMTP_HOST' => $config['email']['smtp_host'],
+            'DAVE_SMTP_PORT' => $config['email']['smtp_port'],
+            'DAVE_SMTP_USERNAME' => $config['email']['smtp_username'],
+            'DAVE_SMTP_PASSWORD' => $config['email']['smtp_password'],
+            'DAVE_SMTP_ENCRYPTION' => $config['email']['smtp_encryption'],
+            'DAVE_FROM_EMAIL' => $config['email']['from_email'],
+            'DAVE_FROM_NAME' => $config['email']['from_name'],
+            'CYNERIO_CLIENT_ID' => $config['cynerio']['client_id'],
+            'CYNERIO_CLIENT_SECRET' => $config['cynerio']['client_secret'],
+            'CYNERIO_ENDPOINT' => $config['cynerio']['endpoint'],
+            'CYNERIO_AUTH_ENDPOINT' => $config['cynerio']['auth_endpoint'],
+            'BLUEFLOW_API_URL' => $config['blueflow']['endpoint'],
+            'NETDISCO_API_URL' => $config['netdisco']['endpoint'],
+        ];
+
+        $safeEnvMap = [];
+        foreach ($envMap as $key => $value) {
+            $safeEnvMap[$key] = sanitizeEnvValue((string)$value, $key);
+        }
+
         $envContent = "# DAVE Environment Configuration\n";
         $envContent .= "# Generated on " . date('Y-m-d H:i:s') . "\n\n";
         $envContent .= "# Core Application Settings\n";
-        $envContent .= "DAVE_BASE_URL=" . $config['app']['base_url'] . "\n";
-        $envContent .= "DAVE_API_URL=" . $config['app']['api_url'] . "\n";
-        $envContent .= "DAVE_ADMIN_USER=" . getenv('DAVE_ADMIN_USER') . "\n";
-        $envContent .= "DAVE_ADMIN_DEFAULT_PASSWORD=" . getenv('DAVE_ADMIN_DEFAULT_PASSWORD') . "\n";        
-        $envContent .= "DAVE_INTEGRATION_API_KEY=" . $integration_api_key . "\n";
-        $envContent .= "DAVE_DEBUG=" . ($config['app']['debug'] ? 'true' : 'false') . "\n\n";
+        $envContent .= "DAVE_BASE_URL=" . $safeEnvMap['DAVE_BASE_URL'] . "\n";
+        $envContent .= "DAVE_API_URL=" . $safeEnvMap['DAVE_API_URL'] . "\n";
+        $envContent .= "DAVE_ADMIN_USER=" . $safeEnvMap['DAVE_ADMIN_USER'] . "\n";
+        $envContent .= "DAVE_ADMIN_DEFAULT_PASSWORD=" . $safeEnvMap['DAVE_ADMIN_DEFAULT_PASSWORD'] . "\n";
+        $envContent .= "DAVE_INTEGRATION_API_KEY=" . $safeEnvMap['DAVE_INTEGRATION_API_KEY'] . "\n";
+        $envContent .= "DAVE_DEBUG=" . $safeEnvMap['DAVE_DEBUG'] . "\n\n";
         $envContent .= "# Database Configuration\n";
-        $envContent .= "DB_HOST=" . $config['database']['host'] . "\n";
-        $envContent .= "DB_PORT=" . $config['database']['port'] . "\n";
-        $envContent .= "DB_NAME=" . $config['database']['name'] . "\n";
-        $envContent .= "DB_USER=" . $config['database']['user'] . "\n";
-        $envContent .= "DB_PASSWORD=" . $config['database']['password'] . "\n\n";
+        $envContent .= "DB_HOST=" . $safeEnvMap['DB_HOST'] . "\n";
+        $envContent .= "DB_PORT=" . $safeEnvMap['DB_PORT'] . "\n";
+        $envContent .= "DB_NAME=" . $safeEnvMap['DB_NAME'] . "\n";
+        $envContent .= "DB_USER=" . $safeEnvMap['DB_USER'] . "\n";
+        $envContent .= "DB_PASSWORD=" . $safeEnvMap['DB_PASSWORD'] . "\n\n";
         $envContent .= "# Email Configuration\n";
-        $envContent .= "DAVE_SMTP_HOST=" . $config['email']['smtp_host'] . "\n";
-        $envContent .= "DAVE_SMTP_PORT=" . $config['email']['smtp_port'] . "\n";
-        $envContent .= "DAVE_SMTP_USERNAME=" . $config['email']['smtp_username'] . "\n";
-        $envContent .= "DAVE_SMTP_PASSWORD=" . $config['email']['smtp_password'] . "\n";
-        $envContent .= "DAVE_SMTP_ENCRYPTION=" . $config['email']['smtp_encryption'] . "\n";
-        $envContent .= "DAVE_FROM_EMAIL=" . $config['email']['from_email'] . "\n";
-        $envContent .= "DAVE_FROM_NAME=" . $config['email']['from_name'] . "\n";
+        $envContent .= "DAVE_SMTP_HOST=" . $safeEnvMap['DAVE_SMTP_HOST'] . "\n";
+        $envContent .= "DAVE_SMTP_PORT=" . $safeEnvMap['DAVE_SMTP_PORT'] . "\n";
+        $envContent .= "DAVE_SMTP_USERNAME=" . $safeEnvMap['DAVE_SMTP_USERNAME'] . "\n";
+        $envContent .= "DAVE_SMTP_PASSWORD=" . $safeEnvMap['DAVE_SMTP_PASSWORD'] . "\n";
+        $envContent .= "DAVE_SMTP_ENCRYPTION=" . $safeEnvMap['DAVE_SMTP_ENCRYPTION'] . "\n";
+        $envContent .= "DAVE_FROM_EMAIL=" . $safeEnvMap['DAVE_FROM_EMAIL'] . "\n";
+        $envContent .= "DAVE_FROM_NAME=" . $safeEnvMap['DAVE_FROM_NAME'] . "\n";
 
-        $envContent .= "CYNERIO_CLIENT_ID=" . $config['cynerio']['client_id'] . "\n";
-        $envContent .= "CYNERIO_CLIENT_SECRET=" . $config['cynerio']['client_secret'] . "\n";
-        $envContent .= "CYNERIO_ENDPOINT=" . $config['cynerio']['endpoint'] . "\n";
-        $envContent .= "CYNERIO_AUTH_ENDPOINT=" . $config['cynerio']['auth_endpoint'] . "\n";
+        $envContent .= "CYNERIO_CLIENT_ID=" . $safeEnvMap['CYNERIO_CLIENT_ID'] . "\n";
+        $envContent .= "CYNERIO_CLIENT_SECRET=" . $safeEnvMap['CYNERIO_CLIENT_SECRET'] . "\n";
+        $envContent .= "CYNERIO_ENDPOINT=" . $safeEnvMap['CYNERIO_ENDPOINT'] . "\n";
+        $envContent .= "CYNERIO_AUTH_ENDPOINT=" . $safeEnvMap['CYNERIO_AUTH_ENDPOINT'] . "\n";
 
-        $envContent .= "BLUEFLOW_API_URL=" . $config['blueflow']['endpoint'] . "\n";
+        $envContent .= "BLUEFLOW_API_URL=" . $safeEnvMap['BLUEFLOW_API_URL'] . "\n";
 
-        $envContent .= "NETDISCO_API_URL=" . $config['netdisco']['endpoint'] . "\n";
+        $envContent .= "NETDISCO_API_URL=" . $safeEnvMap['NETDISCO_API_URL'] . "\n";
 
         file_put_contents(__DIR__ . '/.env', $envContent);
         
@@ -532,7 +716,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
         $env_from_email       = getenv('DAVE_FROM_EMAIL')             ?: '';
         $env_from_name        = getenv('DAVE_FROM_NAME')              ?: '';
         $env_cynerio_id       = getenv('CYNERIO_CLIENT_ID')           ?: '';
-        $env_cynerio_secret   = getenv('CYNERIO_CLIENT_SECRET')       ?: '';
+        $env_cynerio_secret   = '';
         $env_cynerio_ep       = getenv('CYNERIO_ENDPOINT')            ?: '';
         $env_cynerio_auth     = getenv('CYNERIO_AUTH_ENDPOINT')       ?: '';
         $env_blueflow         = getenv('BLUEFLOW_API_URL')            ?: '';
@@ -550,7 +734,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
             <div class="info-banner">
                 <i class="fas fa-lock"></i>
                 System is configured. Only Cynerio, Blueflow and Netdisco settings can be updated here.
-                <a href="<?php echo dave_htmlspecialchars($baseUrl); ?>" style="margin-left:auto; color:#009999; white-space:nowrap;">
+                <a href="<?php echo dave_htmlspecialchars($goToAppUrl); ?>" style="margin-left:auto; color:#009999; white-space:nowrap;">
                     <i class="fas fa-arrow-right"></i> Go to App
                 </a>
             </div>
@@ -563,6 +747,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
             <?php endif; ?>
 
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo dave_htmlspecialchars($csrfToken); ?>">
                 <h3 style="margin-bottom: 20px;">
                     Application Configuration
                     <span class="locked-badge"><i class="fas fa-lock"></i> read-only</span>
@@ -669,8 +854,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
                     </div>
                     <div class="form-group">
                         <label for="cynerio_client_secret">Client Secret</label>
-                        <input type="text" id="cynerio_client_secret" name="cynerio_client_secret"
-                               value="<?php echo dave_htmlspecialchars($_POST['cynerio_client_secret'] ?? $env_cynerio_secret); ?>">
+                        <input type="password" id="cynerio_client_secret" name="cynerio_client_secret"
+                               value="<?php echo dave_htmlspecialchars($_POST['cynerio_client_secret'] ?? $env_cynerio_secret); ?>"
+                               placeholder="Leave blank to keep existing secret" autocomplete="new-password">
                     </div>
                 </div>
 
@@ -725,6 +911,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
             <?php endif; ?>
             
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo dave_htmlspecialchars($csrfToken); ?>">
                 <h3 style="margin-bottom: 20px; color: #2d3748;">Application Configuration</h3>
                 
                 <div class="form-group">
@@ -836,7 +1023,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isConfigured) {
                     </div>
                     <div class="form-group">
                         <label for="cynerio_client_secret">Cynerio Client Secret</label>
-                        <input type="text" id="cynerio_client_secret" name="cynerio_client_secret" 
+                           <input type="password" id="cynerio_client_secret" name="cynerio_client_secret" 
                                value="<?php echo dave_htmlspecialchars($_POST['cynerio_client_secret'] ?? ''); ?>">
                     </div>
                 </div>

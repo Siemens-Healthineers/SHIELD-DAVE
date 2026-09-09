@@ -270,12 +270,16 @@ function searchFDADevices() {
     }
     
     // Cap the limit to prevent excessive API calls
-    $limit = min($limit, 1000);
+    $limit = max(1, min($limit, 1000));
     
     try {
         // Call Python FDA service with limit parameter (non-blocking)
         $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_search_' . uniqid() . '.log';
-        $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py search_devices '$manufacturer' '$model' $limit";
+        $rootArg = escapeshellarg(_ROOT);
+        $scriptArg = escapeshellarg('python/services/fda_integration.py');
+        $manufacturerArg = escapeshellarg($manufacturer);
+        $modelArg = escapeshellarg($model);
+        $command = "cd {$rootArg} && python3 {$scriptArg} search_devices {$manufacturerArg} {$modelArg} {$limit}";
         $result = ShellCommandUtilities::executeShellCommand($command, [
             'blocking' => false,
             'log_file' => $logFile
@@ -315,7 +319,10 @@ function getManufacturerSuggestions() {
     try {
         // Call Python FDA service for suggestions (non-blocking)
         $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_suggestions_' . uniqid() . '.log';
-        $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py get_suggestions '$partial'";
+        $rootArg = escapeshellarg(_ROOT);
+        $scriptArg = escapeshellarg('python/services/fda_integration.py');
+        $partialArg = escapeshellarg($partial);
+        $command = "cd {$rootArg} && python3 {$scriptArg} get_suggestions {$partialArg}";
         $result = ShellCommandUtilities::executeShellCommand($command, [
             'blocking' => false,
             'log_file' => $logFile
@@ -420,7 +427,10 @@ function mapDevice() {
         if ($kNumber) {
             try {
                 $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'fda_510k_' . uniqid() . '.log';
-                $command = "cd " . _ROOT . " && python3 python/services/fda_integration.py search_510k '$kNumber'";
+                $rootArg = escapeshellarg(_ROOT);
+                $scriptArg = escapeshellarg('python/services/fda_integration.py');
+                $kNumberArg = escapeshellarg($kNumber);
+                $command = "cd {$rootArg} && python3 {$scriptArg} search_510k {$kNumberArg}";
                 $cmdResult = ShellCommandUtilities::executeShellCommand($command, [
                     'blocking' => false,
                     'log_file' => $logFile
@@ -505,7 +515,11 @@ function autoMapDevices() {
     try {
         // Start auto-mapping as a background job
         $logFile = _ROOT . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'automap_' . uniqid() . '.json';
-        $command = "cd " . _ROOT . " && php scripts/auto-map-devices.php {$user['user_id']} $logFile";
+        $rootArg = escapeshellarg(_ROOT);
+        $userId = intval($user['user_id']);
+        $scriptArg = escapeshellarg('scripts/auto-map-devices.php');
+        $logFileArg = escapeshellarg($logFile);
+        $command = "cd {$rootArg} && php {$scriptArg} {$userId} {$logFileArg}";
         
         $result = ShellCommandUtilities::executeShellCommand($command, [
             'blocking' => false,
