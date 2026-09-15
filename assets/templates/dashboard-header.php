@@ -155,10 +155,10 @@ include __DIR__ . '/url-config.php';
         <i class="fas fa-bug"></i>
         Vulnerabilities
     </a>
-    <a href="/pages/risk-priorities/software-packages.php" class="nav-item <?php echo (strpos($currentPath, '/risk-priorities/') !== false) ? 'active' : ''; ?>">
+    <!--a href="/pages/risk-priorities/software-packages.php" class="nav-item <?php echo (strpos($currentPath, '/risk-priorities/') !== false) ? 'active' : ''; ?>">
         <i class="fas fa-exclamation-circle"></i>
         Risk Priorities
-    </a>
+    </a-->
     <a href="/pages/risks/index.php" class="nav-item <?php echo (strpos($currentPath, '/risks/') !== false) ? 'active' : ''; ?>">
         <i class="fas fa-shield-alt"></i>
         Risks
