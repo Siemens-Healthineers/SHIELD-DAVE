@@ -1,4 +1,3 @@
-
 # /*
 # * SPDX-License-Identifier: AGPL-3.0-or-later
 # * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
@@ -64,7 +63,7 @@ This guide provides step-by-step instructions for deploying the Device Assessmen
 - **RAM**: 4 GB
 - **Storage**: 50 GB SSD
 - **Network**: 100 Mbps
-- **OS**: Ubuntu 20.04 LTS or CentOS 8
+- **OS**: Ubuntu 26.04 LTS
 - **Python**: 3.8+ (for background services)
 
 #### Recommended Requirements
@@ -73,7 +72,7 @@ This guide provides step-by-step instructions for deploying the Device Assessmen
 - **Storage**: 100 GB SSD
 - **Python**: 3.9+ (for background services)
 - **Network**: 1 Gbps
-- **OS**: Ubuntu 20.04 LTS
+- **OS**: Ubuntu 26.04 LTS
 
 ### Software Requirements
 

@@ -1,4 +1,3 @@
-
 # Device Assessment and Vulnerability Exposure (DAVE)
 
 ## 🏥 Overview
@@ -69,7 +68,7 @@ The **Device Assessment and Vulnerability Exposure (DAVE)** is a comprehensive p
 - **Backend**: Python 3.8+ (3.9+ recommended), PHP 7.4+ (8.0+ recommended)
 - **Database**: PostgreSQL 13+ (14+ recommended)
 - **Web Server**: Apache 2.4+ or Nginx 1.18+
-- **OS**: Linux (Ubuntu 22.04 LTS or later recommended)
+- **OS**: Linux (Ubuntu 26.04 LTS or later recommended)
 
 ### Core Components
 - **Web Interface** - PHP-based user interface with Siemens Healthineers branding
@@ -85,7 +84,7 @@ The **Device Assessment and Vulnerability Exposure (DAVE)** is a comprehensive p
 - **RAM**: 4 GB (8 GB recommended)
 - **Storage**: 50 GB SSD (100 GB SSD recommended)
 - **Network**: 100 Mbps (1 Gbps recommended)
-- **OS**: Ubuntu 22.04 LTS or later (recommended)
+- **OS**: Ubuntu 26.04 LTS or later (recommended)
 - **Web Server**: Apache 2.4+ or Nginx 1.18+
 - **PHP**: 7.4+ (8.0+ recommended) with required extensions
 - **PostgreSQL**: 13+ (14+ recommended)

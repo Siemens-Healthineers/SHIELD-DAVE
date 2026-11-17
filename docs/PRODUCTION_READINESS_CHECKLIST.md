@@ -165,7 +165,7 @@
 
 #### System Requirements
 - [ ] **Verify system meets requirements**:
-  - Ubuntu 18.04+ or Debian 10+
+  - Ubuntu 26.04 LTS
   - Minimum 2GB RAM
   - Minimum 10GB disk space
 - [ ] **Check disk space** and plan for growth

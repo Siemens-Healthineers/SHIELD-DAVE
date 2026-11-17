@@ -21,7 +21,7 @@ The **Device Assessment and Vulnerability Exposure (DAVE)** is a comprehensive p
 - **Backend**: Python 3.9+, PHP 8.0+
 - **Database**: PostgreSQL 14+
 - **Web Server**: Apache 2.4+ or Nginx 1.18+
-- **OS**: Linux (Ubuntu 22.04 LTS or later recommended)
+- **OS**: Linux (Ubuntu 26.04 LTS or later recommended)
 
 For more information about the project, see:
 * [README.md](README.md)

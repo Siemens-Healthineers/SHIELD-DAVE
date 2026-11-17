@@ -3,10 +3,10 @@
 # * SPDX-FileCopyrightText: Copyright 2026 Siemens Healthineers
 # */
 # DAVE (Device Assessment and Vulnerability Exposure) Dockerfile
-# Based on Ubuntu 24.04 LTS
+# Based on Ubuntu 26.04 LTS
 # This Dockerfile performs all installation steps directly without relying on install.sh
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 # Validate .env file exists and required variables are set
 # This must be done early in the build process
@@ -66,7 +66,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     APACHE_RUN_DIR=/var/run/apache2 \
     APACHE_LOCK_DIR=/var/lock/apache2 \
     APACHE_PID_FILE=/var/run/apache2/apache2.pid \
-    _ROOT=/var/www/html
+    _ROOT=/var/www/html \
+    PHP_MIN_VERSION=8.5.12
 
 # Labels
 LABEL maintainer="Siemens Healthineers" \
@@ -82,31 +83,80 @@ RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update -y && \
     apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg \
+    software-properties-common \
     apache2 \
     postgresql \
     postgresql-contrib \
-    php8.3 \
-    php8.3-pgsql \
-    php8.3-curl \
-    php8.3-mbstring \
-    php8.3-xml \
-    php8.3-zip \
-    php8.3-gd \
-    php8.3-cli \
-    libapache2-mod-php8.3 \
     python3 \
     python3-full \
     python3-pip \
     python3-venv \
-    curl \
     wget \
     git \
     unzip \
     cron \
     supervisor \
-    ca-certificates \
+    build-essential \
+    autoconf \
+    bison \
+    re2c \
+    libxml2-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libsqlite3-dev \
+    libpq-dev \
+    libonig-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libwebp-dev \
+    libxslt1-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libedit-dev \
+    pkg-config \
+    apache2-dev \
+    && install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://packages.sury.org/php/apt.gpg | gpg --dearmor -o /etc/apt/keyrings/sury-php.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/sury-php.gpg] https://packages.sury.org/php/ resolute main" > /etc/apt/sources.list.d/sury-php.list \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends \
+    php8.5 \
+    php8.5-pgsql \
+    php8.5-curl \
+    php8.5-mbstring \
+    php8.5-xml \
+    php8.5-zip \
+    php8.5-gd \
+    php8.5-cli \
+    libapache2-mod-php8.5 \
     && apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    php -v | head -n 2 && \
+    if ! php -r 'echo PHP_VERSION;' | grep -Eq '^8\.5\.' || ! php -r 'echo PHP_VERSION;' | awk '{print $1}' | dpkg --compare-versions "$(php -r 'echo PHP_VERSION;')" ge "$PHP_MIN_VERSION" 2>/dev/null; then \
+        echo "Required PHP version is not available in the configured repositories; building PHP 8.5.12 from source..." && \
+        cd /tmp && \
+        curl -fL https://www.php.net/distributions/php-8.5.12.tar.gz -o php-8.5.12.tar.gz && \
+        tar -xzf php-8.5.12.tar.gz && \
+        cd php-8.5.12 && \
+        ./configure --prefix=/usr/local/php-8.5.12 --with-config-file-path=/usr/local/php-8.5.12/etc --with-config-file-scan-dir=/usr/local/php-8.5.12/etc/conf.d --enable-cli --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data --with-pdo-pgsql --with-pgsql --with-curl --with-openssl --with-zip --with-zlib --with-bz2 --with-gd --with-jpeg --with-webp --enable-mbstring --with-xsl --with-readline && \
+        make -j"$(nproc)" && \
+        make install && \
+        mkdir -p /usr/local/php-8.5.12/etc && \
+        cp php.ini-production /usr/local/php-8.5.12/etc/php.ini && \
+        sed -i 's/;date.timezone =/date.timezone = UTC/' /usr/local/php-8.5.12/etc/php.ini && \
+        sed -i 's/memory_limit = 128M/memory_limit = 256M/' /usr/local/php-8.5.12/etc/php.ini && \
+        ln -sf /usr/local/php-8.5.12/bin/php /usr/local/bin/php && \
+        ln -sf /usr/local/php-8.5.12/bin/phpize /usr/local/bin/phpize && \
+        ln -sf /usr/local/php-8.5.12/bin/php-config /usr/local/bin/php-config && \
+        ln -sf /usr/local/php-8.5.12/sbin/php-fpm /usr/local/sbin/php-fpm; \
+    fi && \
+    php -v | head -n 2
 
 # Install Python packages using pip (more reliable than apt for Python packages)
 RUN pip3 install --break-system-packages \
@@ -174,7 +224,7 @@ opcache.interned_strings_buffer=8\n\
 opcache.max_accelerated_files=4000\n\
 opcache.revalidate_freq=2\n\
 opcache.fast_shutdown=1\n\
-' >> /etc/php/8.3/apache2/php.ini
+' >> /etc/php/8.5/apache2/php.ini
 
 # Set up application directories
 RUN mkdir -p /var/www/html/{logs,uploads,temp,cache} && \
@@ -192,16 +242,23 @@ RUN if [ ! -f /var/www/html/config/database.php ] && [ -f /var/www/html/config/d
 # No need for virtual environment in Docker container
 
 # Prepare PostgreSQL directory (initialization will happen at runtime)
-RUN mkdir -p /var/lib/postgresql/16/main && \
+RUN set -e && \
+    PG_MAJOR=$(ls /usr/lib/postgresql 2>/dev/null | sort | tail -n 1 || echo 17) && \
+    PG_DATA_DIR="/var/lib/postgresql/${PG_MAJOR}/main" && \
+    PG_CONF_DIR="/etc/postgresql/${PG_MAJOR}/main" && \
+    mkdir -p "$PG_DATA_DIR" && \
     chown -R postgres:postgres /var/lib/postgresql && \
-    chmod 700 /var/lib/postgresql/16/main && \
-    rm -rf /var/lib/postgresql/16/main/* && \
-    su - postgres -c "/usr/lib/postgresql/16/bin/initdb -D /var/lib/postgresql/16/main"
+    chmod 700 "$PG_DATA_DIR" && \
+    rm -rf "$PG_DATA_DIR"/* && \
+    su - postgres -c "/usr/lib/postgresql/${PG_MAJOR}/bin/initdb -D \"$PG_DATA_DIR\""
 
 # Configure PostgreSQL to listen on all addresses (port will be set from .env at runtime)
-RUN echo "listen_addresses = '*'" >> /etc/postgresql/16/main/postgresql.conf && \
-    echo "host all all 0.0.0.0/0 md5" >> /etc/postgresql/16/main/pg_hba.conf && \
-    echo "host all all ::0/0 md5" >> /etc/postgresql/16/main/pg_hba.conf
+RUN set -e && \
+    PG_MAJOR=$(ls /usr/lib/postgresql 2>/dev/null | sort | tail -n 1 || echo 17) && \
+    PG_CONF_DIR="/etc/postgresql/${PG_MAJOR}/main" && \
+    echo "listen_addresses = '*'" >> "$PG_CONF_DIR/postgresql.conf" && \
+    echo "host all all 0.0.0.0/0 md5" >> "$PG_CONF_DIR/pg_hba.conf" && \
+    echo "host all all ::0/0 md5" >> "$PG_CONF_DIR/pg_hba.conf"
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html && \
@@ -210,157 +267,163 @@ RUN chown -R www-data:www-data /var/www/html && \
     chmod 600 /var/www/html/.env 2>/dev/null || true
 
 # Create supervisor configuration to manage multiple services
-RUN mkdir -p /var/log/supervisor && \
-    echo '[supervisord]\n\
-nodaemon=true\n\
-logfile=/var/log/supervisor/supervisord.log\n\
-pidfile=/var/run/supervisord.pid\n\
-\n\
-[program:postgresql]\n\
-command=/usr/lib/postgresql/16/bin/postgres -D /var/lib/postgresql/16/main -c config_file=/etc/postgresql/16/main/postgresql.conf\n\
-user=postgres\n\
-autostart=true\n\
-autorestart=true\n\
-stderr_logfile=/var/log/postgresql/postgresql.err.log\n\
-stdout_logfile=/var/log/postgresql/postgresql.out.log\n\
-priority=1\n\
-\n\
-[program:apache2]\n\
-command=/usr/sbin/apache2ctl -D FOREGROUND\n\
-autostart=true\n\
-autorestart=true\n\
-stderr_logfile=/var/log/apache2/error.log\n\
-stdout_logfile=/var/log/apache2/access.log\n\
-priority=2\n\
-\n\
-[program:cron]\n\
-command=/usr/sbin/cron -f\n\
-autostart=true\n\
-autorestart=true\n\
-stderr_logfile=/var/log/cron.err.log\n\
-stdout_logfile=/var/log/cron.out.log\n\
-priority=3\n\
-' > /etc/supervisor/conf.d/dave.conf
+RUN cat <<'EOF' > /etc/supervisor/conf.d/dave.conf
+[supervisord]
+nodaemon=true
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:postgresql]
+command=bash -lc 'PG_MAJOR=$(ls /usr/lib/postgresql 2>/dev/null | sort | tail -n 1 || echo 17); exec /usr/lib/postgresql/${PG_MAJOR}/bin/postgres -D /var/lib/postgresql/${PG_MAJOR}/main -c config_file=/etc/postgresql/${PG_MAJOR}/main/postgresql.conf'
+user=postgres
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/postgresql/postgresql.err.log
+stdout_logfile=/var/log/postgresql/postgresql.out.log
+priority=1
+
+[program:apache2]
+command=/usr/sbin/apache2ctl -D FOREGROUND
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/apache2/error.log
+stdout_logfile=/var/log/apache2/access.log
+priority=2
+
+[program:cron]
+command=/usr/sbin/cron -f
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/cron.err.log
+stdout_logfile=/var/log/cron.out.log
+priority=3
+EOF
 
 # Create startup script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "Starting DAVE (Device Assessment and Vulnerability Exposure)..."\n\
-\n\
-# Load environment variables from .env\n\
-if [ -f /var/www/html/.env ]; then\n\
-    echo "Loading configuration from .env..."\n\
-    set -a\n\
-    . /var/www/html/.env\n\
-    set +a\n\
-else\n\
-    echo "ERROR: .env file not found at /var/www/html/.env"\n\
-    exit 1\n\
-fi\n\
-\n\
-# Validate required environment variables\n\
-MISSING_VARS=""\n\
-[ -z "$DB_HOST" ] && MISSING_VARS="$MISSING_VARS DB_HOST"\n\
-[ -z "$DB_PORT" ] && MISSING_VARS="$MISSING_VARS DB_PORT"\n\
-[ -z "$DB_NAME" ] && MISSING_VARS="$MISSING_VARS DB_NAME"\n\
-[ -z "$DB_USER" ] && MISSING_VARS="$MISSING_VARS DB_USER"\n\
-[ -z "$DB_PASSWORD" ] && MISSING_VARS="$MISSING_VARS DB_PASSWORD"\n\
-[ -z "$DAVE_ADMIN_USER" ] && MISSING_VARS="$MISSING_VARS DAVE_ADMIN_USER"\n\
-[ -z "$DAVE_ADMIN_DEFAULT_PASSWORD" ] && MISSING_VARS="$MISSING_VARS DAVE_ADMIN_DEFAULT_PASSWORD"\n\
-\n\
-if [ -n "$MISSING_VARS" ]; then\n\
-    echo "ERROR: The following required environment variables are not set in .env:"\n\
-    for var in $MISSING_VARS; do\n\
-        echo "  - $var"\n\
-    done\n\
-    exit 1\n\
-fi\n\
-\n\
-echo "Environment variables loaded successfully"\n\
-echo "Database: $DB_NAME on $DB_HOST:$DB_PORT"\n\
-echo "Admin user: $DAVE_ADMIN_USER"\n\
-\n\
-# Ensure PostgreSQL data directory exists and is properly initialized\n\
-if [ ! -f /var/lib/postgresql/16/main/PG_VERSION ]; then\n\
-    echo "PostgreSQL data directory not found - initializing..."\n\
-    mkdir -p /var/lib/postgresql/16/main\n\
-    chown -R postgres:postgres /var/lib/postgresql\n\
-    chmod 700 /var/lib/postgresql/16/main\n\
-    su - postgres -c "/usr/lib/postgresql/16/bin/initdb -D /var/lib/postgresql/16/main"\n\
-    \n\
-    # Configure PostgreSQL\n\
-    echo "port = $DB_PORT" >> /etc/postgresql/16/main/postgresql.conf\n\
-    echo "listen_addresses = '"'"'*'"'"'" >> /etc/postgresql/16/main/postgresql.conf\n\
-    echo "host all all 0.0.0.0/0 md5" >> /etc/postgresql/16/main/pg_hba.conf\n\
-    echo "host all all ::0/0 md5" >> /etc/postgresql/16/main/pg_hba.conf\n\
-fi\n\
-\n\
-# Ensure proper ownership\n\
-chown -R postgres:postgres /var/lib/postgresql\n\
-chmod 700 /var/lib/postgresql/16/main\n\
-\n\
-# Start PostgreSQL temporarily to set up database\n\
-echo "Starting PostgreSQL for initial setup..."\n\
-su - postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/lib/postgresql/16/main -o '"'"'-c config_file=/etc/postgresql/16/main/postgresql.conf'"'"' -l /var/log/postgresql/postgresql.log start"\n\
-\n\
-# Wait for PostgreSQL to be ready\n\
-echo "Waiting for PostgreSQL to be ready..."\n\
-for i in {1..30}; do\n\
-    if su - postgres -c "psql -c '"'"'SELECT 1'"'"' >/dev/null 2>&1"; then\n\
-        echo "PostgreSQL is ready"\n\
-        break\n\
-    fi\n\
-    echo "Waiting for PostgreSQL... ($i/30)"\n\
-    sleep 1\n\
-done\n\
-\n\
-# Configure PostgreSQL database and user using .env values\n\
-echo "Configuring PostgreSQL database with credentials from .env..."\n\
-su - postgres -c "psql -c \\"CREATE USER $DB_USER WITH PASSWORD '"'"'$DB_PASSWORD'"'"';\\" " 2>/dev/null || true\n\
-su - postgres -c "psql -c \\"ALTER USER $DB_USER CREATEDB;\\" " 2>/dev/null || true\n\
-su - postgres -c "psql -c \\"CREATE DATABASE $DB_NAME OWNER $DB_USER;\\" " 2>/dev/null || true\n\
-su - postgres -c "psql -c \\"GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;\\" " 2>/dev/null || true\n\
-su - postgres -c "psql -d $DB_NAME -c \\"CREATE EXTENSION IF NOT EXISTS uuid-ossp;\\" " 2>/dev/null || true\n\
-\n\
-# Run database schema if it exists\n\
-if [ -f /var/www/html/database/schema-production.sql ]; then\n\
-    echo "Installing database schema..."\n\
-    PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -f /var/www/html/database/schema-production.sql 2>/dev/null || true\n\
-    echo "Database schema installed"\n\
-fi\n\
-\n\
-# Create initial admin user with credentials from .env\n\
-echo "Creating initial admin user from .env configuration..."\n\
-# Generate bcrypt hash for admin password using PHP\n\
-ADMIN_PASSWORD_HASH=$(php -r "echo password_hash('"'"'$DAVE_ADMIN_DEFAULT_PASSWORD'"'"', PASSWORD_BCRYPT);")\n\
-\n\
-if [ -z "$ADMIN_PASSWORD_HASH" ]; then\n\
-    echo "ERROR: Failed to generate password hash for admin user"\n\
-    exit 1\n\
-fi\n\
-\n\
-PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -c "\n\
-INSERT INTO users (username, email, password_hash, role, mfa_secret, is_active, created_at) \n\
-VALUES ('"'"'$DAVE_ADMIN_USER'"'"', '"'"'$DAVE_ADMIN_USER@dave.local'"'"', '"'"'$ADMIN_PASSWORD_HASH'"'"', '"'"'Admin'"'"', '"'"''"'"', true, NOW())\n\
-ON CONFLICT (username) DO NOTHING;\n\
-" 2>/dev/null || true\n\
-\n\
-echo "Admin user '"'"'$DAVE_ADMIN_USER'"'"' created successfully"\n\
-\n\
-# Stop PostgreSQL (supervisor will manage it)\n\
-echo "Stopping PostgreSQL temporary instance..."\n\
-su - postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/lib/postgresql/16/main stop" || true\n\
-sleep 2\n\
-\n\
-# Ensure Apache run directories exist\n\
-mkdir -p /var/run/apache2 /var/lock/apache2\n\
-\n\
-# Start all services via supervisor\n\
-echo "Starting services via supervisor..."\n\
-exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf\n\
-' > /usr/local/bin/docker-entrypoint.sh && \
-    chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN cat <<'EOF' > /usr/local/bin/docker-entrypoint.sh
+#!/bin/bash
+set -e
+
+echo "Starting DAVE (Device Assessment and Vulnerability Exposure)..."
+
+# Load environment variables from .env
+if [ -f /var/www/html/.env ]; then
+    echo "Loading configuration from .env..."
+    set -a
+    . /var/www/html/.env
+    set +a
+else
+    echo "ERROR: .env file not found at /var/www/html/.env"
+    exit 1
+fi
+
+# Validate required environment variables
+MISSING_VARS=""
+[ -z "$DB_HOST" ] && MISSING_VARS="$MISSING_VARS DB_HOST"
+[ -z "$DB_PORT" ] && MISSING_VARS="$MISSING_VARS DB_PORT"
+[ -z "$DB_NAME" ] && MISSING_VARS="$MISSING_VARS DB_NAME"
+[ -z "$DB_USER" ] && MISSING_VARS="$MISSING_VARS DB_USER"
+[ -z "$DB_PASSWORD" ] && MISSING_VARS="$MISSING_VARS DB_PASSWORD"
+[ -z "$DAVE_ADMIN_USER" ] && MISSING_VARS="$MISSING_VARS DAVE_ADMIN_USER"
+[ -z "$DAVE_ADMIN_DEFAULT_PASSWORD" ] && MISSING_VARS="$MISSING_VARS DAVE_ADMIN_DEFAULT_PASSWORD"
+
+if [ -n "$MISSING_VARS" ]; then
+    echo "ERROR: The following required environment variables are not set in .env:"
+    for var in $MISSING_VARS; do
+        echo "  - $var"
+    done
+    exit 1
+fi
+
+# Escape SQL literals safely so usernames/passwords with shell metacharacters do not break the installer.
+sql_escape() {
+    printf "%s" "$1" | sed "s/'/''/g"
+}
+
+DB_USER_ESCAPED="$(sql_escape "$DB_USER")"
+DB_PASSWORD_ESCAPED="$(sql_escape "$DB_PASSWORD")"
+DAVE_ADMIN_USER_ESCAPED="$(sql_escape "$DAVE_ADMIN_USER")"
+DAVE_ADMIN_EMAIL_ESCAPED="$(sql_escape "${DAVE_ADMIN_USER}@dave.local")"
+
+PG_MAJOR=$(ls /usr/lib/postgresql 2>/dev/null | sort | tail -n 1 || echo 17)
+PG_DATA_DIR="/var/lib/postgresql/${PG_MAJOR}/main"
+PG_CONF_DIR="/etc/postgresql/${PG_MAJOR}/main"
+
+echo "Environment variables loaded successfully"
+echo "Database: $DB_NAME on $DB_HOST:$DB_PORT"
+echo "Admin user: $DAVE_ADMIN_USER"
+
+# Ensure PostgreSQL data directory exists and is properly initialized
+if [ ! -f "$PG_DATA_DIR/PG_VERSION" ]; then
+    echo "PostgreSQL data directory not found - initializing..."
+    mkdir -p "$PG_DATA_DIR"
+    chown -R postgres:postgres /var/lib/postgresql
+    chmod 700 "$PG_DATA_DIR"
+    su - postgres -c "/usr/lib/postgresql/${PG_MAJOR}/bin/initdb -D \"$PG_DATA_DIR\""
+
+    echo "port = $DB_PORT" >> "$PG_CONF_DIR/postgresql.conf"
+    echo "listen_addresses = '*'" >> "$PG_CONF_DIR/postgresql.conf"
+    echo "host all all 0.0.0.0/0 md5" >> "$PG_CONF_DIR/pg_hba.conf"
+    echo "host all all ::0/0 md5" >> "$PG_CONF_DIR/pg_hba.conf"
+fi
+
+# Ensure proper ownership
+chown -R postgres:postgres /var/lib/postgresql
+chmod 700 "$PG_DATA_DIR"
+
+echo "Starting PostgreSQL for initial setup..."
+su - postgres -c "/usr/lib/postgresql/${PG_MAJOR}/bin/pg_ctl -D \"$PG_DATA_DIR\" -o '-c config_file=${PG_CONF_DIR}/postgresql.conf' -l /var/log/postgresql/postgresql.log start"
+
+echo "Waiting for PostgreSQL to be ready..."
+for i in $(seq 1 30); do
+    if su - postgres -c "psql -c 'SELECT 1' >/dev/null 2>&1"; then
+        echo "PostgreSQL is ready"
+        break
+    fi
+    echo "Waiting for PostgreSQL... ($i/30)"
+    sleep 1
+done
+
+echo "Configuring PostgreSQL database with credentials from .env..."
+su - postgres -c "psql -c \"CREATE USER '$DB_USER_ESCAPED' WITH PASSWORD '$DB_PASSWORD_ESCAPED';\"" 2>/dev/null || true
+su - postgres -c "psql -c \"ALTER USER '$DB_USER_ESCAPED' CREATEDB;\"" 2>/dev/null || true
+su - postgres -c "psql -c \"CREATE DATABASE '$DB_NAME' OWNER '$DB_USER_ESCAPED';\"" 2>/dev/null || true
+su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE '$DB_NAME' TO '$DB_USER_ESCAPED';\"" 2>/dev/null || true
+su - postgres -c "psql -d '$DB_NAME' -c \"CREATE EXTENSION IF NOT EXISTS uuid-ossp;\"" 2>/dev/null || true
+
+if [ -f /var/www/html/database/schema-production.sql ]; then
+    echo "Installing database schema..."
+    PGPASSWORD=$DB_PASSWORD psql -h localhost -U "$DB_USER" -d "$DB_NAME" -f /var/www/html/database/schema-production.sql 2>/dev/null || true
+    echo "Database schema installed"
+fi
+
+echo "Creating initial admin user from .env configuration..."
+ADMIN_PASSWORD_HASH=$(php -r 'echo password_hash($argv[1], PASSWORD_BCRYPT);' -- "$DAVE_ADMIN_DEFAULT_PASSWORD")
+
+if [ -z "$ADMIN_PASSWORD_HASH" ]; then
+    echo "ERROR: Failed to generate password hash for admin user"
+    exit 1
+fi
+
+ADMIN_PASSWORD_HASH_ESCAPED="$(sql_escape "$ADMIN_PASSWORD_HASH")"
+PGPASSWORD=$DB_PASSWORD psql -h localhost -U "$DB_USER" -d "$DB_NAME" -c "
+INSERT INTO users (username, email, password_hash, role, mfa_secret, is_active, created_at)
+VALUES ('${DAVE_ADMIN_USER_ESCAPED}', '${DAVE_ADMIN_EMAIL_ESCAPED}', '${ADMIN_PASSWORD_HASH_ESCAPED}', 'Admin', '', true, NOW())
+ON CONFLICT (username) DO NOTHING;
+" 2>/dev/null || true
+
+echo "Admin user '$DAVE_ADMIN_USER' created successfully"
+
+echo "Stopping PostgreSQL temporary instance..."
+su - postgres -c "/usr/lib/postgresql/${PG_MAJOR}/bin/pg_ctl -D \"$PG_DATA_DIR\" stop" || true
+sleep 2
+
+mkdir -p /var/run/apache2 /var/lock/apache2
+
+echo "Starting services via supervisor..."
+exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+EOF
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose ports (PostgreSQL port configured via DB_PORT in .env at runtime)
 EXPOSE 80 443 5432

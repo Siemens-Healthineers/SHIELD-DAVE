@@ -130,7 +130,7 @@ When using migrations (not production schema), they apply in numerical order:
 ## Production Deployment Steps
 
 ### 1. System Requirements
-- Ubuntu 18.04+ or Debian 10+
+- Ubuntu 26.04 LTS
 - Minimum 2GB RAM
 - Minimum 10GB disk space
 - Root or sudo access

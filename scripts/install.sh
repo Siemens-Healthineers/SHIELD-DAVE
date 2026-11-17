@@ -42,6 +42,158 @@ info() {
     echo -e "${BLUE}[INFO] $1${NC}"
 }
 
+# Install a patched PHP 8.5.12+ build from source when distro packages are still vulnerable.
+install_php_from_source() {
+    local php_version="8.5.12"
+    local php_root="/usr/local/php-8.5.12"
+    local src_dir="/tmp/php-${php_version}"
+    local archive="/tmp/php-${php_version}.tar.gz"
+
+    if [ -x "$php_root/bin/php" ] && "$php_root/bin/php" -r 'echo PHP_VERSION;' 2>/dev/null | grep -q '^8\.5\.'; then
+        local installed=$($php_root/bin/php -r 'echo PHP_VERSION;' 2>/dev/null || true)
+        if [ -n "$installed" ] && dpkg --compare-versions "$installed" ge "$php_version" 2>/dev/null; then
+            info "Detected existing patched PHP runtime at $php_root ($installed). Skipping rebuild."
+            export PATH="$php_root/bin:$PATH"
+            export PHP_INI_SCAN_DIR="$php_root/etc/conf.d"
+            return 0
+        fi
+    fi
+
+    log "PHP package is not patched in the configured repositories. Building PHP ${php_version} from source..."
+
+    sudo apt install -y \
+        build-essential \
+        autoconf \
+        bison \
+        re2c \
+        libxml2-dev \
+        libssl-dev \
+        libcurl4-openssl-dev \
+        libsqlite3-dev \
+        libpq-dev \
+        libonig-dev \
+        libzip-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libfreetype6-dev \
+        libwebp-dev \
+        libxslt1-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libedit-dev \
+        pkg-config \
+        ca-certificates \
+        curl \
+        git \
+        apache2-dev
+
+    if [ ! -f "$archive" ]; then
+        curl -fL "https://www.php.net/distributions/php-${php_version}.tar.gz" -o "$archive"
+    fi
+
+    if [ ! -d "$src_dir" ]; then
+        tar -xzf "$archive" -C /tmp
+    fi
+
+    cd "$src_dir"
+    if [ ! -x "$php_root/bin/php" ]; then
+        ./configure \
+            --prefix="$php_root" \
+            --with-config-file-path="$php_root/etc" \
+            --with-config-file-scan-dir="$php_root/etc/conf.d" \
+            --enable-cli \
+            --enable-fpm \
+            --with-fpm-user=www-data \
+            --with-fpm-group=www-data \
+            --with-pdo-pgsql \
+            --with-pgsql \
+            --with-curl \
+            --with-openssl \
+            --with-zip \
+            --with-zlib \
+            --with-bz2 \
+            --with-gd \
+            --with-jpeg \
+            --with-webp \
+            --enable-mbstring \
+            --with-xsl \
+            --with-readline
+        make -j"$(nproc)"
+        sudo make install
+    fi
+
+    sudo mkdir -p "$php_root/etc"
+    sudo cp "$src_dir/php.ini-production" "$php_root/etc/php.ini"
+    sudo sed -i 's/;date.timezone =/date.timezone = UTC/' "$php_root/etc/php.ini"
+    sudo sed -i 's/memory_limit = 128M/memory_limit = 256M/' "$php_root/etc/php.ini"
+    sudo sed -i 's/max_execution_time = 30/max_execution_time = 300/' "$php_root/etc/php.ini"
+    sudo sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 50M/' "$php_root/etc/php.ini"
+    sudo sed -i 's/post_max_size = 8M/post_max_size = 50M/' "$php_root/etc/php.ini"
+
+    if [ ! -f "$php_root/etc/php-fpm.conf" ]; then
+        sudo cp "$php_root/etc/php-fpm.conf.default" "$php_root/etc/php-fpm.conf"
+    fi
+
+    sudo rm -f /run/php/php-fpm-8.5.sock /run/php/php-fpm.pid
+    sudo systemctl stop php8.5-fpm.service 2>/dev/null || true
+    sudo pkill -f "/usr/local/php-8.5.12/sbin/php-fpm" 2>/dev/null || true
+    sudo pkill -f "php-fpm.*php-fpm.conf" 2>/dev/null || true
+
+    sudo mkdir -p /run/php
+    sudo mkdir -p /usr/local/php-8.5.12/var/log
+    sudo mkdir -p /usr/local/php-8.5.12/var/run
+
+    sudo tee "$php_root/etc/php-fpm.d/www.conf" > /dev/null <<EOF
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php-fpm-8.5.sock
+listen.owner = www-data
+listen.group = www-data
+listen.mode = 0660
+pm = dynamic
+pm.max_children = 20
+pm.start_servers = 4
+pm.min_spare_servers = 2
+pm.max_spare_servers = 8
+chdir = /
+EOF
+
+    sudo tee /etc/systemd/system/php8.5-fpm.service > /dev/null <<EOF
+[Unit]
+Description=The PHP FastCGI Process Manager
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/php-8.5.12/sbin/php-fpm --nodaemonize --fpm-config /usr/local/php-8.5.12/etc/php-fpm.conf
+ExecReload=/usr/local/php-8.5.12/sbin/php-fpm --fpm-config /usr/local/php-8.5.12/etc/php-fpm.conf -s reload
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable php8.5-fpm.service 2>/dev/null || true
+    sudo systemctl stop php8.5-fpm.service 2>/dev/null || true
+    sudo /usr/local/php-8.5.12/sbin/php-fpm --fpm-config "$php_root/etc/php-fpm.conf" -D
+
+    sudo ln -sf "$php_root/bin/php" /usr/local/bin/php
+    sudo ln -sf "$php_root/bin/phpize" /usr/local/bin/phpize
+    sudo ln -sf "$php_root/bin/php-config" /usr/local/bin/php-config
+    sudo ln -sf "$php_root/sbin/php-fpm" /usr/local/sbin/php-fpm
+
+    export PATH="$php_root/bin:$PATH"
+    export PHP_INI_SCAN_DIR="$php_root/etc/conf.d"
+
+    info "PHP 8.5.12 built from source and installed at $php_root"
+    php -v | head -n 2
+
+    return 0
+}
+
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
    error "This script should not be run as root. Please run as a regular user with sudo privileges."
@@ -78,6 +230,99 @@ info "Architecture: $ARCH"
 # Check system requirements
 log "Checking system requirements..."
 
+# Detect supported OS/release and ensure the PHP repo matches the actual Ubuntu codename.
+UBUNTU_CODENAME=$(lsb_release -sc 2>/dev/null || echo "")
+if [ -z "$UBUNTU_CODENAME" ]; then
+    UBUNTU_CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "")
+fi
+
+if [ -n "$UBUNTU_CODENAME" ]; then
+    info "Detected Ubuntu codename: $UBUNTU_CODENAME"
+fi
+
+# Remove incompatible repo entries for other Ubuntu releases before installing PHP.
+for source_file in /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list /etc/apt/sources.list; do
+    [ -e "$source_file" ] || continue
+    if grep -Eq "ondrej.*(noble|resolute|jammy|focal|mantic|oracular|plucky)|packages.sury.org/php.*(noble|resolute|jammy|focal|mantic|oracular|plucky)" "$source_file" 2>/dev/null; then
+        if [ -n "$UBUNTU_CODENAME" ] && ! grep -Eq "$UBUNTU_CODENAME" "$source_file" 2>/dev/null; then
+            warning "Removing mismatched PHP repo entry: $source_file"
+            sudo rm -f "$source_file"
+        fi
+    fi
+done 2>/dev/null
+
+# Ensure the correct PHP repository is configured for the running Ubuntu release.
+if ! grep -Rq "packages.sury.org/php\|ondrej/php" /etc/apt/sources.list.d /etc/apt/sources.list 2>/dev/null; then
+    sudo apt install -y ca-certificates curl gnupg
+    sudo install -m 0755 -d /etc/apt/keyrings
+   
+    if [ -n "$UBUNTU_CODENAME" ]; then
+        curl -fsSL https://packages.sury.org/php/apt.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/sury-php.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/sury-php.gpg] https://packages.sury.org/php/ ${UBUNTU_CODENAME} main" | sudo tee /etc/apt/sources.list.d/sury-php.list > /dev/null
+    else
+        error "Unable to determine the Ubuntu codename. Cannot configure the correct PHP repository."
+    fi
+fi
+
+# Fallback to Ondřej PPA only if the OS release is compatible and repo is still absent.
+if ! apt-cache policy php8.5 2>/dev/null | grep -q "Candidate:"; then
+    if [ -n "$UBUNTU_CODENAME" ] && { [ "$UBUNTU_CODENAME" = "noble" ] || [ "$UBUNTU_CODENAME" = "resolute" ] || [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "focal" ]; }; then
+        if ! grep -Rq "ondrej/php" /etc/apt/sources.list.d /etc/apt/sources.list 2>/dev/null; then
+            sudo add-apt-repository -y ppa:ondrej/php
+        fi
+    fi
+fi
+
+sudo apt update -y
+
+# Resolve the active PHP runtime and ensure it is a patched 8.5+ build.
+# Prefer PHP 8.5 when installed, but accept the newest supported 8.x runtime available.
+PHP_MAJOR_MINOR="8.5"
+PHP_BIN="php8.5"
+PHP_PACKAGE="php8.5"
+PHP_INI_DIR="/etc/php/8.5/apache2"
+MIN_PHP_VERSION="8.5.12"
+
+for candidate in 8.5 8.4 8.3; do
+    if command -v "php${candidate}" >/dev/null 2>&1; then
+        PHP_MAJOR_MINOR="$candidate"
+        PHP_BIN="php${candidate}"
+        PHP_PACKAGE="php${candidate}"
+        PHP_INI_DIR="/etc/php/${candidate}/apache2"
+        break
+    fi
+    if apt-cache policy "php${candidate}" 2>/dev/null | grep -q "Candidate:"; then
+        PHP_MAJOR_MINOR="$candidate"
+        PHP_BIN="php${candidate}"
+        PHP_PACKAGE="php${candidate}"
+        PHP_INI_DIR="/etc/php/${candidate}/apache2"
+        break
+    fi
+done
+
+PHP_INSTALLED_VERSION=""
+if [ -n "$PHP_BIN" ] && command -v "$PHP_BIN" >/dev/null 2>&1; then
+    PHP_INSTALLED_VERSION=$($PHP_BIN -r 'echo PHP_VERSION;' 2>/dev/null || true)
+fi
+
+CANDIDATE_PHP=$(apt-cache policy "php${PHP_MAJOR_MINOR}" 2>/dev/null | awk '/Candidate:/{print $2}' || true)
+
+if [ -n "$PHP_INSTALLED_VERSION" ] && dpkg --compare-versions "$PHP_INSTALLED_VERSION" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+    info "Using PHP runtime: $PHP_BIN ($PHP_INSTALLED_VERSION)"
+elif [ -n "$CANDIDATE_PHP" ] && dpkg --compare-versions "$CANDIDATE_PHP" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+    info "Using PHP candidate version from apt: $CANDIDATE_PHP"
+else
+    warning "No patched PHP runtime was found in the configured repositories. Building PHP $MIN_PHP_VERSION from source..."
+    install_php_from_source
+    PHP_BIN="/usr/local/bin/php"
+    PHP_INI_DIR="/usr/local/php-8.5.12/etc"
+    PHP_INSTALLED_VERSION=$($PHP_BIN -r 'echo PHP_VERSION;' 2>/dev/null || true)
+    if [ -z "$PHP_INSTALLED_VERSION" ] || ! dpkg --compare-versions "$PHP_INSTALLED_VERSION" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+        error "PHP source build did not produce a patched runtime at $MIN_PHP_VERSION or newer."
+    fi
+    info "Using PHP runtime: $PHP_BIN ($PHP_INSTALLED_VERSION)"
+fi
+
 # Check available memory
 MEMORY_GB=$(free -g | awk '/^Mem:/{print $2}')
 if [ "$MEMORY_GB" -lt 2 ]; then
@@ -96,38 +341,82 @@ info "System requirements check passed"
 log "Updating system packages..."
 sudo apt update -y
 
-# Add PHP repository for latest PHP versions
-log "Adding PHP repository..."
-sudo apt install -y software-properties-common
-sudo apt update -y
+# Verify a patched PHP 8.5 runtime is available before continuing.
+CANDIDATE_PHP=$(apt-cache policy "php${PHP_MAJOR_MINOR}" 2>/dev/null | awk '/Candidate:/{print $2}' || true)
+if [ -z "$CANDIDATE_PHP" ]; then
+    if [ -x "/usr/local/bin/php" ] && dpkg --compare-versions "$($PHP_BIN -r 'echo PHP_VERSION;' 2>/dev/null || echo 0)" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+        info "Using locally built PHP runtime for the required patched version: $($PHP_BIN -r 'echo PHP_VERSION;' 2>/dev/null || echo unknown)"
+    else
+        error "php${PHP_MAJOR_MINOR} package is not available in the configured repositories. Please enable a supported PHP repository and retry."
+    fi
+fi
+
+if [ -n "$CANDIDATE_PHP" ] && ! dpkg --compare-versions "$CANDIDATE_PHP" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+    warning "Distro PHP package is below the required patched version. Building PHP $MIN_PHP_VERSION from source instead..."
+    install_php_from_source
+    PHP_BIN="/usr/local/bin/php"
+    PHP_INI_DIR="/usr/local/php-8.5.12/etc"
+    PHP_INSTALLED_VERSION=$($PHP_BIN -r 'echo PHP_VERSION;' 2>/dev/null || true)
+    if [ -z "$PHP_INSTALLED_VERSION" ] || ! dpkg --compare-versions "$PHP_INSTALLED_VERSION" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+        error "Installed PHP version $PHP_INSTALLED_VERSION does not satisfy the minimum required patched version $MIN_PHP_VERSION."
+    fi
+fi
 
 # Install required packages
 log "Installing required packages..."
-sudo apt install -y \
-    apache2 \
-    postgresql \
-    postgresql-contrib \
-    postgresql-16-pgvector \
-    php8.3 \
-    php8.3-pgsql \
-    php8.3-curl \
-    php8.3-mbstring \
-    php8.3-xml \
-    php8.3-zip \
-    php8.3-gd \
-    php8.3-cli \
-    libapache2-mod-php8.3 \
-    python3 \
-    python3-pip \
-    python3-venv \
-    curl \
-    wget \
-    git \
-    unzip \
-    software-properties-common \
-    certbot \
-    python3-certbot-apache \
-    cron
+if [ "$PHP_BIN" = "/usr/local/bin/php" ] || [ "$PHP_BIN" = "/usr/local/php-8.5.12/bin/php" ]; then
+    sudo apt install -y \
+        apache2 \
+        postgresql \
+        postgresql-contrib \
+        postgresql-16-pgvector \
+        python3 \
+        python3-pip \
+        python3-venv \
+        curl \
+        wget \
+        git \
+        unzip \
+        software-properties-common \
+        certbot \
+        python3-certbot-apache \
+        cron
+else
+    sudo apt install -y \
+        apache2 \
+        postgresql \
+        postgresql-contrib \
+        postgresql-16-pgvector \
+        "php${PHP_MAJOR_MINOR}" \
+        "php${PHP_MAJOR_MINOR}-pgsql" \
+        "php${PHP_MAJOR_MINOR}-curl" \
+        "php${PHP_MAJOR_MINOR}-mbstring" \
+        "php${PHP_MAJOR_MINOR}-xml" \
+        "php${PHP_MAJOR_MINOR}-zip" \
+        "php${PHP_MAJOR_MINOR}-gd" \
+        "php${PHP_MAJOR_MINOR}-cli" \
+        "libapache2-mod-php${PHP_MAJOR_MINOR}" \
+        python3 \
+        python3-pip \
+        python3-venv \
+        curl \
+        wget \
+        git \
+        unzip \
+        software-properties-common \
+        certbot \
+        python3-certbot-apache \
+        cron
+fi
+
+# Ensure the actual installed version is patched before proceeding
+PHP_VER=$($PHP_BIN -v 2>/dev/null | awk '/^PHP /{print $2}' | head -n 1 || true)
+if [ -z "$PHP_VER" ]; then
+    error "The selected PHP runtime ($PHP_BIN) was not installed correctly or is not available in PATH."
+fi
+if ! dpkg --compare-versions "$PHP_VER" ge "$MIN_PHP_VERSION" 2>/dev/null; then
+    error "Installed PHP version $PHP_VER does not satisfy the minimum required patched version $MIN_PHP_VERSION."
+fi
 
 # Enable Apache modules
 log "Enabling Apache modules..."
@@ -169,7 +458,7 @@ sudo a2dissite 000-default.conf
 
 # Configure PHP
 log "Configuring PHP..."
-sudo tee -a /etc/php/8.3/apache2/php.ini > /dev/null <<EOF
+sudo tee -a "$PHP_INI_DIR/php.ini" > /dev/null <<EOF
 
 ;  PHP Configuration
 memory_limit = 256M
@@ -234,15 +523,25 @@ if [ ${#MISSING_VARS[@]} -gt 0 ]; then
     exit 1
 fi
 
+# Escape SQL literals safely so usernames/passwords with shell metacharacters do not break the installer.
+sql_escape() {
+    printf "%s" "$1" | sed "s/'/''/g"
+}
+
+DB_USER_ESCAPED="$(sql_escape "$DB_USER")"
+DB_PASSWORD_ESCAPED="$(sql_escape "$DB_PASSWORD")"
+DAVE_ADMIN_USER_ESCAPED="$(sql_escape "$DAVE_ADMIN_USER")"
+DAVE_ADMIN_EMAIL_ESCAPED="$(sql_escape "${DAVE_ADMIN_USER}@dave.local")"
+
 # Configure PostgreSQL
 log "Configuring PostgreSQL..."
-sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
-sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;" 2>/dev/null || true
-sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || true
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null || true
+sudo -u postgres psql -c "CREATE USER '$DB_USER_ESCAPED' WITH PASSWORD '$DB_PASSWORD_ESCAPED';" 2>/dev/null || true
+sudo -u postgres psql -c "ALTER USER '$DB_USER_ESCAPED' CREATEDB;" 2>/dev/null || true
+sudo -u postgres psql -c "CREATE DATABASE '$DB_NAME' OWNER '$DB_USER_ESCAPED';" 2>/dev/null || true
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE '$DB_NAME' TO '$DB_USER_ESCAPED';" 2>/dev/null || true
 
 # Create UUID extension
-sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";" 2>/dev/null || true
+sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";" 2>/dev/null || true
 
 # Set up application directories
 log "Setting up application directories..."
@@ -385,16 +684,17 @@ fi
 # Create initial admin user
 log "Creating initial admin user..."
 
-# Generate bcrypt hash for admin password using PHP
-ADMIN_PASSWORD_HASH=$(php -r "echo password_hash('$DAVE_ADMIN_DEFAULT_PASSWORD', PASSWORD_BCRYPT);")
+# Generate bcrypt hash for admin password using PHP and pass the password as an argument to avoid shell quoting issues.
+ADMIN_PASSWORD_HASH=$(php -r 'echo password_hash($argv[1], PASSWORD_BCRYPT);' -- "$DAVE_ADMIN_DEFAULT_PASSWORD")
 
 if [ -z "$ADMIN_PASSWORD_HASH" ]; then
     error "Failed to generate password hash for admin user"
 fi
 
+ADMIN_PASSWORD_HASH_ESCAPED="$(sql_escape "$ADMIN_PASSWORD_HASH")"
 PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "
 INSERT INTO users (username, email, password_hash, role, mfa_secret, is_active, created_at) 
-VALUES ('$DAVE_ADMIN_USER', '$DAVE_ADMIN_USER@dave.local', '$ADMIN_PASSWORD_HASH', 'Admin', '', true, NOW())
+VALUES ('${DAVE_ADMIN_USER_ESCAPED}', '${DAVE_ADMIN_EMAIL_ESCAPED}', '${ADMIN_PASSWORD_HASH_ESCAPED}', 'Admin', '', true, NOW())
 ON CONFLICT (username) DO NOTHING;
 " 2>/dev/null || true
 

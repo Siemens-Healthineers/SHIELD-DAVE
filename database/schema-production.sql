@@ -12,9 +12,9 @@
 --
 -- ====================================================================================
 
--- Generated: 2026-08-31 10:24:02
+-- Generated: 2026-09-09 10:13:57
 
-\restrict 4MOjuslE8Q7HSllvY88v1gRsgs4l1lk2goYZBp7Eczci8DcnmcdaKd2Lomwpr1R
+\restrict 0W3zPw8H0sXcT6WYgYt5qy30XPmikwfNFMWITMR3UEngQ4my0IRCb9qvXDJ2oDK
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -4303,7 +4303,7 @@ ALTER TABLE ONLY public.vulnerability_scans
     ADD CONSTRAINT vulnerability_scans_device_id_fkey FOREIGN KEY (device_id) REFERENCES public.medical_devices(device_id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.vulnerability_scans
     ADD CONSTRAINT vulnerability_scans_requested_by_fkey FOREIGN KEY (requested_by) REFERENCES public.users(user_id);
-\unrestrict 4MOjuslE8Q7HSllvY88v1gRsgs4l1lk2goYZBp7Eczci8DcnmcdaKd2Lomwpr1R
+\unrestrict 0W3zPw8H0sXcT6WYgYt5qy30XPmikwfNFMWITMR3UEngQ4my0IRCb9qvXDJ2oDK
 
 -- ====================================================================================
 -- Migration Tracking Table
